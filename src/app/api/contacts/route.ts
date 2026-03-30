@@ -1,2 +1,9 @@
-// TODO: GET /api/contacts  — 获取当前用户的联系人列表（支持筛选、搜索）
-// TODO: POST /api/contacts — 创建新联系人
+import { NextResponse } from 'next/server'
+
+export async function GET() {
+  return NextResponse.json({ contacts: [] })
+}
+
+export async function POST() {
+  return NextResponse.json({ error: '未实现' }, { status: 501 })
+}

@@ -1,5 +1,1 @@
-// TODO: 新用户引导页
-// Step 1: 选择职业、行业与使用场景目标
-// Step 2: 自我画像建立
-// Step 3: Trial 体验模式（AI 生成 10-15 个虚拟联系人）
-// Step 4: 开始真实录入
+export default function Page() { return null }

@@ -9,121 +9,80 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── NextAuth 所需模型 ─────────────────────────────────────
+// ─── 用户与认证 ────────────────────────────────────────────
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String?
+  image     String?
+  industry  String?
+  role      String?
+  goal      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+  contacts Contact[]
+  journeys Journey[]
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+  @@index([phone])
+  @@index([expiresAt])
 }
 
 // ─── 核心业务模型 ──────────────────────────────────────────
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  industry      String?   // 所在行业
-  role          String?   // 职业角色
-  goal          String?   // 使用场景目标（如「拓展行业人脉」「寻找投资人」）
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  accounts  Account[]
-  sessions  Session[]
-  contacts  Contact[]
-  journeys  Journey[]
-}
-
-// 联系人 / 人物卡片
 model Contact {
   id        String   @id @default(cuid())
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 基本信息
   name   String
-  wechat String? // 微信名
+  wechat String?
   phone  String?
   email  String?
 
-  // 气场动物标签（第一层，可选）
   spiritAnimal SpiritAnimal?
-
-  // 关系角色标签（第二层）
   relationRole RelationRole
 
-  // 行业快签（第三层，AI 智能推荐，字符串数组）
   tags     String[]
-  industry String?  // 所属行业
+  industry String?
+  company  String?
+  title    String?
 
-  // 完整卡片信息（可选，事后补充）
-  company String? // 公司
-  title   String? // 职位
+  trustLevel  Int?
+  temperature Temperature?
+  energyScore Int          @default(50)
 
-  // 额外加分标签（可选）
-  trustLevel  Int?         // 置信度 1-5
-  temperature Temperature? // 温度：冷/温/热
-
-  // 能量值（基于互动频率计算，0-100）
-  energyScore Int @default(50)
-
-  // 备注与印象
   notes String? @db.Text
 
-  // 关系时间
   lastContactedAt DateTime?
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  interactions  Interaction[]
-  relationsA    ContactRelation[]  @relation("ContactA")
-  relationsB    ContactRelation[]  @relation("ContactB")
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interactions Interaction[]
+  relationsA   ContactRelation[] @relation("ContactA")
+  relationsB   ContactRelation[] @relation("ContactB")
 
   @@index([userId])
   @@index([userId, relationRole])
   @@index([userId, spiritAnimal])
 }
 
-// 人脉关联（记录联系人之间互相认识的关系）
 model ContactRelation {
   id           String  @id @default(cuid())
   contactIdA   String
   contactIdB   String
-  relationDesc String? // 关系描述，如「同学」「同事」「合作伙伴」
-
-  createdAt DateTime @default(now())
+  relationDesc String?
+  createdAt    DateTime @default(now())
 
   contactA Contact @relation("ContactA", fields: [contactIdA], references: [id], onDelete: Cascade)
   contactB Contact @relation("ContactB", fields: [contactIdB], references: [id], onDelete: Cascade)
@@ -133,12 +92,11 @@ model ContactRelation {
   @@index([contactIdB])
 }
 
-// 互动记录
 model Interaction {
   id        String          @id @default(cuid())
   contactId String
   type      InteractionType
-  content   String          @db.Text // 交流内容/摘要
+  content   String          @db.Text
   date      DateTime        @default(now())
   createdAt DateTime        @default(now())
 
@@ -148,13 +106,12 @@ model Interaction {
   @@index([date])
 }
 
-// 人脉航程（AI 分析结果）
 model Journey {
   id         String   @id @default(cuid())
   userId     String
-  goal       String   @db.Text // 用户输入的目标
-  aiAnalysis String?  @db.Text // AI 分析结果文本
-  pathData   Json?             // 路径数据（可视化用）
+  goal       String   @db.Text
+  aiAnalysis String?  @db.Text
+  pathData   Json?
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -164,41 +121,37 @@ model Journey {
 
 // ─── 枚举 ──────────────────────────────────────────────────
 
-// 气场动物（第一层标签）
 enum SpiritAnimal {
-  LION       // 狮子：强势、权威、领袖型
-  FOX        // 狐狸：精明、圆滑、策略型
-  BEAR       // 熊：稳重、可靠、信赖型
-  CHAMELEON  // 变色龙：适应力强、多面型
-  EAGLE      // 鹰：敏锐、远见、判断力强
-  DOLPHIN    // 海豚：亲和、感染力、社交型
-  OWL        // 猫头鹰：深沉、安静、知识型
-  SKUNK      // 臭鼬：古怪、独特、反常规
+  LION
+  FOX
+  BEAR
+  CHAMELEON
+  EAGLE
+  DOLPHIN
+  OWL
+  SKUNK
 }
 
-// 关系角色（第二层标签）
 enum RelationRole {
-  BIG_INVESTOR  // 大金主：能直接带来业务/资源
-  GATEWAY       // 传送门：认识很多人，能引荐你
-  ADVISOR       // 智囊：给你提供行业洞察与建议
-  THERMOMETER   // 温度计：情感支持、社交润滑剂
-  LIGHTHOUSE    // 灯塔：行业大佬，可仰望但难接近
-  COMRADE       // 战友：能并肩作战的伙伴
+  BIG_INVESTOR
+  GATEWAY
+  ADVISOR
+  THERMOMETER
+  LIGHTHOUSE
+  COMRADE
 }
 
-// 温度标签
 enum Temperature {
-  COLD  // 冷
-  WARM  // 温
-  HOT   // 热
+  COLD
+  WARM
+  HOT
 }
 
-// 互动类型
 enum InteractionType {
-  MEETING  // 会面
-  CALL     // 电话
-  EMAIL    // 邮件
-  MESSAGE  // 消息
-  EVENT    // 活动
-  OTHER    // 其他
+  MEETING
+  CALL
+  EMAIL
+  MESSAGE
+  EVENT
+  OTHER
 }

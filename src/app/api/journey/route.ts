@@ -1,2 +1,9 @@
-// TODO: POST /api/journey — 创建新航程分析（接收用户目标，调用 AI 分析）
-// TODO: GET  /api/journey — 获取当前用户的历史航程列表
+import { NextResponse } from 'next/server'
+
+export async function GET() {
+  return NextResponse.json({ journeys: [] })
+}
+
+export async function POST() {
+  return NextResponse.json({ error: '未实现' }, { status: 501 })
+}

@@ -1,5 +1,1 @@
-// TODO: 联系人详情页
-// 展示完整人物卡片信息
-// 互动记录时间线
-// 能量值可视化
-// 关系链接网络
+export default function Page() { return null }
