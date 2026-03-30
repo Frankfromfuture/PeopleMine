@@ -1,0 +1,134 @@
+// PeopleMine - 人脉管理工具
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── NextAuth 所需模型 ─────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── 核心业务模型 ──────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  contacts     Contact[]
+  interactions Interaction[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 基本信息
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  title     String?   // 职位
+  location  String?
+
+  // 关系管理
+  tags      String[]  // 标签，如 ["朋友", "同事", "投资人"]
+  source    String?   // 认识来源，如 "LinkedIn", "活动", "朋友介绍"
+  priority  Priority  @default(NORMAL)
+  notes     String?   @db.Text
+
+  // 社交链接
+  linkedinUrl String?
+  twitterUrl  String?
+  websiteUrl  String?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interactions Interaction[]
+
+  @@index([userId])
+  @@index([userId, priority])
+}
+
+model Interaction {
+  id        String          @id @default(cuid())
+  userId    String
+  contactId String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  type      InteractionType
+  date      DateTime        @default(now())
+  summary   String          @db.Text  // 交流摘要
+  notes     String?         @db.Text  // 详细备注
+  nextAction String?                  // 下一步行动
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([contactId])
+  @@index([date])
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  VIP
+}
+
+enum InteractionType {
+  MEETING    // 会面
+  CALL       // 电话
+  EMAIL      // 邮件
+  MESSAGE    // 消息
+  EVENT      // 活动
+  OTHER      // 其他
+}
