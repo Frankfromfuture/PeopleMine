@@ -17,6 +17,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  // 开发模式跳过登录验证
+  if (process.env.NODE_ENV === 'development') {
+    return NextResponse.next()
+  }
+
   const res = NextResponse.next()
   const session = await getIronSession<SessionData>(req, res, sessionOptions)
 
