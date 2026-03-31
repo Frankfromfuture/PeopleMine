@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import Link from "next/link"
 import { RELATION_ROLE_LABELS } from "@/types"
 import type { RelationRole, Temperature } from "@/types"
+import TestDataGenerator from "./TestDataGenerator"
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -73,20 +74,32 @@ export default async function DashboardPage() {
     userId = 'dev-user'
   }
 
-  const [user, allContacts] = await Promise.all([
-    db.user.findUnique({
-      where: { id: userId },
-      select: { name: true, phone: true },
-    }),
-    db.contact.findMany({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ])
+  let user = null
+  let allContacts = []
+  let dbError = null
+
+  try {
+    const [userData, contactsData] = await Promise.all([
+      db.user.findUnique({
+        where: { id: userId },
+        select: { name: true, phone: true },
+      }),
+      db.contact.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+      }),
+    ])
+    user = userData
+    allContacts = contactsData
+  } catch (error) {
+    dbError = error instanceof Error ? error.message : '数据库连接失败'
+    console.error('数据库错误:', error)
+  }
 
   const displayName =
     user?.name ||
-    (user?.phone ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") : "同学")
+    (user?.phone ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, "$1****$2") : "同学") ||
+    "Demo 用户"
 
   // Stats
   const totalContacts = allContacts.length
@@ -113,6 +126,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-full">
+      {/* ── Database error warning ── */}
+      {dbError && (
+        <div className="bg-amber-50 border-b border-amber-200 px-8 py-4">
+          <p className="text-sm text-amber-800">
+            <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
+          </p>
+          <p className="text-xs text-amber-700 mt-1">
+            请检查 DATABASE_URL 配置或联系管理员。可以使用「生成测试数据」功能预览功能。
+          </p>
+        </div>
+      )}
+
       {/* ── Page header ── */}
       <div className="px-8 pt-7 pb-5">
         <p className="text-xs text-gray-400 mb-1">{dateStr}</p>
@@ -121,6 +146,15 @@ export default async function DashboardPage() {
             {displayName}，{greeting} 👋
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Link
+              href="/contacts/new"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              人物标签页
+            </Link>
             <button className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
               我的人脉
               <svg className="w-3 h-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -393,6 +427,11 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── Test Data Generator section (Dev/Demo mode) ── */}
+      <div className="px-8 pb-8">
+        <TestDataGenerator />
       </div>
 
       {/* ── Quick features section ── */}

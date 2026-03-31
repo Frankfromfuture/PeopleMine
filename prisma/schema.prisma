@@ -54,7 +54,7 @@ model Contact {
   spiritAnimal SpiritAnimal?
   relationRole RelationRole
 
-  tags     String[]
+  tags     String?  // JSON array stored as string
   industry String?
   company  String?
   title    String?
@@ -63,8 +63,7 @@ model Contact {
   temperature Temperature?
   energyScore Int          @default(50)
 
-  notes String? @db.Text
-
+  notes String?
   lastContactedAt DateTime?
 
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -96,7 +95,7 @@ model Interaction {
   id        String          @id @default(cuid())
   contactId String
   type      InteractionType
-  content   String          @db.Text
+  content   String
   date      DateTime        @default(now())
   createdAt DateTime        @default(now())
 
@@ -109,8 +108,8 @@ model Interaction {
 model Journey {
   id         String   @id @default(cuid())
   userId     String
-  goal       String   @db.Text
-  aiAnalysis String?  @db.Text
+  goal       String
+  aiAnalysis String?
   pathData   Json?
   createdAt  DateTime @default(now())
 

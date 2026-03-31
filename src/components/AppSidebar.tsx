@@ -60,6 +60,18 @@ export default function AppSidebar() {
 
   return (
     <aside className="w-[220px] fixed left-0 top-12 bottom-0 z-40 bg-zinc-900 flex flex-col overflow-y-auto">
+      <div className="px-3 pt-3 pb-1">
+        <Link
+          href="/contacts/new"
+          className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          新增人物标签
+        </Link>
+      </div>
+
       {/* Main nav */}
       <nav className="flex-1 px-2 py-3 space-y-0.5">
         {navMain.map((item) => (

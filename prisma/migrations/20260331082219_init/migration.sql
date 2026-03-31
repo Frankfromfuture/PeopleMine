@@ -49,7 +49,7 @@ CREATE TABLE "Contact" (
     "email" TEXT,
     "spiritAnimal" "SpiritAnimal",
     "relationRole" "RelationRole" NOT NULL,
-    "tags" TEXT[],
+    "tags" TEXT,
     "industry" TEXT,
     "company" TEXT,
     "title" TEXT,
