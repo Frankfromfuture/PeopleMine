@@ -182,3 +182,63 @@ npx shadcn@latest add <component-name>
 - `DATABASE_URL`：PostgreSQL 连接串（在 `prisma.config.ts` 中通过 `dotenv` 读取）
 - `NEXTAUTH_SECRET`：生成命令 `openssl rand -base64 32`
 - `ANTHROPIC_API_KEY`：用于 F3 人脉航程 AI 分析
+
+---
+
+## ⚡ 当前架构现状（2026-03-31）
+
+### 已完成
+- ✅ **Asana 风格登录后主界面**（`(app)` 路由组）
+  - 深色侧边栏（`zinc-900`）+ 全宽顶栏（汉堡菜单、搜索、用户头像）
+  - 仪表盘主内容：左侧「待跟进人脉」Card（含 Tab）+ 右侧「人脉分布」Card
+  - 4 行统计卡片（总人数、热度、需维护、平均能量）
+  - 3 张功能引导卡片
+- ✅ **认证系统**：手机 OTP 登录 + iron-session + mock 用户（开发模式）
+- ✅ **API 基础**：`/api/contacts` GET/POST、`/api/auth/*`
+- ✅ **样式系统**：系统字体栈（macOS 苹方、Windows 微软俊黑、英文 Segoe UI）
+- ✅ **类型系统**：6 种关系角色 + 8 种气场动物 + Temperature 枚举
+- ✅ **权限配置**：开发模式 bypass（middleware 放行 + mock 用户）
+
+### 文件变更注意
+- 使用 `src/app/(app)/` 路由组而非根目录页面（旧的 `src/app/contacts/` 等已删除）
+- 侧边栏/顶栏分离为 `AppSidebar.tsx` 和 `AppTopBar.tsx`（客户端组件）
+- 仪表盘在 `(app)/page.tsx` 完整实现，数据库查询内置
+
+### 后续开发：「人物打标签」页面（`/contacts/new`）
+**预期 UI**（Asana 风格）：
+- 顶部面包屑：首页 > 人脉数据库 > 新增
+- 卡片式表单分为两个 Tab：
+  1. **简易模式（≤30秒）**
+     - 输入框：姓名（必填）
+     - 单选：6 种关系角色（必填）
+     - 多选：行业快签（从 AI 推荐列表勾选）
+     - 底部：「30秒快速保存」+ 「进入完整模式」
+  2. **完整模式**
+     - 姓名、公司、职位、微信、电话、邮箱、备注
+     - 可选：气场动物选择、信任度滑块（1-5）、温度按钮（冷/温/热）
+     - 关系链接：「已认识谁」多选框（列表其他联系人）
+     - 底部：保存按钮
+
+**样式参考**：
+- 卡片白色背景（`bg-white`）
+- 分组标题小灰字（`text-sm text-gray-500 uppercase`）
+- 输入框 shadcn/ui Input
+- 多选/单选用 Checkbox/RadioGroup
+- 角色选择展示为彩色 badge（BIG_INVESTOR=amber, GATEWAY=blue 等）
+- 气场动物选择用网格 + emoji（LION=狮子 等）
+
+**接入逻辑**：
+- POST `/api/contacts` 已实现，前端只需构造 `{ name, relationRole, tags, company, title, wechat, phone, email, spiritAnimal?, trustLevel?, temperature?, notes }` 数据结构
+- 表单验证：名字必填，角色必选
+- 成功后重定向到 `/contacts` 列表页
+
+### 开发提示
+1. **Tailwind 配置已改**：`fontFamily.sans` 使用系统字体栈，无需 next/font
+2. **DevTools 权限**：`.claude/settings.local.json` 已设 `defaultMode: "bypassPermissions"`，所有 Bash/Edit 操作无需确认
+3. **DB 查询模板**：见 `(app)/page.tsx` 的 `Promise.all([db.user.findUnique(...), db.contact.findMany(...)])` 模式
+4. **颜色映射**：见 `(app)/page.tsx` 底部的 `getRoleStyle()`、`getRoleEmoji()` 等辅助函数，复用这套逻辑
+5. **Sidebar 高亮**：`usePathname()` 判断 `pathname.startsWith(item.href)`，避免在路由组中重复
+
+### 技术债
+- 尚未实现：contacts 列表页、详情页、编辑页、journey 分析页
+- SMS 配置：当前开发模式用 `000000` 跳过，上线前完成阿里云短信接入
