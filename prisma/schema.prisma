@@ -16,11 +16,19 @@ model User {
   phone     String   @unique
   name      String?
   image     String?
-  industry  String?
+  industry  String?  // 行业标签库 JSON
   role      String?
   goal      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // 「我」的个人档案
+  selfTags        String?  // JSON array
+  selfCompany     String?
+  selfTitle       String?
+  selfJobPosition String?
+  selfSpiritAnimal String?
+  selfBio         String?
 
   contacts Contact[]
   journeys Journey[]
@@ -57,7 +65,8 @@ model Contact {
   tags     String?  // JSON array stored as string
   industry String?
   company  String?
-  title    String?
+  title       String?
+  jobPosition String?   // 岗位，如：总经理、销售、财务…
 
   trustLevel  Int?
   temperature Temperature?

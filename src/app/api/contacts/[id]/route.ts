@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   try {
     const userId = await getRequestUserId()
     const body = await req.json()
-    const tags = Array.isArray(body.tags) ? body.tags : parseTags(body.tagsCsv)
+    const tagArr = Array.isArray(body.tags) ? body.tags : parseTags(body.tagsCsv)
     const existing = await db.contact.findFirst({ where: { id: params.id, userId } })
     if (!existing) {
       return NextResponse.json({ error: '联系人不存在' }, { status: 404 })
@@ -59,7 +59,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: {
         name: body.name,
         relationRole: body.relationRole,
-        tags,
+        tags: tagArr.length > 0 ? JSON.stringify(tagArr) : null,
         spiritAnimal: body.spiritAnimal || null,
         temperature: body.temperature || null,
         trustLevel: body.trustLevel ? Number(body.trustLevel) : null,
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       if (!existing) {
         return NextResponse.redirect(new URL('/contacts', req.url), { status: 303 })
       }
-      const tags = mergeTags(form.getAll('tags').map((v) => String(v)), String(form.get('manualTags') ?? ''))
+      const tagArr = mergeTags(form.getAll('tags').map((v) => String(v)), String(form.get('manualTags') ?? ''))
       const relationRoleValue = String(form.get('relationRole') ?? '') as RelationRole
       const spiritAnimalValue = form.get('spiritAnimal') ? (String(form.get('spiritAnimal')) as SpiritAnimal) : null
       const temperatureValue = form.get('temperature') ? (String(form.get('temperature')) as Temperature) : null
@@ -115,12 +115,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         data: {
           name: String(form.get('name') ?? ''),
           relationRole: relationRoleValue,
-          tags,
+          tags: tagArr.length > 0 ? JSON.stringify(tagArr) : null,
           spiritAnimal: spiritAnimalValue,
           temperature: temperatureValue,
           trustLevel: form.get('trustLevel') ? Number(form.get('trustLevel')) : null,
           company: form.get('company') ? String(form.get('company')) : null,
           title: form.get('title') ? String(form.get('title')) : null,
+          jobPosition: form.get('jobPosition') ? String(form.get('jobPosition')) : null,
           wechat: form.get('wechat') ? String(form.get('wechat')) : null,
           phone: form.get('phone') ? String(form.get('phone')) : null,
           email: form.get('email') ? String(form.get('email')) : null,

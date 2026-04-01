@@ -1,311 +1,426 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import GoalInput from './GoalInput'
-import JourneyGraph from './JourneyGraph'
-import NodeDetailPanel from './NodeDetailPanel'
-import JourneyHistory from './JourneyHistory'
-import { JourneyPathData, JourneyAnalysisResponse } from '@/lib/journey/types'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useLoading } from '@/components/ThinkingToast'
+import JourneyGraph, {
+  NetworkContact,
+  NetworkRelation,
+  ROLE_LABEL,
+  ROLE_COLOR,
+  CHANNEL_ICON,
+} from './JourneyGraph'
+import { JourneyPathData, JourneyAnalysisResponse, PathStep, AlternativePath } from '@/lib/journey/types'
 
-interface Journey {
-  id: string
-  goal: string
-  createdAt: string
-  pathData: JourneyPathData
-  aiAnalysis: string | null
-}
-
-type LoadingStep = 'idle' | 'step1' | 'step2' | 'step3' | 'step4'
+// ─── 加载步骤 ──────────────────────────────────────────────────────────────────
 
 const LOADING_STEPS = [
-  { key: 'step1', label: '读取联系人数据', emoji: '📊' },
+  { key: 'step1', label: '读取人脉数据', emoji: '📊' },
   { key: 'step2', label: '计算节点评分', emoji: '🎯' },
   { key: 'step3', label: '规划候选路径', emoji: '🗺️' },
   { key: 'step4', label: 'AI 深度分析中', emoji: '🧠' },
 ]
 
-export default function JourneyPage() {
-  const [currentPathData, setCurrentPathData] = useState<JourneyPathData | null>(
-    null,
+type LoadingStep = 'idle' | 'step1' | 'step2' | 'step3' | 'step4'
+
+// ─── 航路卡片 ──────────────────────────────────────────────────────────────────
+
+function RouteCard({
+  title,
+  badge,
+  steps,
+  score,
+  rationale,
+  isActive,
+  onClick,
+}: {
+  title: string
+  badge: string
+  steps: PathStep[]
+  score: number
+  rationale?: string
+  isActive: boolean
+  onClick: () => void
+}) {
+  const [expandedStep, setExpandedStep] = useState<number | null>(null)
+
+  return (
+    <div
+      className={`rounded-xl border-2 p-4 cursor-pointer transition-all ${
+        isActive
+          ? 'border-amber-400 bg-amber-50 shadow-md'
+          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+      }`}
+      onClick={onClick}
+    >
+      {/* 标题行 */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-bold text-gray-900">{title}</span>
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              isActive ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-600'
+            }`}
+          >
+            {badge}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-violet-500 rounded-full"
+              style={{ width: `${score * 100}%` }}
+            />
+          </div>
+          <span className="text-xs font-semibold text-gray-700">
+            {(score * 100).toFixed(0)}%
+          </span>
+        </div>
+      </div>
+
+      {/* 策略简述 */}
+      {rationale && (
+        <p className="text-xs text-gray-600 mb-3 leading-relaxed">{rationale}</p>
+      )}
+
+      {/* 路径节点序列 */}
+      <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center justify-center w-7 h-7 rounded-full bg-zinc-800 text-white text-xs font-bold shrink-0">
+          你
+        </div>
+        {steps.map((step, i) => {
+          const colors = ROLE_COLOR[step.communicationAdvice ? '' : '']
+          const nodeColors = Object.values(ROLE_COLOR)[i % 6]
+          return (
+            <React.Fragment key={step.contactId}>
+              <svg width="16" height="10" className="text-amber-400 shrink-0">
+                <path d="M0 5 L12 5 M8 1 L14 5 L8 9" stroke="#f59e0b" strokeWidth="1.5" fill="none" />
+              </svg>
+              <button
+                className={`flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
+                  expandedStep === i
+                    ? 'ring-2 ring-violet-400'
+                    : 'hover:opacity-90'
+                }`}
+                style={{
+                  backgroundColor: nodeColors.bg,
+                  borderColor: nodeColors.border,
+                  color: nodeColors.text,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpandedStep(expandedStep === i ? null : i)
+                }}
+              >
+                {step.contactName}
+              </button>
+            </React.Fragment>
+          )
+        })}
+      </div>
+
+      {/* 展开的攻略 */}
+      {expandedStep !== null && steps[expandedStep] && (
+        <div
+          className="mt-3 rounded-lg bg-white border border-gray-200 p-3 text-xs space-y-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="font-semibold text-gray-800">
+            {steps[expandedStep].contactName} 的攻略
+            <span className="ml-2 text-gray-400 font-normal">
+              置信度 {(steps[expandedStep].confidenceAtThisStep * 100).toFixed(0)}%
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-500">开场白：</span>
+            <span className="text-gray-700">「{steps[expandedStep].communicationAdvice.openingLine}」</span>
+          </div>
+          <div>
+            <span className="text-gray-500">核心诉求：</span>
+            <span className="text-gray-700">{steps[expandedStep].communicationAdvice.keyMessage}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">时机：</span>
+            <span className="text-gray-700">{steps[expandedStep].communicationAdvice.timing}</span>
+          </div>
+          {steps[expandedStep].communicationAdvice.caution && (
+            <div className="bg-amber-50 border border-amber-200 rounded p-2">
+              <span className="text-amber-700">⚠️ {steps[expandedStep].communicationAdvice.caution}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1 text-gray-500">
+            <span>推荐渠道：</span>
+            <span className="font-medium text-gray-700">
+              {CHANNEL_ICON[steps[expandedStep].communicationAdvice.channelSuggestion]}{' '}
+              {steps[expandedStep].communicationAdvice.channelSuggestion}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   )
+}
+
+// ─── 主页面 ────────────────────────────────────────────────────────────────────
+
+export default function JourneyPage() {
+  const { showLoading, hideLoading } = useLoading()
+  const [contacts, setContacts] = useState<NetworkContact[]>([])
+  const [relations, setRelations] = useState<NetworkRelation[]>([])
+  const [pathData, setPathData] = useState<JourneyPathData | null>(null)
+  const [activeRouteIndex, setActiveRouteIndex] = useState(0)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [goal, setGoal] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState<LoadingStep>('idle')
   const [error, setError] = useState<string | null>(null)
-  const [journeyHistory, setJourneyHistory] = useState<Journey[]>([])
-  const [historyExpanded, setHistoryExpanded] = useState(false)
+  const [networkLoading, setNetworkLoading] = useState(true)
 
-  // 加载历史
+  // 加载全量网络
   useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const res = await fetch('/api/journey?limit=5&offset=0')
-        if (res.ok) {
-          const data = await res.json()
-          setJourneyHistory(
-            data.journeys.map((j: Record<string, unknown>) => ({
-              id: j.id,
-              goal: j.goal,
-              createdAt: j.createdAt,
-              pathData: j.pathData,
-              aiAnalysis: j.aiAnalysis,
-            })),
-          )
-        }
-      } catch (err) {
-        console.error('加载历史失败:', err)
-      }
-    }
-    loadHistory()
-  }, [])
+    showLoading()
+    fetch('/api/network')
+      .then((r) => r.json())
+      .then((data) => {
+        setContacts(data.contacts || [])
+        setRelations(data.relations || [])
+      })
+      .catch(console.error)
+      .finally(() => { setNetworkLoading(false); hideLoading() })
+  }, [showLoading, hideLoading])
 
-  // 加载步进动画（前 3 步快速，第 4 步等待真实响应）
+  // 加载动画
   useEffect(() => {
     if (!isLoading) return
-
-    const intervals = [
+    const timers = [
       setTimeout(() => setLoadingStep('step1'), 0),
       setTimeout(() => setLoadingStep('step2'), 800),
       setTimeout(() => setLoadingStep('step3'), 1600),
       setTimeout(() => setLoadingStep('step4'), 2400),
     ]
-
-    return () => intervals.forEach(clearTimeout)
+    return () => timers.forEach(clearTimeout)
   }, [isLoading])
 
-  // 提交目标分析
-  const handleSubmitGoal = async (goal: string) => {
+  const handleAnalyze = useCallback(async () => {
+    if (!goal.trim() || isLoading) return
     setIsLoading(true)
     setError(null)
-    setCurrentPathData(null)
+    setPathData(null)
+    setActiveRouteIndex(0)
     setSelectedNodeId(null)
+    showLoading()
 
     try {
       const res = await fetch('/api/journey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal }),
+        body: JSON.stringify({ goal: goal.trim() }),
       })
-
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(
-          errorData.error ||
-            `服务器错误: ${res.status}`,
-        )
+        const err = await res.json()
+        throw new Error(err.error || `服务器错误 ${res.status}`)
       }
-
       const data = (await res.json()) as JourneyAnalysisResponse
-      setCurrentPathData(data.journey.pathData)
-
-      // 更新历史
-      setJourneyHistory((prev) => [
-        {
-          id: data.journey.id,
-          goal: data.journey.goal,
-          createdAt: data.journey.createdAt,
-          pathData: data.journey.pathData,
-          aiAnalysis: data.journey.aiAnalysis,
-        },
-        ...prev.slice(0, 4),
-      ])
+      setPathData(data.journey.pathData)
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : '未知错误'
-      setError(message)
-      console.error('分析失败:', err)
+      setError(err instanceof Error ? err.message : '未知错误')
     } finally {
       setIsLoading(false)
       setLoadingStep('idle')
+      hideLoading()
     }
-  }
+  }, [goal, isLoading, showLoading, hideLoading])
 
-  const handleSelectHistoryJourney = (journeyId: string) => {
-    const journey = journeyHistory.find((j) => j.id === journeyId)
-    if (journey) {
-      setCurrentPathData(journey.pathData)
-      setSelectedNodeId(null)
-    }
-  }
+  // 所有航路（主 + 备选，最多3条）
+  const allRoutes = pathData
+    ? [
+        {
+          title: '最优航路',
+          badge: '★ 首选',
+          steps: pathData.primaryPath,
+          score: pathData.overallConfidence,
+          rationale: pathData.overallStrategy,
+        },
+        ...pathData.alternativePaths.slice(0, 2).map((alt: AlternativePath, i) => ({
+          title: `备选航路 ${i + 2}`,
+          badge: `备选`,
+          steps: alt.steps,
+          score: alt.score,
+          rationale: alt.rationale,
+        })),
+      ]
+    : []
 
   return (
-    <div className="px-6 py-6 space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">人脉航程</h1>
-        <p className="text-sm text-gray-600">
-          AI 驱动的人脉路径规划
-        </p>
+    <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden">
+      {/* ── 顶部工具栏 ── */}
+      <div className="shrink-0 px-5 py-3 bg-white border-b border-gray-200 flex items-center gap-3">
+        <h1 className="text-lg font-bold text-gray-900 shrink-0">人脉航程</h1>
+        <div className="flex-1 flex items-center gap-2 max-w-2xl">
+          <input
+            className="flex-1 h-9 px-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+            placeholder="输入目标，例如：我想认识 A 轮投资人，推进融资…"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+            disabled={isLoading}
+          />
+          <button
+            className="h-9 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
+            onClick={handleAnalyze}
+            disabled={isLoading || !goal.trim()}
+          >
+            {isLoading ? '分析中…' : '开始分析'}
+          </button>
+          {pathData && (
+            <button
+              className="h-9 px-3 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition shrink-0"
+              onClick={() => { setPathData(null); setGoal(''); setError(null) }}
+            >
+              清除
+            </button>
+          )}
+        </div>
+        <div className="shrink-0 text-xs text-gray-400">
+          {contacts.length} 位联系人
+        </div>
       </div>
 
-      {/* 目标输入卡片 */}
-      {!currentPathData && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <GoalInput onSubmit={handleSubmitGoal} isLoading={isLoading} />
-        </div>
-      )}
-
-      {/* 加载进度 */}
-      {isLoading && (
-        <div className="bg-white rounded-xl border border-gray-200 p-8">
-          <div className="space-y-6">
-            {LOADING_STEPS.map((step, index) => {
-              const isActive = (
-                ['idle', 'step1', 'step2', 'step3', 'step4'].indexOf(loadingStep) >=
-                index
-              )
-              const isCurrentStep = loadingStep === step.key
-
-              return (
-                <div key={step.key} className="flex items-center gap-4">
-                  <div
-                    className={`flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition ${
-                      isActive
-                        ? isCurrentStep
-                          ? 'bg-violet-600 text-white scale-110'
-                          : 'bg-green-100 text-green-700'
-                        : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    {isActive && !isCurrentStep ? '✓' : step.emoji}
-                  </div>
-                  <div className="flex-1">
-                    <p
-                      className={`font-medium ${
-                        isActive ? 'text-gray-900' : 'text-gray-500'
-                      }`}
-                    >
-                      {step.label}
-                    </p>
-                    {isCurrentStep && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        正在处理中...
-                      </p>
-                    )}
-                  </div>
-                  {isCurrentStep && (
-                    <div className="w-4 h-4 rounded-full border-2 border-violet-600 border-t-transparent animate-spin" />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 错误提示 */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p className="text-sm text-red-800">
-            <span className="font-semibold">分析失败：</span> {error}
-          </p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-3 px-3 py-1 text-sm rounded bg-red-100 text-red-700 hover:bg-red-200 transition"
-          >
-            关闭
-          </button>
-        </div>
-      )}
-
-      {/* 结果展示区 */}
-      {currentPathData && !isLoading && (
-        <>
-          {/* 图谱和详情面板 */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <JourneyGraph
-                pathData={currentPathData}
-                onNodeClick={setSelectedNodeId}
-                selectedNodeId={selectedNodeId}
-              />
-            </div>
-            <div className="md:w-[350px]">
-              <NodeDetailPanel
-                pathData={currentPathData}
-                selectedNodeId={selectedNodeId}
-                onClose={() => setSelectedNodeId(null)}
-              />
-            </div>
-          </div>
-
-          {/* AI 分析摘要 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-3">
-              🎯 整体策略
-            </h3>
-            <p className="text-gray-700 leading-relaxed text-sm">
-              {currentPathData.overallStrategy}
-            </p>
-            <div className="mt-4 flex items-center gap-2">
-              <span className="text-xs font-medium text-gray-600">
-                置信度：
-              </span>
-              <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-xs">
-                <div
-                  className="bg-violet-600 h-2 rounded-full"
-                  style={{
-                    width: `${currentPathData.overallConfidence * 100}%`,
-                  }}
-                />
+      {/* ── 主体：画布 + 右侧面板 ── */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* 画布 */}
+        <div className="flex-1 relative min-w-0">
+          {networkLoading ? (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="text-center">
+                <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin mx-auto mb-3" />
+                <p className="text-sm">加载人脉网络…</p>
               </div>
-              <span className="text-xs font-semibold text-gray-900">
-                {(currentPathData.overallConfidence * 100).toFixed(0)}%
-              </span>
             </div>
-          </div>
+          ) : contacts.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="text-center">
+                <div className="text-4xl mb-3">👥</div>
+                <p className="text-sm font-medium text-gray-600">还没有联系人</p>
+                <p className="text-xs text-gray-400 mt-1">先去「人脉数据库」添加几位联系人吧</p>
+              </div>
+            </div>
+          ) : (
+            <JourneyGraph
+              contacts={contacts}
+              relations={relations}
+              pathData={pathData}
+              activeRouteIndex={activeRouteIndex}
+              onNodeClick={setSelectedNodeId}
+              selectedNodeId={selectedNodeId}
+            />
+          )}
 
-          {/* 缺失节点提示 */}
-          {currentPathData.missingNodes.length > 0 && (
-            <div className="bg-amber-50 rounded-xl border border-amber-200 p-6">
-              <h3 className="font-semibold text-amber-900 mb-3">
-                ⚠️ 网络缺失节点
-              </h3>
-              <div className="space-y-3">
-                {currentPathData.missingNodes.map((missing) => (
-                  <div key={missing.missingRole}>
-                    <p className="font-medium text-amber-900 text-sm">
-                      {missing.roleName}
-                    </p>
-                    <p className="text-sm text-amber-800 mt-1">
-                      {missing.whyNeeded}
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      💡 建议：{missing.howToFind}
-                    </p>
-                  </div>
-                ))}
+          {/* 加载遮罩 */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-72">
+                <div className="space-y-4">
+                  {LOADING_STEPS.map((step, i) => {
+                    const stepIndex = ['idle', 'step1', 'step2', 'step3', 'step4'].indexOf(loadingStep)
+                    const isActive = stepIndex >= i
+                    const isCurrent = loadingStep === step.key
+                    return (
+                      <div key={step.key} className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-full flex items-center justify-center text-base font-bold transition-all ${
+                            isActive
+                              ? isCurrent
+                                ? 'bg-violet-600 text-white scale-110'
+                                : 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-400'
+                          }`}
+                        >
+                          {isActive && !isCurrent ? '✓' : step.emoji}
+                        </div>
+                        <span className={`text-sm ${isActive ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                          {step.label}
+                        </span>
+                        {isCurrent && (
+                          <div className="ml-auto w-4 h-4 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )}
-
-          {/* 重新分析按钮 */}
-          <div className="text-center">
-            <button
-              onClick={() => {
-                setCurrentPathData(null)
-                setSelectedNodeId(null)
-                setError(null)
-              }}
-              className="px-4 py-2 rounded-lg bg-violet-100 text-violet-700 hover:bg-violet-200 transition font-medium text-sm"
-            >
-              新建分析
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* 历史记录 */}
-      {!isLoading && !currentPathData && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <JourneyHistory
-            journeys={journeyHistory}
-            onSelectJourney={handleSelectHistoryJourney}
-            isExpanded={historyExpanded}
-            onToggleExpand={() => setHistoryExpanded(!historyExpanded)}
-          />
         </div>
-      )}
+
+        {/* ── 右侧面板 ── */}
+        {(pathData || error) && (
+          <div className="w-[360px] shrink-0 border-l border-gray-200 bg-white overflow-y-auto flex flex-col">
+            {/* 错误 */}
+            {error && (
+              <div className="m-4 p-3 rounded-lg bg-red-50 border border-red-200">
+                <p className="text-sm text-red-700 font-medium">分析失败</p>
+                <p className="text-xs text-red-600 mt-1">{error}</p>
+                <button
+                  className="mt-2 text-xs text-red-500 hover:text-red-700"
+                  onClick={() => setError(null)}
+                >
+                  关闭
+                </button>
+              </div>
+            )}
+
+            {/* 航路卡片 */}
+            {pathData && (
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-gray-900 text-sm">🧭 航路方案</h2>
+                  <span className="text-xs text-gray-400">{allRoutes.length} 条</span>
+                </div>
+
+                {allRoutes.map((route, i) => (
+                  <RouteCard
+                    key={i}
+                    title={route.title}
+                    badge={route.badge}
+                    steps={route.steps}
+                    score={route.score}
+                    rationale={route.rationale}
+                    isActive={activeRouteIndex === i}
+                    onClick={() => setActiveRouteIndex(i)}
+                  />
+                ))}
+
+                {/* 缺失节点 */}
+                {pathData.missingNodes.length > 0 && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mt-2">
+                    <h3 className="font-semibold text-amber-900 text-sm mb-2">⚠️ 缺少关键人脉</h3>
+                    <div className="space-y-3">
+                      {pathData.missingNodes.map((m) => (
+                        <div key={m.missingRole}>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded font-medium"
+                              style={{
+                                backgroundColor: ROLE_COLOR[m.missingRole]?.bg || '#f3f4f6',
+                                color: ROLE_COLOR[m.missingRole]?.text || '#374151',
+                                border: `1px solid ${ROLE_COLOR[m.missingRole]?.border || '#9ca3af'}`,
+                              }}
+                            >
+                              {m.roleName}
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-800">{m.whyNeeded}</p>
+                          <p className="text-xs text-amber-700 mt-1">💡 {m.howToFind}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -70,12 +70,16 @@ export default async function DashboardPage() {
   try {
     ;({ userId } = await requireAuth())
   } catch {
-    // 开发模式 mock
-    userId = 'dev-user'
+    // 开发模式：找有联系人的用户，避免 dev-user 与 OTP 创建的用户 ID 不一致
+    const withContacts = await db.contact.findFirst({
+      select: { userId: true },
+      orderBy: { createdAt: 'desc' },
+    }).catch(() => null)
+    userId = withContacts?.userId ?? 'dev-user'
   }
 
-  let user = null
-  let allContacts = []
+  let user: { name: string | null; phone: string | null } | null = null
+  let allContacts: Awaited<ReturnType<typeof db.contact.findMany>> = []
   let dbError = null
 
   try {

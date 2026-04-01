@@ -97,13 +97,30 @@ export async function POST(request: NextRequest) {
         )
       }
       // 开发模式：使用固定的 demo 用户 ID
-      userId = 'dev-user'
+      const withContacts = await db.contact.findFirst({
+        select: { userId: true },
+        orderBy: { createdAt: 'desc' },
+      }).catch(() => null)
+      userId = withContacts?.userId ?? 'dev-user'
     }
 
-    // 1. 加载用户的所有联系人和关系
-    const contacts = await db.contact.findMany({
-      where: { userId },
-    })
+    // 1. 加载用户档案 + 所有联系人和关系
+    const [selfProfile, contacts] = await Promise.all([
+      db.user.findUnique({
+        where: { id: userId },
+        select: {
+          name: true,
+          goal: true,
+          selfTags: true,
+          selfCompany: true,
+          selfTitle: true,
+          selfJobPosition: true,
+          selfSpiritAnimal: true,
+          selfBio: true,
+        },
+      }),
+      db.contact.findMany({ where: { userId } }),
+    ])
 
     if (contacts.length === 0) {
       return NextResponse.json(
@@ -153,6 +170,7 @@ export async function POST(request: NextRequest) {
         topContacts,
         relations,
         candidatePaths,
+        selfProfile ?? undefined,
       )
     } catch (claudeError) {
       console.error('Claude 分析失败:', claudeError)

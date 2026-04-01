@@ -41,7 +41,8 @@ export default async function EditContactPage({ params }: { params: { id: string
   if (!contact) notFound()
 
   const saved = parseSavedTagOptions(user?.industry ?? null)
-  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...saved, ...contact.tags]))
+  const contactTags = parseSavedTagOptions(contact.tags)
+  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...saved, ...contactTags]))
 
   return (
     <NewContactForm
@@ -52,8 +53,9 @@ export default async function EditContactPage({ params }: { params: { id: string
         name: contact.name,
         company: contact.company,
         title: contact.title,
+        jobPosition: contact.jobPosition,
         trustLevel: contact.trustLevel,
-        tags: contact.tags,
+        tags: contactTags,
         spiritAnimal: contact.spiritAnimal,
         relationRole: contact.relationRole,
         temperature: contact.temperature,

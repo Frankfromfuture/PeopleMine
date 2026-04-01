@@ -228,7 +228,6 @@ export function generateRandomContact(tagVariability: number = 50): {
   // 数据完整度随机
   const hasCompany = completenessRandom > 20
   const hasTitle = completenessRandom > 15
-  const hasNotes = completenessRandom > 60
 
   return {
     name,
@@ -239,9 +238,7 @@ export function generateRandomContact(tagVariability: number = 50): {
     trustLevel: generateRandomTrustLevel(),
     company: hasCompany ? randomPick(industryData.companies) : null,
     title: hasTitle ? randomPick(industryData.titles) : null,
-    notes: hasNotes
-      ? `自动生成的测试数据，行业：${industryData.industry}`
-      : null,
+    notes: `自动生成的测试数据，行业：${industryData.industry}`,
   }
 }
 

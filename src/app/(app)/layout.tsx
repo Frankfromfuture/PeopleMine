@@ -2,6 +2,7 @@ import { requireAuth } from "@/lib/session"
 import { db } from "@/lib/db"
 import AppTopBar from "@/components/AppTopBar"
 import AppSidebar from "@/components/AppSidebar"
+import { LoadingProvider } from "@/components/ThinkingToast"
 import { redirect } from "next/navigation"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,12 +23,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AppTopBar phone={user?.phone} name={user?.name} />
-      <AppSidebar />
-      <main className="pt-12 ml-[220px] min-h-screen">
-        {children}
-      </main>
-    </div>
+    <LoadingProvider>
+      <div className="min-h-screen bg-gray-50">
+        <AppTopBar phone={user?.phone} name={user?.name} />
+        <AppSidebar />
+        <main className="pt-12 ml-[220px] min-h-screen">
+          {children}
+        </main>
+      </div>
+    </LoadingProvider>
   )
 }

@@ -21,11 +21,18 @@ const ANIMAL_EMOJI: Record<SpiritAnimal, string> = {
   SKUNK: '🦨',
 }
 
+const JOB_POSITION_OPTIONS = [
+  '总经理', '董事长', '副总裁', '总监', '经理',
+  '销售', '市场', '产品经理', '工程师', '设计师',
+  '财务', '行政', '人力资源', '运营', '法务', '其他',
+]
+
 type InitialContact = {
   id?: string
   name?: string | null
   company?: string | null
   title?: string | null
+  jobPosition?: string | null
   trustLevel?: number | null
   tags?: string[]
   spiritAnimal?: string | null
@@ -79,6 +86,17 @@ export default function NewContactForm({
               <label className="block">
                 <span className="text-sm text-gray-700">职位</span>
                 <input name="title" defaultValue={initialContact?.title ?? ''} className="mt-1 w-full h-10 px-3 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400" />
+              </label>
+            </div>
+            <div className="mt-3">
+              <label className="block">
+                <span className="text-sm text-gray-700">岗位</span>
+                <select name="jobPosition" defaultValue={initialContact?.jobPosition ?? ''} className="mt-1 w-full h-10 px-3 rounded-lg border border-gray-200 outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400 bg-white text-sm">
+                  <option value="">不填</option>
+                  {JOB_POSITION_OPTIONS.map((pos) => (
+                    <option key={pos} value={pos}>{pos}</option>
+                  ))}
+                </select>
               </label>
             </div>
           </section>

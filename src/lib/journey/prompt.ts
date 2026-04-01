@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import {
   ScoredContact,
   CandidatePath,
@@ -10,11 +11,30 @@ import {
 import { RelationRole } from '@/types'
 import { ContactRelation } from '@prisma/client'
 
-// 支持 Kimi API（兼容 OpenAI 格式）
-const client = new OpenAI({
-  apiKey: process.env.KIMI_API_KEY || process.env.ANTHROPIC_API_KEY,
-  baseURL: process.env.KIMI_API_KEY ? 'https://api.moonshot.cn/openai/v1' : undefined,
-})
+// 根据配置选择 AI 客户端（在函数调用时动态读取环境变量）
+function getAIClient() {
+  const kimiKey = process.env.KIMI_API_KEY
+  const anthropicKey = process.env.ANTHROPIC_API_KEY
+
+  console.log('[AI客户端] KIMI_API_KEY:', kimiKey ? `${kimiKey.slice(0, 10)}...` : '未配置')
+  console.log('[AI客户端] ANTHROPIC_API_KEY:', anthropicKey ? `${anthropicKey.slice(0, 10)}...` : '未配置')
+
+  if (kimiKey) {
+    console.log('[AI客户端] 使用 Kimi API, baseURL: https://api.moonshot.cn/v1')
+    return {
+      type: 'kimi' as const,
+      client: new OpenAI({ apiKey: kimiKey, baseURL: 'https://api.moonshot.cn/v1' }),
+    }
+  }
+  if (anthropicKey) {
+    console.log('[AI客户端] 使用 Anthropic API')
+    return {
+      type: 'anthropic' as const,
+      client: new Anthropic({ apiKey: anthropicKey }),
+    }
+  }
+  return null
+}
 
 /**
  * 将联系人数据格式化为 Claude 可读的 JSON
@@ -96,6 +116,17 @@ function detectGoalCategory(goal: string): string {
   return 'other'
 }
 
+interface SelfProfile {
+  name?: string | null
+  goal?: string | null
+  selfTags?: string | null
+  selfCompany?: string | null
+  selfTitle?: string | null
+  selfJobPosition?: string | null
+  selfSpiritAnimal?: string | null
+  selfBio?: string | null
+}
+
 /**
  * 构建发送给 Claude 的提示词
  */
@@ -104,14 +135,31 @@ function buildPrompt(
   scoredContacts: ScoredContact[],
   relations: ContactRelation[],
   candidatePaths: CandidatePath[],
+  selfProfile?: SelfProfile,
 ): string {
   const topContactIds = new Set(scoredContacts.map((c) => c.id))
   const formattedContacts = formatContactsForPrompt(scoredContacts)
   const formattedRelations = formatRelationsForPrompt(relations, topContactIds)
 
+  let selfSection = ''
+  if (selfProfile && (selfProfile.name || selfProfile.selfBio || selfProfile.selfTags)) {
+    const tags = selfProfile.selfTags ? (() => { try { return JSON.parse(selfProfile.selfTags) } catch { return [] } })() : []
+    selfSection = `
+## 用户自身档案（航程起点）
+- 姓名：${selfProfile.name || '未填写'}
+- 公司：${selfProfile.selfCompany || '未填写'}
+- 职位：${selfProfile.selfTitle || ''}${selfProfile.selfJobPosition ? `（${selfProfile.selfJobPosition}）` : ''}
+- 行业标签：${tags.length > 0 ? tags.join('、') : '未填写'}
+- 气场：${selfProfile.selfSpiritAnimal || '未选择'}
+- 个人介绍：${selfProfile.selfBio || '未填写'}
+- 长期目标：${selfProfile.goal || '未填写'}
+
+请将「${selfProfile.name || '用户'}」作为人脉网络的起点，分析从 TA 出发到达目标所需的最优路径。`
+  }
+
   return `## 用户的人脉拓展目标
 ${goal}
-
+${selfSection}
 ## 用户的人脉网络概况
 - 总联系人数：${scoredContacts.length}
 - 已分析（Top-15）：${formattedContacts.length}
@@ -212,6 +260,7 @@ export async function analyzeJourneyWithClaude(
   scoredContacts: ScoredContact[],
   relations: ContactRelation[],
   candidatePaths: CandidatePath[],
+  selfProfile?: SelfProfile,
 ): Promise<JourneyPathData> {
   // 如果没有 API key，返回使用预计算数据的兜底结果（用于测试）
   if (!process.env.KIMI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
@@ -219,29 +268,49 @@ export async function analyzeJourneyWithClaude(
     return generateFallbackPathData(goal, scoredContacts, relations, candidatePaths)
   }
 
-  const prompt = buildPrompt(goal, scoredContacts, relations, candidatePaths)
+  const prompt = buildPrompt(goal, scoredContacts, relations, candidatePaths, selfProfile)
+
+  const aiClient = getAIClient()
+  if (!aiClient) throw new Error('未配置 AI 服务')
 
   let responseText = ''
   try {
-    const isKimi = !!process.env.KIMI_API_KEY
-    const response = await client.messages.create({
-      model: isKimi ? 'moonshot-v1-8k' : 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      system: '你是一名专业的人脉策略顾问，擅长分析社交网络并制定最优的人脉拓展路径。你的输出必须是严格的 JSON 格式，不包含任何额外文字、markdown 代码块或其他符号。',
-    })
-
-    // 提取响应文本
-    if (response.content[0].type === 'text') {
-      responseText = response.content[0].text
+    if (aiClient.type === 'kimi') {
+      const model = 'kimi-k2.5'
+      console.log(`[Kimi请求] model=${model}, prompt长度=${prompt.length}字符`)
+      const response = await (aiClient.client as OpenAI).chat.completions.create({
+        model,
+        max_tokens: 8192,
+        messages: [
+          {
+            role: 'system',
+            content: '你是一名专业的人脉策略顾问，擅长分析社交网络并制定最优的人脉拓展路径。你的输出必须是严格的 JSON 格式，不包含任何额外文字、markdown 代码块或其他符号。',
+          },
+          { role: 'user', content: prompt },
+        ],
+      })
+      const msg = response.choices[0].message as unknown as Record<string, unknown>
+      console.log('[Kimi响应] finish_reason:', response.choices[0].finish_reason)
+      console.log('[Kimi响应] content前200字:', String(msg.content || '').slice(0, 200))
+      console.log('[Kimi响应] reasoning_content前200字:', String(msg.reasoning_content || '').slice(0, 200))
+      // kimi-k2.5 是推理模型，实际内容在 content 字段，推理过程在 reasoning_content
+      responseText = (msg.content as string) || ''
+    } else {
+      const model = 'claude-opus-4-6'
+      console.log(`[Anthropic请求] model=${model}, prompt长度=${prompt.length}字符`)
+      const response = await (aiClient.client as Anthropic).messages.create({
+        model,
+        max_tokens: 2048,
+        system: '你是一名专业的人脉策略顾问，擅长分析社交网络并制定最优的人脉拓展路径。你的输出必须是严格的 JSON 格式，不包含任何额外文字、markdown 代码块或其他符号。',
+        messages: [{ role: 'user', content: prompt }],
+      })
+      console.log('[Anthropic响应] stop_reason:', response.stop_reason)
+      if (response.content[0].type === 'text') {
+        responseText = response.content[0].text
+      }
     }
   } catch (error) {
-    console.error('AI API 错误:', error)
+    console.error('[AI API 错误]', JSON.stringify(error, null, 2))
     throw new Error('AI 分析失败：' + String(error))
   }
 
@@ -258,7 +327,7 @@ export async function analyzeJourneyWithClaude(
     claudeOutput = JSON.parse(cleanedResponse)
   } catch (parseError) {
     console.error('JSON 解析失败:', parseError)
-    console.error('原始响应:', responseText)
+    console.error('原始响应完整内容:', responseText)
     throw new Error('AI 返回的格式无效，请重试')
   }
 
