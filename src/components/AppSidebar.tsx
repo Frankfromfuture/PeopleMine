@@ -4,6 +4,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
+const IS_DEV = process.env.NODE_ENV === 'development'
+
 const navMain = [
   {
     href: "/",
@@ -150,6 +152,31 @@ export default function AppSidebar() {
           ))}
         </div>
       </nav>
+
+      {/* Dev-only section */}
+      {IS_DEV && (
+        <div className="border-t border-zinc-800 px-2 py-2">
+          <div className="px-3 mb-1">
+            <span className="text-[10px] font-semibold text-amber-600/70 uppercase tracking-widest">Dev Only</span>
+          </div>
+          <Link
+            href="/dev-lab"
+            className={cn(
+              "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+              isActive("/dev-lab")
+                ? "bg-amber-900/40 text-amber-300 font-medium"
+                : "text-amber-600/70 hover:bg-amber-900/30 hover:text-amber-400"
+            )}
+          >
+            <span className={isActive("/dev-lab") ? "text-amber-400" : "text-amber-700"}>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15M14.25 3.104c.251.023.501.05.75.082M19.8 15a2.25 2.25 0 01-2.15 2.395H6.35A2.25 2.25 0 014.2 15m15.6 0a2.25 2.25 0 00.15-.89V6.375a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.375V14.11a2.25 2.25 0 00.15.89" />
+              </svg>
+            </span>
+            人脉方程
+          </Link>
+        </div>
+      )}
 
       {/* Bottom: invite */}
       <div className="border-t border-zinc-800 p-3">

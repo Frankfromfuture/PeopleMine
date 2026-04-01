@@ -1,0 +1,61 @@
+{
+  "categories": [
+    {
+      "id": "cat-industry",
+      "name": "行业",
+      "subcategories": [
+        {
+          "id": "sub-tech",
+          "name": "科技",
+          "tags": ["AI", "互联网", "区块链", "芯片", "量子计算", "云计算"]
+        },
+        {
+          "id": "sub-finance",
+          "name": "金融",
+          "tags": ["投资", "VC", "PE", "银行", "保险", "证券"]
+        },
+        {
+          "id": "sub-health",
+          "name": "医疗健康",
+          "tags": ["医疗", "健康", "生物医药", "医疗器械"]
+        },
+        {
+          "id": "sub-edu",
+          "name": "教育",
+          "tags": ["教育", "培训", "在线教育", "EdTech"]
+        },
+        {
+          "id": "sub-consume",
+          "name": "消费与零售",
+          "tags": ["消费", "零售", "电商", "品牌", "新消费"]
+        }
+      ]
+    },
+    {
+      "id": "cat-function",
+      "name": "职能",
+      "subcategories": [
+        {
+          "id": "sub-product",
+          "name": "产品与设计",
+          "tags": ["产品", "设计", "UX", "用研"]
+        },
+        {
+          "id": "sub-ops",
+          "name": "运营与市场",
+          "tags": ["运营", "市场", "品牌", "增长"]
+        },
+        {
+          "id": "sub-tech-func",
+          "name": "技术开发",
+          "tags": ["前端", "后端", "数据", "算法", "架构"]
+        },
+        {
+          "id": "sub-biz",
+          "name": "商务与销售",
+          "tags": ["销售", "商务", "BD", "客户成功"]
+        }
+      ]
+    }
+  ]
+}

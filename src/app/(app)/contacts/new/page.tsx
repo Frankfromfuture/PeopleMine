@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { requireAuth } from '@/lib/session'
 import NewContactForm from './NewContactForm'
+import { loadTagConfig, flattenTags } from '@/lib/dev/tag-store'
 
 const DEFAULT_TAG_OPTIONS = ['AI', '互联网', '投资', '产品', '设计', '运营', '教育', '医疗']
 
@@ -34,7 +35,9 @@ export default async function NewContactPage() {
   })
 
   const saved = parseSavedTagOptions(user?.industry ?? null)
-  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...saved]))
+  // In dev mode, merge tags from the dev lab tag config
+  const devTags = process.env.NODE_ENV === 'development' ? flattenTags(loadTagConfig()) : []
+  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...devTags, ...saved]))
 
-  return <NewContactForm initialTagOptions={initialTagOptions} />
+  return <NewContactForm initialTagOptions={initialTagOptions} tagConfig={process.env.NODE_ENV === 'development' ? loadTagConfig() : null} />
 }

@@ -1,5 +1,6 @@
 import { RELATION_ROLE_LABELS, SPIRIT_ANIMAL_LABELS } from '@/types'
 import type { RelationRole, SpiritAnimal, Temperature } from '@/types'
+import type { TagConfig } from '@/lib/dev/tag-store'
 
 const ROLE_STYLE: Record<RelationRole, string> = {
   BIG_INVESTOR: 'bg-amber-100 text-amber-700 border-amber-200',
@@ -48,10 +49,12 @@ export default function NewContactForm({
   initialTagOptions,
   initialContact,
   mode = 'create',
+  tagConfig = null,
 }: {
   initialTagOptions: string[]
   initialContact?: InitialContact
   mode?: 'create' | 'edit'
+  tagConfig?: TagConfig | null
 }) {
   const isEdit = mode === 'edit' && Boolean(initialContact?.id)
   const actionUrl = isEdit ? `/api/contacts/${initialContact?.id}` : '/api/contacts'
@@ -122,20 +125,51 @@ export default function NewContactForm({
 
           <section>
             <p className="text-sm text-gray-500 uppercase mb-3">2) 行业标签</p>
-            <div>
-              {initialTagOptions.map((tag) => (
-                <div key={tag} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border bg-white text-gray-700 border-gray-200 mr-2 mb-2">
-                  <input
-                    type="checkbox"
-                    name="tags"
-                    value={tag}
-                    defaultChecked={initialContact?.tags?.includes(tag)}
-                    className="align-middle"
-                  />
-                  <span>{tag}</span>
-                </div>
-              ))}
-            </div>
+            {tagConfig ? (
+              /* Dev mode: grouped by category/subcategory */
+              <div className="space-y-3">
+                {tagConfig.categories.map((cat) => (
+                  <div key={cat.id}>
+                    <p className="text-xs font-semibold text-zinc-500 mb-1.5">{cat.name}</p>
+                    {cat.subcategories.map((sub) => (
+                      <div key={sub.id} className="mb-2">
+                        <p className="text-xs text-zinc-400 mb-1">{sub.name}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {sub.tags.map((tag) => (
+                            <label key={tag} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border bg-white text-gray-700 border-gray-200 cursor-pointer hover:border-violet-300">
+                              <input
+                                type="checkbox"
+                                name="tags"
+                                value={tag}
+                                defaultChecked={initialContact?.tags?.includes(tag)}
+                                className="align-middle accent-violet-600"
+                              />
+                              <span>{tag}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* Production mode: flat list */
+              <div>
+                {initialTagOptions.map((tag) => (
+                  <div key={tag} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border bg-white text-gray-700 border-gray-200 mr-2 mb-2">
+                    <input
+                      type="checkbox"
+                      name="tags"
+                      value={tag}
+                      defaultChecked={initialContact?.tags?.includes(tag)}
+                      className="align-middle"
+                    />
+                    <span>{tag}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <input
               name="manualTags"
               placeholder="自定义行业标签（多个用逗号分隔，如：半导体, 新能源）"
