@@ -9,7 +9,7 @@ import { getAuthUserId } from '@/lib/session'
 export async function DELETE() {
   try {
     // 认证
-    userId = await getAuthUserId()
+    const userId = await getAuthUserId()
 
     // 获取该用户的所有联系人 ID
     const contacts = await db.contact.findMany({

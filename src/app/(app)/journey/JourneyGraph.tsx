@@ -484,17 +484,16 @@ export default function JourneyGraph({
           return (
             <div key={c.id}
               ref={el => { nodeElRef.current[c.id] = el }}
-              className="absolute flex items-center justify-center rounded-full font-semibold cursor-pointer"
+              className={`journey-node${isSel ? ' selected' : ''} absolute flex items-center justify-center rounded-full font-semibold cursor-pointer`}
               style={{
                 width: size, height: size, left: initX, top: initY,
                 background: col.bg,
-                border: `2px solid ${col.border}`,
                 color: col.hex,
                 fontSize: size > 50 ? 12 : 10,
                 opacity: dimmed ? 0.25 : 1,
                 zIndex: onPath ? 5 : 2,
                 boxShadow: isSel
-                  ? `0 0 0 3px #7c3aed, 0 4px 12px ${col.glow}`
+                  ? `0 0 0 1.5px rgba(255,255,255,0.9), 0 0 22px rgba(255,255,255,0.5), 0 4px 12px ${col.glow}`
                   : `0 2px 8px ${col.glow}`,
                 transition: 'opacity 0.4s, box-shadow 0.2s',
               }}

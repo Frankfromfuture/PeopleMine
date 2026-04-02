@@ -29,7 +29,7 @@ export default function TestDataGenerator() {
       if (response.ok) {
         setMessage({
           type: 'success',
-          text: `✓ 成功生成 ${data.count} 个随机联系人`,
+          text: `✓ 成功生成 ${data.count} 个随机联系人（${data.mode === 'ai' ? 'AI 真随机' : '本地随机'}）`,
         })
         // 刷新页面以显示新数据
         setTimeout(() => window.location.reload(), 1500)

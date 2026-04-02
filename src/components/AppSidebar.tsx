@@ -107,7 +107,7 @@ export default function AppSidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-12 bottom-0 z-40 flex flex-col overflow-y-auto border-r border-slate-200/80 bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 shadow-[inset_-1px_0_0_rgba(148,163,184,0.25)]"
+      className="app-sidebar fixed left-0 top-12 bottom-0 z-40 flex flex-col overflow-y-auto bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100"
       style={{ width }}
     >
       <div className="px-3 pt-3 pb-1 space-y-1.5">
@@ -130,9 +130,9 @@ export default function AppSidebar() {
             <Link
               href={item.href}
               className={cn(
-                "relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                "sidebar-nav-item relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
                 isActive(item.href)
-                  ? "bg-white text-slate-900 font-medium border border-slate-200"
+                  ? "active bg-white text-slate-900 font-medium"
                   : "text-slate-600 hover:bg-white hover:text-slate-900"
               )}
             >
@@ -197,7 +197,7 @@ export default function AppSidebar() {
       </nav>
 
       {IS_DEV && (
-        <div className="border-t border-slate-200 px-2 py-2">
+        <div className="px-2 py-2 mt-1">
           <div className="px-3 mb-1">
             <span className="text-[10px] font-semibold text-amber-600/70 uppercase tracking-widest">Dev Only</span>
           </div>
@@ -220,10 +220,10 @@ export default function AppSidebar() {
         </div>
       )}
 
-      <div className="border-t border-slate-200 p-3">
+      <div className="p-3 mt-1">
         <Link
           href="/invite"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-white hover:text-slate-800 transition-colors"
+          className="sidebar-nav-item flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-white hover:text-slate-800 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />

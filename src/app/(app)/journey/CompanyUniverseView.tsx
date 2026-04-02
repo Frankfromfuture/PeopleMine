@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { COMPANY_SCALE_LABELS } from '@/types'
-import type { CompanyScale, Temperature } from '@/types'
+import type { CompanyScale } from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -443,22 +443,22 @@ export default function CompanyUniverseView() {
             const col = SCALE_COLOR[c.scale ?? ''] ?? DEFAULT_COLOR
             const isSel = selected?.id === c.id
             const inActive = activeIndustry === 'ALL' || (c.industry || '其他') === activeIndustry
-            const strokeColor = c.temperature ? TEMP_HEX[c.temperature] : col.border
+            // strokeColor reserved for future border use
+            void (c.temperature ? TEMP_HEX[c.temperature] : col.border)
 
             return (
               <div key={c.id}
                 ref={el => { nodeElRef.current[c.id] = el }}
-                className="absolute flex items-center justify-center rounded-full font-semibold cursor-pointer"
+                className={`journey-node${isSel ? ' selected' : ''} absolute flex items-center justify-center rounded-full font-semibold cursor-pointer`}
                 style={{
                   width: size, height: size, left: initX, top: initY,
                   background: col.bg,
-                  border: `2px solid ${strokeColor}`,
                   color: col.hex,
                   fontSize: size > 56 ? 12 : 10,
                   opacity: inActive ? 1 : 0.2,
                   zIndex: isSel ? 5 : 2,
                   boxShadow: isSel
-                    ? `0 0 0 3px #7c3aed, 0 4px 12px ${col.glow}`
+                    ? `0 0 0 1.5px rgba(255,255,255,0.9), 0 0 22px rgba(255,255,255,0.5), 0 4px 12px ${col.glow}`
                     : `0 2px 8px ${col.glow}`,
                   transition: 'opacity 0.3s, box-shadow 0.2s',
                 }}

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from "next/link"
+import { db } from "@/lib/db"
 import { getAuthUserId } from "@/lib/session"
 import ContactsTable from "./ContactsTable"
 
@@ -57,7 +58,7 @@ export default async function ContactsPage() {
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
           <p className="text-xs text-amber-700 mt-1">
-            Supabase 闲置连接被回收，刷新页面即可恢复。
+            数据库连接失败，刷新页面即可恢复。
           </p>
         </div>
       )}

@@ -81,6 +81,93 @@
   }
 }
 
+/* ── Natural white glow system ──────────────────────────────────────────────
+   Replaces hard borders on interactive / card elements with a rim-light glow
+   that appears on hover. Borders are stripped at rest; on hover a soft white
+   halo emerges — like ambient light catching an edge.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Shared glow keyframe for "breathing" on active/selected elements */
+@keyframes rim-breathe {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.55), 0 0 14px rgba(255,255,255,0.18); }
+  50%       { box-shadow: 0 0 0 1px rgba(255,255,255,0.80), 0 0 22px rgba(255,255,255,0.28); }
+}
+
+/* 1 ── Widget cards */
+.widget-shell {
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.widget-shell:hover {
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.92),
+              0 0 28px rgba(255,255,255,0.55),
+              0 4px 20px rgba(0,0,0,0.05) !important;
+}
+
+/* 2 ── Buttons (all non-input buttons) */
+button:not([class*="rounded-full"]):not(.no-glow) {
+  border-color: transparent !important;
+}
+button:hover:not(:disabled):not(.no-glow) {
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.85),
+              0 0 18px rgba(255,255,255,0.38),
+              0 2px 10px rgba(0,0,0,0.06) !important;
+}
+
+/* 3 ── Sidebar nav links */
+.sidebar-nav-item {
+  border: none !important;
+}
+.sidebar-nav-item:hover,
+.sidebar-nav-item.active {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.88),
+              0 0 16px rgba(255,255,255,0.35),
+              0 1px 6px rgba(0,0,0,0.04);
+}
+
+/* 4 ── Journey graph nodes (DOM nodes get this class) */
+.journey-node {
+  border: none !important;
+}
+.journey-node:hover {
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.9),
+              0 0 22px rgba(255,255,255,0.5),
+              0 2px 14px rgba(0,0,0,0.08) !important;
+}
+.journey-node.selected {
+  animation: rim-breathe 2.4s ease-in-out infinite;
+}
+
+/* 5 ── FreeMoveCanvas toolbar */
+.canvas-toolbar button {
+  border-color: transparent !important;
+}
+.canvas-toolbar button:hover {
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.88),
+              0 0 16px rgba(255,255,255,0.4) !important;
+}
+
+/* 6 ── Sidebar container: soften the hard border-r */
+.app-sidebar {
+  border-right: none !important;
+  box-shadow: 2px 0 20px rgba(0,0,0,0.05), 1px 0 0 rgba(255,255,255,0.6);
+}
+
+/* 7 ── General: any element with border-gray-200 that's also interactive */
+a.border,
+a[class*="border-gray"],
+a[class*="border-slate"] {
+  border-color: transparent !important;
+}
+a.border:hover,
+a[class*="border-gray"]:hover,
+a[class*="border-slate"]:hover {
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.88),
+              0 0 18px rgba(255,255,255,0.38),
+              0 2px 10px rgba(0,0,0,0.05) !important;
+  border-color: transparent !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0ms !important;

@@ -110,10 +110,22 @@ export default async function DashboardPage() {
       db.contact.findMany({
         where: { userId },
         orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          relationRole: true,
+          temperature: true,
+          energyScore: true,
+          trustLevel: true,
+          company: true,
+          title: true,
+          lastContactedAt: true,
+          updatedAt: true,
+        },
       }),
     ])
     user = userData
-    allContacts = contactsData
+    allContacts = contactsData as typeof allContacts
   } catch (error) {
     dbError = error instanceof Error ? error.message : '数据库连接失败'
     console.error('数据库错误:', error)
@@ -147,6 +159,13 @@ export default async function DashboardPage() {
     weekday: "long",
   })
 
+  const isDbReferenceError = typeof dbError === 'string' && dbError.toLowerCase().includes('db is not defined')
+  const isLikelyConnectionRecycle = typeof dbError === 'string' && (
+    dbError.toLowerCase().includes('timeout') ||
+    dbError.toLowerCase().includes('connection') ||
+    dbError.toLowerCase().includes('supabase')
+  )
+
   return (
     <div className="min-h-full asana-board-bg">
       <FreeMoveCanvas />
@@ -157,7 +176,11 @@ export default async function DashboardPage() {
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
           <p className="text-xs text-amber-700 mt-1">
-            Supabase 闲置连接被回收，刷新页面即可恢复。若持续出现请检查 DATABASE_URL 配置。
+            {isDbReferenceError
+              ? '当前属于服务端代码异常（并非 Supabase 闲置回收）。请检查最近变更并重新部署。'
+              : isLikelyConnectionRecycle
+              ? '数据库连接失败，刷新页面即可恢复。若持续出现请检查 DATABASE_URL 配置。'
+              : '请稍后重试；若持续出现请查看服务端日志定位具体原因。'}
           </p>
         </div>
       )}

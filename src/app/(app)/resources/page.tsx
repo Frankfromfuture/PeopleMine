@@ -5,6 +5,7 @@ import { getAuthUserId } from '@/lib/session'
 import ContactsTable from '../contacts/ContactsTable'
 import CompaniesTable from '../companies/CompaniesTable'
 import { syncCompaniesFromContacts } from '@/lib/company-sync'
+import { db } from '@/lib/db'
 
 type Props = {
   searchParams: Promise<{ type?: string; role?: string }>
@@ -40,7 +41,8 @@ export default async function ResourcesPage({ searchParams }: Props) {
     lastContactedAt: Date | null
   }> = []
 
-  let companies: Awaited<ReturnType<typeof db.company.findMany>> = []
+  type CompanyRow = { id: string; name: string; industry: string | null; scale: string | null; tags: string | null; temperature: string | null; energyScore: number; familiarityLevel: number | null; mainBusiness: string | null; notes: string | null; createdAt: Date; updatedAt: Date; contacts: { id: string; name: string }[] }
+  let companies: CompanyRow[] = []
 
   if (userId && !dbError) {
     try {
@@ -103,7 +105,7 @@ export default async function ResourcesPage({ searchParams }: Props) {
           <p className="text-sm text-amber-800">
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
-          <p className="text-xs text-amber-700 mt-1">Supabase 闲置连接被回收，刷新页面即可恢复。</p>
+          <p className="text-xs text-amber-700 mt-1">数据库连接失败，刷新页面即可恢复。</p>
         </div>
       )}
 

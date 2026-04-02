@@ -30,18 +30,23 @@ export async function requireAuth(): Promise<{ userId: string; phone: string }> 
   return { userId: session.userId, phone: session.phone }
 }
 
+/** 开发模式 demo 用户 ID 内存缓存，进程内只查一次 DB */
+let _devUserId: string | null = null
+
 /** 获取当前用户 ID，开发模式自动 upsert demo 用户 */
 export async function getAuthUserId(): Promise<string> {
   try {
     const { userId } = await requireAuth()
     return userId
   } catch {
+    if (_devUserId) return _devUserId
     const { db } = await import('@/lib/db')
     const devUser = await db.user.upsert({
       where: { phone: '13800138000' },
       update: {},
       create: { phone: '13800138000', name: 'Demo 用户' },
     })
+    _devUserId = devUser.id
     return devUser.id
   }
 }

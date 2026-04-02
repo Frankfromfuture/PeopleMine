@@ -1,8 +1,10 @@
 # PeopleMine 人迈
 
-> **Your Asset, Your Mine** — AI-powered personal network management
+> **Your Asset, Your Mine**
 
-PeopleMine helps you tag every contact, track relationship energy, and let AI plan your "network journey" — finding the optimal path to reach any goal. Turn your network into your greatest asset.
+中文 / English 双语说明：PeopleMine 是一款 AI 驱动的人脉管理工具，帮助你用标签化方式管理联系人、可视化关系能量，并生成目标导向的人脉航程。
+
+Bilingual README: PeopleMine is an AI-powered relationship management platform for tagging contacts, visualizing relationship energy, and generating goal-oriented network journeys.
 
 ---
 

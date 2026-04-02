@@ -83,7 +83,11 @@
       "Bash(python3 -)",
       "Bash(python3 -c \"import os; print\\(os.path.exists\\('C:/Users/Frank Fan/PeopleMine/src/app/\\(app\\)/contacts/page.tsx'\\)\\)\")",
       "Bash(python3)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(node -e \"require\\('openai'\\)\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/contacts/generate-random -H \"Content-Type: application/json\" -d \"{\\\\\"count\\\\\":2,\\\\\"tagVariability\\\\\":50}\")",
+      "Bash(curl -s -X POST https://api.moonshot.cn/v1/chat/completions -H 'Content-Type: application/json' -H 'Authorization: Bearer sk-a4E3txeUZforIAdoGuVJlQcqo1LH77DSgtPKxdSG8jXIH7Pl' -d '{\"model\":\"kimi-k2.5\",\"max_tokens\":100,\"messages\":[{\"role\":\"user\",\"content\":\"say hi\"}]}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/contacts/generate-random -H \"Content-Type: application/json\" -d \"{\\\\\"count\\\\\":3,\\\\\"tagVariability\\\\\":70}\")"
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [

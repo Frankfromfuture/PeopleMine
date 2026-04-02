@@ -8,66 +8,86 @@ type SizeMap = Record<string, "sm" | "md" | "lg">
 type DuplicateItem = { id: string; sourceId: string; x: number; y: number; size: "sm" | "md" | "lg" }
 
 const STORAGE_KEY = "pm-dashboard-free-move-v1"
-const HIDDEN_KEY = "pm-dashboard-hidden-widgets-v1"
-const SIZE_KEY = "pm-dashboard-widget-size-v1"
-const PIN_KEY = "pm-dashboard-pin-order-v1"
-const DUP_KEY = "pm-dashboard-duplicates-v1"
+const HIDDEN_KEY  = "pm-dashboard-hidden-widgets-v1"
+const SIZE_KEY    = "pm-dashboard-widget-size-v1"
+const PIN_KEY     = "pm-dashboard-pin-order-v1"
+const DUP_KEY     = "pm-dashboard-duplicates-v1"
+const GRID        = 16
+const GAP         = 10   // padding between pushed widgets
+const PUSH_PASSES = 4    // collision resolution iterations
 
-function loadPosMap(): PosMap {
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+
+function load<T>(key: string, fallback: T): T {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}")
-    return parsed && typeof parsed === "object" ? (parsed as PosMap) : {}
-  } catch {
-    return {}
+    const raw = localStorage.getItem(key)
+    if (!raw) return fallback
+    const parsed = JSON.parse(raw)
+    return parsed ?? fallback
+  } catch { return fallback }
+}
+
+// ─── Collision helpers ────────────────────────────────────────────────────────
+
+function snap(v: number) { return Math.round(v / GRID) * GRID }
+
+/** Push all non-active widgets away from each other after the active one moved. */
+function resolveCollisions(
+  activeId: string,
+  nodes: HTMLElement[],
+  posMap: PosMap,
+) {
+  const visible = nodes.filter(n => n.style.display !== "none")
+
+  for (let pass = 0; pass < PUSH_PASSES; pass++) {
+    let pushed = false
+
+    for (let i = 0; i < visible.length; i++) {
+      const a = visible[i]
+
+      for (let j = 0; j < visible.length; j++) {
+        if (i === j) continue
+        const b = visible[j]
+        const idB = b.dataset.freeMoveId!
+        if (idB === activeId) continue // never push the dragged widget
+
+        const rA = a.getBoundingClientRect()
+        const rB = b.getBoundingClientRect()
+
+        const ox = Math.min(rA.right, rB.right) - Math.max(rA.left, rB.left)
+        const oy = Math.min(rA.bottom, rB.bottom) - Math.max(rA.top, rB.top)
+        if (ox <= 2 || oy <= 2) continue
+
+        const posB = posMap[idB] ?? { x: 0, y: 0 }
+
+        if (ox < oy) {
+          const dir = rB.left >= rA.left ? 1 : -1
+          posMap[idB] = { x: snap(posB.x + dir * (ox + GAP)), y: posB.y }
+        } else {
+          const dir = rB.top >= rA.top ? 1 : -1
+          posMap[idB] = { x: posB.x, y: snap(posB.y + dir * (oy + GAP)) }
+        }
+        b.style.transform = `translate(${posMap[idB].x}px, ${posMap[idB].y}px)`
+        pushed = true
+      }
+    }
+
+    if (!pushed) break
   }
 }
 
-function loadHiddenMap(): HiddenMap {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "{}")
-    return parsed && typeof parsed === "object" ? (parsed as HiddenMap) : {}
-  } catch {
-    return {}
-  }
-}
-
-function loadSizeMap(): SizeMap {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SIZE_KEY) ?? "{}")
-    return parsed && typeof parsed === "object" ? (parsed as SizeMap) : {}
-  } catch {
-    return {}
-  }
-}
-
-function loadPinOrder(): string[] {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(PIN_KEY) ?? "[]")
-    return Array.isArray(parsed) ? (parsed as string[]) : []
-  } catch {
-    return []
-  }
-}
-
-function loadDuplicates(): DuplicateItem[] {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(DUP_KEY) ?? "[]")
-    return Array.isArray(parsed) ? (parsed as DuplicateItem[]) : []
-  } catch {
-    return []
-  }
-}
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FreeMoveCanvas() {
-  const [editMode, setEditMode] = useState(false)
   const [hiddenCount, setHiddenCount] = useState(0)
-  const [guide, setGuide] = useState<{ x: number | null; y: number | null }>({ x: null, y: null })
-  const posMapRef = useRef<PosMap>({})
-  const hiddenMapRef = useRef<HiddenMap>({})
-  const sizeMapRef = useRef<SizeMap>({})
-  const pinOrderRef = useRef<string[]>([])
+  const posMapRef     = useRef<PosMap>({})
+  const hiddenMapRef  = useRef<HiddenMap>({})
+  const sizeMapRef    = useRef<SizeMap>({})
+  const pinOrderRef   = useRef<string[]>([])
   const duplicatesRef = useRef<DuplicateItem[]>([])
-  const historyRef = useRef<string[]>([])
+  const historyRef    = useRef<string[]>([])
+  // track which node is dragging so mousemove cursor logic knows
+  const draggingRef   = useRef(false)
 
   const pushHistory = () => {
     const raw = JSON.stringify({
@@ -82,49 +102,43 @@ export default function FreeMoveCanvas() {
 
   const restoreFromRaw = (raw: string) => {
     try {
-      const parsed = JSON.parse(raw) as {
-        posMap: PosMap
-        hiddenMap: HiddenMap
-        sizeMap: SizeMap
-        pinOrder: string[]
-        duplicates: DuplicateItem[]
-      }
-      posMapRef.current = parsed.posMap ?? {}
-      hiddenMapRef.current = parsed.hiddenMap ?? {}
-      sizeMapRef.current = parsed.sizeMap ?? {}
-      pinOrderRef.current = parsed.pinOrder ?? []
-      duplicatesRef.current = parsed.duplicates ?? []
+      const p = JSON.parse(raw)
+      posMapRef.current     = p.posMap ?? {}
+      hiddenMapRef.current  = p.hiddenMap ?? {}
+      sizeMapRef.current    = p.sizeMap ?? {}
+      pinOrderRef.current   = p.pinOrder ?? []
+      duplicatesRef.current = p.duplicates ?? []
       localStorage.setItem(STORAGE_KEY, JSON.stringify(posMapRef.current))
-      localStorage.setItem(HIDDEN_KEY, JSON.stringify(hiddenMapRef.current))
-      localStorage.setItem(SIZE_KEY, JSON.stringify(sizeMapRef.current))
-      localStorage.setItem(PIN_KEY, JSON.stringify(pinOrderRef.current))
-      localStorage.setItem(DUP_KEY, JSON.stringify(duplicatesRef.current))
+      localStorage.setItem(HIDDEN_KEY,  JSON.stringify(hiddenMapRef.current))
+      localStorage.setItem(SIZE_KEY,    JSON.stringify(sizeMapRef.current))
+      localStorage.setItem(PIN_KEY,     JSON.stringify(pinOrderRef.current))
+      localStorage.setItem(DUP_KEY,     JSON.stringify(duplicatesRef.current))
       window.location.reload()
     } catch {}
   }
 
   useEffect(() => {
-    const posMap = loadPosMap()
-    const hiddenMap = loadHiddenMap()
-    const sizeMap = loadSizeMap()
-    const pinOrder = loadPinOrder()
-    const duplicates = loadDuplicates()
+    const posMap     = load<PosMap>(STORAGE_KEY, {})
+    const hiddenMap  = load<HiddenMap>(HIDDEN_KEY, {})
+    const sizeMap    = load<SizeMap>(SIZE_KEY, {})
+    const pinOrder   = load<string[]>(PIN_KEY, [])
+    const duplicates = load<DuplicateItem[]>(DUP_KEY, [])
 
-    posMapRef.current = posMap
-    hiddenMapRef.current = hiddenMap
-    sizeMapRef.current = sizeMap
-    pinOrderRef.current = pinOrder
+    posMapRef.current     = posMap
+    hiddenMapRef.current  = hiddenMap
+    sizeMapRef.current    = sizeMap
+    pinOrderRef.current   = pinOrder
     duplicatesRef.current = duplicates
 
+    // ── Restore duplicate clones ──────────────────────────────────────────
     const sourceNodes = Array.from(document.querySelectorAll<HTMLElement>("[data-free-move-id]"))
-
     for (const dup of duplicatesRef.current) {
       if (document.querySelector(`[data-free-move-id="${dup.id}"]`)) continue
-      const source = sourceNodes.find((n) => n.dataset.freeMoveId === dup.sourceId)
-      if (!source || !source.parentElement) continue
+      const source = sourceNodes.find(n => n.dataset.freeMoveId === dup.sourceId)
+      if (!source?.parentElement) continue
       const clone = source.cloneNode(true) as HTMLElement
       clone.dataset.freeMoveId = dup.id
-      clone.style.transform = `translate(${dup.x}px, ${dup.y}px)`
+      clone.style.transform    = `translate(${dup.x}px, ${dup.y}px)`
       clone.dataset.widgetSize = dup.size
       source.parentElement.insertBefore(clone, source.nextSibling)
       posMapRef.current[dup.id] = { x: dup.x, y: dup.y }
@@ -133,106 +147,115 @@ export default function FreeMoveCanvas() {
 
     const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-free-move-id]"))
 
+    // ── Restore pin order ─────────────────────────────────────────────────
     for (let i = pinOrderRef.current.length - 1; i >= 0; i--) {
-      const id = pinOrderRef.current[i]
-      const node = nodes.find((n) => n.dataset.freeMoveId === id)
-      const parent = node?.parentElement
-      if (node && parent) parent.prepend(node)
+      const id   = pinOrderRef.current[i]
+      const node = nodes.find(n => n.dataset.freeMoveId === id)
+      if (node?.parentElement) node.parentElement.prepend(node)
     }
 
+    // ── Apply saved state to DOM ──────────────────────────────────────────
     for (const node of nodes) {
       const id = node.dataset.freeMoveId
       if (!id) continue
-
       if (hiddenMap[id]) node.style.display = "none"
-
-      node.style.willChange = "transform"
-      node.style.transition = "box-shadow 120ms ease"
-      node.style.cursor = editMode ? "grab" : "default"
-
+      node.style.willChange  = "transform"
+      node.style.transition  = "box-shadow 120ms ease, transform 80ms ease"
       const p = posMap[id]
       if (p) node.style.transform = `translate(${p.x}px, ${p.y}px)`
-
-      const size = sizeMap[id] ?? "lg"
-      node.dataset.widgetSize = size
+      node.dataset.widgetSize = sizeMap[id] ?? "lg"
     }
 
     setHiddenCount(Object.values(hiddenMap).filter(Boolean).length)
 
-    let active: { el: HTMLElement; id: string; startX: number; startY: number; baseX: number; baseY: number } | null = null
+    // ─────────────────────────────────────────────────────────────────────
+    // DRAG LOGIC — always on, no editMode gate
+    // ─────────────────────────────────────────────────────────────────────
+    type Active = { el: HTMLElement; id: string; startX: number; startY: number; baseX: number; baseY: number }
+    let active: Active | null = null
 
-    const SNAP = 12
-    const GRID = 16
+    const NON_DRAG_SELECTOR = "a,button,input,textarea,select,summary,[data-widget-menu],[data-widget-action]"
+    const TEXT_SELECTOR     = "p,span,h1,h2,h3,h4,h5,h6,li,td,th,label,svg,img,em,strong,small,time"
 
-    const getSectionLanes = () => {
-      const track = document.querySelector<HTMLElement>("[data-section-track]")
-      if (!track) return [0]
-      const lane = Math.max(280, Math.floor((track.clientWidth - 20) / 2))
-      return [0, lane]
+    const isInteractive = (t: HTMLElement | null) => Boolean(t?.closest(NON_DRAG_SELECTOR))
+    const isTextOrIcon  = (t: HTMLElement | null) => Boolean(t?.closest(TEXT_SELECTOR))
+
+    // ── Cursor management ─────────────────────────────────────────────────
+    const onMouseMove = (e: MouseEvent) => {
+      if (draggingRef.current) return
+      const target = e.target as HTMLElement | null
+      const widget = target?.closest("[data-free-move-id]") as HTMLElement | null
+      // Reset all widget cursors first
+      for (const n of nodes) { if (n !== widget) n.style.cursor = "default" }
+      if (!widget) return
+      if (isInteractive(target) || isTextOrIcon(target)) {
+        widget.style.cursor = "default"
+      } else {
+        widget.style.cursor = "grab"
+      }
     }
 
-    const isInteractiveTarget = (target: HTMLElement | null) =>
-      Boolean(target?.closest("a,button,input,textarea,select,summary,[data-widget-menu],[data-widget-action]"))
+    // ── Pointer events ────────────────────────────────────────────────────
     const onPointerDown = (e: PointerEvent) => {
-      if (!editMode) return
       const target = e.target as HTMLElement | null
       const el = target?.closest("[data-free-move-id]") as HTMLElement | null
       if (!el) return
-
-      const inBlankZone = Boolean(target?.closest('[data-drag-zone="blank"]'))
-      if (!inBlankZone && isInteractiveTarget(target)) return
-
+      if (isInteractive(target)) return
+      // Allow drag from any non-interactive area (not just data-drag-zone="blank")
       const id = el.dataset.freeMoveId
       if (!id) return
+
+      pushHistory()
       const base = posMapRef.current[id] ?? { x: 0, y: 0 }
       active = { el, id, startX: e.clientX, startY: e.clientY, baseX: base.x, baseY: base.y }
-      el.style.boxShadow = "0 20px 50px rgba(15,23,42,0.12)"
-      el.style.zIndex = "20"
-      el.style.cursor = "grabbing"
+      draggingRef.current = true
+      el.style.boxShadow = "0 20px 50px rgba(15,23,42,0.14)"
+      el.style.zIndex    = "20"
+      el.style.cursor    = "grabbing"
+      el.style.transition = "box-shadow 120ms ease"
       e.preventDefault()
     }
 
     const onPointerMove = (e: PointerEvent) => {
       if (!active) return
-      let x = active.baseX + (e.clientX - active.startX)
-      let y = active.baseY + (e.clientY - active.startY)
+      let x = snap(active.baseX + (e.clientX - active.startX))
+      let y = snap(active.baseY + (e.clientY - active.startY))
 
-      x = Math.round(x / GRID) * GRID
-      y = Math.round(y / GRID) * GRID
-
+      // Snap to sibling edges
+      const SNAP_THRESHOLD = 10
       for (const [id, pos] of Object.entries(posMapRef.current)) {
         if (id === active.id) continue
-        if (Math.abs(x - pos.x) <= SNAP) x = pos.x
-        if (Math.abs(y - pos.y) <= SNAP) y = pos.y
-      }
-
-      for (const laneX of getSectionLanes()) {
-        if (Math.abs(x - laneX) <= 20) x = laneX
+        if (Math.abs(x - pos.x) <= SNAP_THRESHOLD) x = pos.x
+        if (Math.abs(y - pos.y) <= SNAP_THRESHOLD) y = pos.y
       }
 
       active.el.style.transform = `translate(${x}px, ${y}px)`
       posMapRef.current[active.id] = { x, y }
-      setGuide({ x, y })
+
+      // Push colliding widgets away
+      resolveCollisions(active.id, nodes, posMapRef.current)
     }
 
     const onPointerUp = () => {
       if (!active) return
       active.el.style.boxShadow = ""
-      active.el.style.zIndex = ""
-      active.el.style.cursor = editMode ? "grab" : "default"
+      active.el.style.zIndex    = ""
+      active.el.style.cursor    = "grab"
+      active.el.style.transition = "box-shadow 120ms ease, transform 80ms ease"
+      // Save all positions (including pushed ones)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(posMapRef.current))
-      setGuide({ x: null, y: null })
+      draggingRef.current = false
       active = null
     }
 
+    // ── Widget action clicks ──────────────────────────────────────────────
     const onClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null
-      const actionEl = target?.closest("[data-widget-action]") as HTMLElement | null
+      const target    = e.target as HTMLElement | null
+      const actionEl  = target?.closest("[data-widget-action]") as HTMLElement | null
       if (!actionEl) return
-
-      const action = actionEl.dataset.widgetAction
-      const owner = actionEl.closest("[data-free-move-id]") as HTMLElement | null
-      const id = owner?.dataset.freeMoveId
+      const action    = actionEl.dataset.widgetAction
+      const owner     = actionEl.closest("[data-free-move-id]") as HTMLElement | null
+      const id        = owner?.dataset.freeMoveId
       if (!id || !owner || !action) return
 
       pushHistory()
@@ -253,13 +276,13 @@ export default function FreeMoveCanvas() {
         delete posMapRef.current[id]
         delete hiddenMapRef.current[id]
         delete sizeMapRef.current[id]
-        pinOrderRef.current = pinOrderRef.current.filter((v) => v !== id)
-        duplicatesRef.current = duplicatesRef.current.filter((d) => d.id !== id)
+        pinOrderRef.current   = pinOrderRef.current.filter(v => v !== id)
+        duplicatesRef.current = duplicatesRef.current.filter(d => d.id !== id)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(posMapRef.current))
-        localStorage.setItem(HIDDEN_KEY, JSON.stringify(hiddenMapRef.current))
-        localStorage.setItem(SIZE_KEY, JSON.stringify(sizeMapRef.current))
-        localStorage.setItem(PIN_KEY, JSON.stringify(pinOrderRef.current))
-        localStorage.setItem(DUP_KEY, JSON.stringify(duplicatesRef.current))
+        localStorage.setItem(HIDDEN_KEY,  JSON.stringify(hiddenMapRef.current))
+        localStorage.setItem(SIZE_KEY,    JSON.stringify(sizeMapRef.current))
+        localStorage.setItem(PIN_KEY,     JSON.stringify(pinOrderRef.current))
+        localStorage.setItem(DUP_KEY,     JSON.stringify(duplicatesRef.current))
         setHiddenCount(Object.values(hiddenMapRef.current).filter(Boolean).length)
         return
       }
@@ -267,7 +290,7 @@ export default function FreeMoveCanvas() {
       if (action === "size-sm" || action === "size-md" || action === "size-lg") {
         const size = action.replace("size-", "") as "sm" | "md" | "lg"
         owner.dataset.widgetSize = size
-        sizeMapRef.current[id] = size
+        sizeMapRef.current[id]   = size
         localStorage.setItem(SIZE_KEY, JSON.stringify(sizeMapRef.current))
         return
       }
@@ -280,8 +303,7 @@ export default function FreeMoveCanvas() {
         owner.style.transform = ""
         delete posMapRef.current[id]
         localStorage.setItem(STORAGE_KEY, JSON.stringify(posMapRef.current))
-
-        pinOrderRef.current = [id, ...pinOrderRef.current.filter((v) => v !== id)].slice(0, 50)
+        pinOrderRef.current = [id, ...pinOrderRef.current.filter(v => v !== id)].slice(0, 50)
         localStorage.setItem(PIN_KEY, JSON.stringify(pinOrderRef.current))
         return
       }
@@ -290,44 +312,47 @@ export default function FreeMoveCanvas() {
         e.preventDefault()
         const parent = owner.parentElement
         if (!parent) return
-
         const sourceId = owner.dataset.sourceId || id
-        const clone = owner.cloneNode(true) as HTMLElement
-        const newId = `${sourceId}-copy-${Date.now()}`
+        const clone    = owner.cloneNode(true) as HTMLElement
+        const newId    = `${sourceId}-copy-${Date.now()}`
         clone.dataset.freeMoveId = newId
-        clone.dataset.sourceId = sourceId
+        clone.dataset.sourceId   = sourceId
         clone.style.display = ""
         parent.insertBefore(clone, owner.nextSibling)
-
-        const sourcePos = posMapRef.current[id] ?? { x: 0, y: 0 }
-        const nextPos = { x: sourcePos.x + 24, y: sourcePos.y + 24 }
-        clone.style.transform = `translate(${nextPos.x}px, ${nextPos.y}px)`
-        posMapRef.current[newId] = nextPos
+        const srcPos = posMapRef.current[id] ?? { x: 0, y: 0 }
+        const pos    = { x: srcPos.x + 24, y: srcPos.y + 24 }
+        clone.style.transform     = `translate(${pos.x}px, ${pos.y}px)`
+        posMapRef.current[newId]  = pos
         localStorage.setItem(STORAGE_KEY, JSON.stringify(posMapRef.current))
-
-        const sourceSize = (owner.dataset.widgetSize as "sm" | "md" | "lg" | undefined) ?? "lg"
-        clone.dataset.widgetSize = sourceSize
-        sizeMapRef.current[newId] = sourceSize
+        const size = (owner.dataset.widgetSize as "sm" | "md" | "lg") ?? "lg"
+        clone.dataset.widgetSize  = size
+        sizeMapRef.current[newId] = size
         localStorage.setItem(SIZE_KEY, JSON.stringify(sizeMapRef.current))
-
-        const newDup: DuplicateItem = { id: newId, sourceId, x: nextPos.x, y: nextPos.y, size: sourceSize }
-        duplicatesRef.current = [newDup, ...duplicatesRef.current.filter((d) => d.id !== newId)].slice(0, 30)
+        duplicatesRef.current = [
+          { id: newId, sourceId, x: pos.x, y: pos.y, size },
+          ...duplicatesRef.current.filter(d => d.id !== newId),
+        ].slice(0, 30)
         localStorage.setItem(DUP_KEY, JSON.stringify(duplicatesRef.current))
+        return
       }
     }
 
+    window.addEventListener("mousemove", onMouseMove)
     window.addEventListener("pointerdown", onPointerDown)
     window.addEventListener("pointermove", onPointerMove)
     window.addEventListener("pointerup", onPointerUp)
     window.addEventListener("click", onClick)
 
     return () => {
+      window.removeEventListener("mousemove", onMouseMove)
       window.removeEventListener("pointerdown", onPointerDown)
       window.removeEventListener("pointermove", onPointerMove)
       window.removeEventListener("pointerup", onPointerUp)
       window.removeEventListener("click", onClick)
     }
-  }, [editMode])
+  }, [])
+
+  // ─── Toolbar actions ───────────────────────────────────────────────────────
 
   const restoreAllHidden = () => {
     pushHistory()
@@ -348,10 +373,10 @@ export default function FreeMoveCanvas() {
 
   const resetAll = () => {
     pushHistory()
-    posMapRef.current = {}
-    hiddenMapRef.current = {}
-    sizeMapRef.current = {}
-    pinOrderRef.current = []
+    posMapRef.current     = {}
+    hiddenMapRef.current  = {}
+    sizeMapRef.current    = {}
+    pinOrderRef.current   = []
     duplicatesRef.current = []
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(HIDDEN_KEY)
@@ -360,44 +385,28 @@ export default function FreeMoveCanvas() {
     localStorage.removeItem(DUP_KEY)
     const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-free-move-id]"))
     for (const node of nodes) {
-      node.style.transform = ""
-      node.style.display = ""
+      node.style.transform    = ""
+      node.style.display      = ""
       node.dataset.widgetSize = "lg"
     }
-    setGuide({ x: null, y: null })
     setHiddenCount(0)
   }
 
-  return (
-    <>
-      {guide.x !== null && (
-        <div
-          className="pointer-events-none fixed inset-y-0 z-30 w-px bg-violet-400/40"
-          style={{ left: `calc(2rem + ${guide.x}px)` }}
-        />
-      )}
-      {guide.y !== null && (
-        <div
-          className="pointer-events-none fixed inset-x-0 z-30 h-px bg-violet-400/35"
-          style={{ top: `${guide.y + 120}px` }}
-        />
-      )}
+  const undo = () => {
+    const prev = historyRef.current.shift()
+    if (prev) restoreFromRaw(prev)
+  }
 
-      <div className="fixed right-6 bottom-6 z-40 rounded-2xl border border-[#d6cec3] bg-white/90 backdrop-blur px-3 py-2 shadow-lg">
-        <div className="flex items-center gap-2 text-xs">
-          <button
-            onClick={() => setEditMode((v) => !v)}
-            className={`px-2.5 py-1 rounded-md border ${editMode ? "border-violet-300 bg-violet-50 text-violet-700" : "border-gray-200 text-gray-600"}`}
-          >
-            {editMode ? "结束编辑" : "编辑布局"}
-          </button>
-          <button onClick={alignAll} className="px-2.5 py-1 rounded-md border border-gray-200 text-gray-600">对齐</button>
-          <button onClick={restoreAllHidden} className="px-2.5 py-1 rounded-md border border-gray-200 text-gray-600">
-            显示全部{hiddenCount > 0 ? `(${hiddenCount})` : ""}
-          </button>
-          <button onClick={resetAll} className="px-2.5 py-1 rounded-md border border-rose-200 text-rose-600">重置</button>
-        </div>
+  return (
+    <div className="canvas-toolbar fixed right-6 bottom-6 z-40 rounded-2xl bg-white/90 backdrop-blur px-3 py-2 shadow-lg">
+      <div className="flex items-center gap-2 text-xs">
+        <button onClick={undo} className="px-2.5 py-1 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50" title="撤销">↩ 撤销</button>
+        <button onClick={alignAll} className="px-2.5 py-1 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50">对齐</button>
+        <button onClick={restoreAllHidden} className="px-2.5 py-1 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50">
+          显示全部{hiddenCount > 0 ? `(${hiddenCount})` : ""}
+        </button>
+        <button onClick={resetAll} className="px-2.5 py-1 rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50">重置</button>
       </div>
-    </>
+    </div>
   )
 }
