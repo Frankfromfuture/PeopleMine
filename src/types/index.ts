@@ -42,3 +42,15 @@ export const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
   EVENT:   '活动',
   OTHER:   '其他',
 }
+
+// ─── 企业类型 ──────────────────────────────────────────────
+
+export type CompanyScale = 'STARTUP' | 'SME' | 'MID' | 'LARGE' | 'LISTED'
+
+export const COMPANY_SCALE_LABELS: Record<CompanyScale, { name: string; desc: string; color: string }> = {
+  STARTUP: { name: '初创',   desc: '<50人',    color: 'bg-violet-100 text-violet-700 border-violet-200' },
+  SME:     { name: '中小型', desc: '50-300人', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  MID:     { name: '中型',   desc: '300-1000人', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+  LARGE:   { name: '大型',   desc: '1000人+',  color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  LISTED:  { name: '上市',   desc: 'A股/港股/美股', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+}

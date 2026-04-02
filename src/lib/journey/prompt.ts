@@ -127,6 +127,21 @@ interface SelfProfile {
   selfBio?: string | null
 }
 
+export interface CompanyContext {
+  id: string
+  name: string
+  industry: string | null
+  scale: string | null
+  mainBusiness: string | null
+  tags: string[]
+  familiarityLevel: number | null
+  temperature: string | null
+  energyScore: number
+  founderName: string | null
+  investors: string[]
+  linkedContactIds: string[] // 人脉库中关联该公司的联系人 ID
+}
+
 /**
  * 构建发送给 Claude 的提示词
  */
@@ -136,6 +151,7 @@ function buildPrompt(
   relations: ContactRelation[],
   candidatePaths: CandidatePath[],
   selfProfile?: SelfProfile,
+  companies?: CompanyContext[],
 ): string {
   const topContactIds = new Set(scoredContacts.map((c) => c.id))
   const formattedContacts = formatContactsForPrompt(scoredContacts)
@@ -157,9 +173,37 @@ function buildPrompt(
 请将「${selfProfile.name || '用户'}」作为人脉网络的起点，分析从 TA 出发到达目标所需的最优路径。`
   }
 
+  // 企业资源部分
+  let companySection = ''
+  if (companies && companies.length > 0) {
+    const formatted = companies.map((c) => ({
+      id: c.id,
+      name: c.name,
+      industry: c.industry,
+      scale: c.scale,
+      mainBusiness: c.mainBusiness,
+      tags: c.tags.slice(0, 5),
+      familiarityLevel: c.familiarityLevel,
+      temperature: c.temperature,
+      energyScore: c.energyScore,
+      founderName: c.founderName,
+      investors: c.investors.slice(0, 3),
+      linkedContactNames: c.linkedContactIds
+        .map((cid) => scoredContacts.find((sc) => sc.id === cid)?.name)
+        .filter(Boolean)
+        .slice(0, 3),
+    }))
+    companySection = `
+## 用户的企业资源网络（${companies.length} 家）
+用户维护了以下企业关系，可作为目标分析的参考节点（考虑其相关联系人是否应优先出现在路径中）：
+${JSON.stringify(formatted, null, 2)}
+
+`
+  }
+
   return `## 用户的人脉拓展目标
 ${goal}
-${selfSection}
+${selfSection}${companySection}
 ## 用户的人脉网络概况
 - 总联系人数：${scoredContacts.length}
 - 已分析（Top-15）：${formattedContacts.length}
@@ -261,6 +305,7 @@ export async function analyzeJourneyWithClaude(
   relations: ContactRelation[],
   candidatePaths: CandidatePath[],
   selfProfile?: SelfProfile,
+  companies?: CompanyContext[],
 ): Promise<JourneyPathData> {
   // 如果没有 API key，返回使用预计算数据的兜底结果（用于测试）
   if (!process.env.KIMI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
@@ -268,7 +313,7 @@ export async function analyzeJourneyWithClaude(
     return generateFallbackPathData(goal, scoredContacts, relations, candidatePaths)
   }
 
-  const prompt = buildPrompt(goal, scoredContacts, relations, candidatePaths, selfProfile)
+  const prompt = buildPrompt(goal, scoredContacts, relations, candidatePaths, selfProfile, companies)
 
   const aiClient = getAIClient()
   if (!aiClient) throw new Error('未配置 AI 服务')

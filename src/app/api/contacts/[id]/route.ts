@@ -54,6 +54,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!existing) {
       return NextResponse.json({ error: '联系人不存在' }, { status: 404 })
     }
+    const selectedCompanyId = typeof body.companyId === 'string' ? body.companyId.trim() : ''
+    let linkedCompanyId: string | null = null
+    let companyNameForContact: string | null = typeof body.company === 'string' ? body.company : null
+    if (selectedCompanyId) {
+      const selected = await db.company.findFirst({
+        where: { id: selectedCompanyId, userId },
+        select: { id: true, name: true },
+      })
+      if (selected) {
+        linkedCompanyId = selected.id
+        companyNameForContact = selected.name
+      }
+    }
+
     const contact = await db.contact.update({
       where: { id: params.id },
       data: {
@@ -61,6 +75,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         relationRole: body.relationRole,
         tags: tagArr.length > 0 ? JSON.stringify(tagArr) : null,
         spiritAnimal: body.spiritAnimal || null,
+        company: companyNameForContact,
+        companyId: linkedCompanyId,
         temperature: body.temperature || null,
         trustLevel: body.trustLevel ? Number(body.trustLevel) : null,
       },
@@ -109,6 +125,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const relationRoleValue = String(form.get('relationRole') ?? '') as RelationRole
       const spiritAnimalValue = form.get('spiritAnimal') ? (String(form.get('spiritAnimal')) as SpiritAnimal) : null
       const temperatureValue = form.get('temperature') ? (String(form.get('temperature')) as Temperature) : null
+      const selectedCompanyId = form.get('companyId') ? String(form.get('companyId')) : ''
+      let linkedCompanyId: string | null = null
+      let companyNameForContact: string | null = form.get('company') ? String(form.get('company')) : null
+      if (selectedCompanyId) {
+        const selected = await db.company.findFirst({
+          where: { id: selectedCompanyId, userId },
+          select: { id: true, name: true },
+        })
+        if (selected) {
+          linkedCompanyId = selected.id
+          companyNameForContact = selected.name
+        }
+      }
 
       await db.contact.update({
         where: { id: params.id },
@@ -119,7 +148,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           spiritAnimal: spiritAnimalValue,
           temperature: temperatureValue,
           trustLevel: form.get('trustLevel') ? Number(form.get('trustLevel')) : null,
-          company: form.get('company') ? String(form.get('company')) : null,
+          company: companyNameForContact,
+          companyId: linkedCompanyId,
           title: form.get('title') ? String(form.get('title')) : null,
           jobPosition: form.get('jobPosition') ? String(form.get('jobPosition')) : null,
           wechat: form.get('wechat') ? String(form.get('wechat')) : null,

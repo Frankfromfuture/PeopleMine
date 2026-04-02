@@ -1,21 +1,21 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-
-// ─── 消息库 ────────────────────────────────────────────────────────────────────
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 const MESSAGES = [
-  '思考中', '计算中', '分析中', '处理中', '规划中',
-  '推演中', '匹配中', '评估中', '构建中', '优化中',
-  '连接中', '加载中', '解析中', '整合中', '检索中',
+  '同步视图中',
+  '生成航线建议中',
+  '编排界面状态中',
+  '准备下一步动作中',
+  '计算关系权重中',
+  '刷新数据快照中',
 ]
 
 function randomMsg() {
   return MESSAGES[Math.floor(Math.random() * MESSAGES.length)]
 }
-
-// ─── Context ───────────────────────────────────────────────────────────────────
 
 interface LoadingCtx {
   showLoading: () => void
@@ -31,77 +31,68 @@ export function useLoading() {
   return useContext(LoadingContext)
 }
 
-// ─── 浮动 Toast ────────────────────────────────────────────────────────────────
-
-function Toast({ visible }: { visible: boolean }) {
-  const [msg, setMsg] = useState(randomMsg)
-  const [dots, setDots] = useState(1)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+function FloatingLoader({ visible }: { visible: boolean }) {
+  const [msg, setMsg] = useState(MESSAGES[0])
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     if (!visible) return
     setMsg(randomMsg())
-    setDots(1)
-
-    intervalRef.current = setInterval(() => {
-      setDots(d => {
-        if (d >= 6) {
-          setMsg(randomMsg())
-          return 1
-        }
-        return d + 1
-      })
-    }, 350)
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+    const timer = setInterval(() => setMsg(randomMsg()), 1900)
+    return () => clearInterval(timer)
   }, [visible])
 
-  return (
-    <div
-      className="fixed bottom-6 right-6 z-[9999] pointer-events-none"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        transition: 'opacity 0.25s ease, transform 0.25s ease',
-      }}
-    >
-      <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-zinc-900/95 shadow-xl border border-zinc-700/60 backdrop-blur-sm">
-        {/* 跳动三点 */}
-        <div className="flex items-end gap-0.5 h-4">
-          {[0, 1, 2].map(i => (
-            <span
-              key={i}
-              className="w-1.5 h-1.5 rounded-full bg-violet-400"
-              style={{
-                animation: visible ? `bounce 0.9s ease-in-out ${i * 0.15}s infinite` : 'none',
-              }}
-            />
-          ))}
-        </div>
-        {/* 文字 */}
-        <span className="text-sm text-zinc-100 font-medium tracking-wide whitespace-nowrap">
-          {msg}
-          <span className="text-violet-300">{'·'.repeat(dots)}</span>
-        </span>
-      </div>
+  const dots = useMemo(() => [0, 1, 2], [])
 
-      <style>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); opacity: 0.6; }
-          50% { transform: translateY(-5px); opacity: 1; }
-        }
-      `}</style>
-    </div>
+  return (
+    <AnimatePresence>
+      {visible ? (
+        <motion.div
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.2 }}
+          className="fixed bottom-6 right-6 z-[9999] pointer-events-none"
+        >
+          <div className="relative overflow-hidden flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-zinc-900/95 shadow-xl border border-zinc-700/60 backdrop-blur-sm">
+            <motion.div
+              className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0%,rgba(139,92,246,0.08)_50%,transparent_100%)]"
+              animate={reduceMotion ? undefined : { x: ['-120%', '120%'] }}
+              transition={reduceMotion ? undefined : { duration: 2.2, repeat: Infinity, ease: 'linear' }}
+            />
+
+            <div className="relative flex items-end gap-0.5 h-4">
+              {dots.map((i) => (
+                <motion.span
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-violet-400"
+                  animate={
+                    reduceMotion
+                      ? undefined
+                      : { y: [0, -5, 0], opacity: [0.5, 1, 0.5] }
+                  }
+                  transition={
+                    reduceMotion
+                      ? undefined
+                      : { duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }
+                  }
+                />
+              ))}
+            </div>
+
+            <span className="relative text-sm text-zinc-100 font-medium tracking-wide whitespace-nowrap">
+              {msg}
+            </span>
+          </div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   )
 }
 
-// ─── Provider ──────────────────────────────────────────────────────────────────
-
 export function LoadingProvider({ children }: { children: React.ReactNode }) {
   const [visible, setVisible] = useState(false)
-  const manualRef = useRef(false)     // true = 手动触发（AI分析），不被导航覆盖
+  const manualRef = useRef(false)
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pathname = usePathname()
 
@@ -115,7 +106,6 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
     setVisible(false)
   }, [])
 
-  // 拦截链接点击 → 触发导航 loading
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (manualRef.current) return
@@ -124,25 +114,22 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
       const href = target.getAttribute('href')
       if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto')) return
       if (target.getAttribute('target') === '_blank') return
-      // 内部导航：显示 loading
       setVisible(true)
     }
     document.addEventListener('click', handler, true)
     return () => document.removeEventListener('click', handler, true)
   }, [])
 
-  // 路由变化完成 → 关闭导航 loading（手动的不关）
   useEffect(() => {
     if (manualRef.current) return
     if (navTimerRef.current) clearTimeout(navTimerRef.current)
-    // 给页面 300ms 渲染时间再关闭
-    navTimerRef.current = setTimeout(() => setVisible(false), 300)
+    navTimerRef.current = setTimeout(() => setVisible(false), 220)
   }, [pathname])
 
   return (
     <LoadingContext.Provider value={{ showLoading, hideLoading }}>
       {children}
-      <Toast visible={visible} />
+      <FloatingLoader visible={visible} />
     </LoadingContext.Provider>
   )
 }

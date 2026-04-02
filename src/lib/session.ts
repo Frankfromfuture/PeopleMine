@@ -29,3 +29,19 @@ export async function requireAuth(): Promise<{ userId: string; phone: string }> 
   }
   return { userId: session.userId, phone: session.phone }
 }
+
+/** 获取当前用户 ID，开发模式自动 upsert demo 用户 */
+export async function getAuthUserId(): Promise<string> {
+  try {
+    const { userId } = await requireAuth()
+    return userId
+  } catch {
+    const { db } = await import('@/lib/db')
+    const devUser = await db.user.upsert({
+      where: { phone: '13800138000' },
+      update: {},
+      create: { phone: '13800138000', name: 'Demo 用户' },
+    })
+    return devUser.id
+  }
+}

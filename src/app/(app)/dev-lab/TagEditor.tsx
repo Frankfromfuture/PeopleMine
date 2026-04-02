@@ -7,6 +7,7 @@ function genId() {
   return 'id-' + Math.random().toString(36).slice(2, 9)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ScoreBar({ value }: { value: number }) {
   const pct = Math.round(value * 100)
   const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500'

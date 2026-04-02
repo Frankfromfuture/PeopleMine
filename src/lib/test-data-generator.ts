@@ -1,8 +1,16 @@
-import { RelationRole, Temperature } from '@/types'
+import { RelationRole, Temperature, SpiritAnimal } from '@/types'
 
-/**
- * 中文常见姓氏
- */
+const COMPANY_SCALE_BY_CATEGORY: Record<string, Array<'STARTUP' | 'SME' | 'MID' | 'LARGE'>> = {
+  tech: ['STARTUP', 'SME', 'MID', 'LARGE', 'LARGE'],
+  finance: ['SME', 'MID', 'LARGE', 'LARGE'],
+  business: ['STARTUP', 'SME', 'SME', 'MID'],
+  education: ['SME', 'MID', 'LARGE'],
+  media: ['STARTUP', 'SME', 'SME'],
+  healthcare: ['STARTUP', 'SME', 'MID'],
+}
+
+const SPIRIT_ANIMALS: SpiritAnimal[] = ['LION', 'FOX', 'BEAR', 'CHAMELEON', 'EAGLE', 'DOLPHIN', 'OWL', 'SKUNK']
+
 const SURNAMES = [
   '王', '李', '张', '刘', '陈', '杨', '黄', '赵', '吴', '周', '徐', '孙', '朱', '郭', '何',
   '高', '林', '郑', '谢', '唐', '许', '韦', '冯', '段', '宋', '茅', '苏', '卢', '蒋', '魏',
@@ -10,9 +18,6 @@ const SURNAMES = [
   '余', '邹', '傅', '皮', '卓', '齐', '康', '伍', '余', '元', '卜', '顾', '孟', '平', '黎',
 ]
 
-/**
- * 常见名字库
- */
 const GIVEN_NAMES = [
   '子轩', '浩宇', '俊杰', '子涵', '浩然', '子晟', '博文', '浩轩', '亚飞', '思浩',
   '思言', '思翔', '思颜', '思语', '思云', '佳欣', '梦琦', '思琪', '子琪', '思晴',
@@ -21,9 +26,6 @@ const GIVEN_NAMES = [
   '峰', '磊', '伟', '斌', '云', '翔', '洋', '源', '鸿', '伦', '阳', '昊', '成',
 ]
 
-/**
- * 行业分类及相关标签
- */
 const INDUSTRY_TAGS: Record<string, {
   industries: string[]
   baseTag: string[]
@@ -45,7 +47,7 @@ const INDUSTRY_TAGS: Record<string, {
   business: {
     industries: ['商业', '运营', '品牌', '营销', '消费'],
     baseTag: ['营销', '运营', '品牌', '商业', '增长'],
-    companies: ['小红书', '知乎', '美团', '滴滴', '瑞幸', '蕾哈娜', '完美日记', '花西子'],
+    companies: ['小红书', '知乎', '美团', '滴滴', '瑞幸', '完美日记', '花西子'],
     titles: ['运营总监', '营销经理', '品牌负责人', '增长黑客', '业务开发', '商务总监'],
   },
   education: {
@@ -63,14 +65,11 @@ const INDUSTRY_TAGS: Record<string, {
   healthcare: {
     industries: ['医疗', '健康', '制药', '生物'],
     baseTag: ['医疗', '健康', '科学', '生命', '创新'],
-    companies: ['华大基因', '丁香园', '寿司医生', '诺华', '强生', '阿斯利康', '医院'],
+    companies: ['华大基因', '丁香园', '诺华', '强生', '阿斯利康', '医院'],
     titles: ['医生', '研究员', '产品经理', '健康顾问', '生物学家', '临床医学'],
   },
 }
 
-/**
- * 关系角色分布（权重）
- */
 const ROLE_DISTRIBUTION = {
   BIG_INVESTOR: 0.15,
   GATEWAY: 0.25,
@@ -80,35 +79,29 @@ const ROLE_DISTRIBUTION = {
   COMRADE: 0.10,
 }
 
-/**
- * 随机选择数组中的一个元素
- */
+function generateRandomSpiritAnimal(): SpiritAnimal | null {
+  if (Math.random() < 0.4) return null
+  return randomPick(SPIRIT_ANIMALS)
+}
+
 function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-/**
- * 随机选择多个元素（不重复）
- */
 function randomPickMultiple<T>(arr: T[], count: number): T[] {
   const shuffled = [...arr].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, Math.min(count, arr.length))
 }
 
-/**
- * 生成随机中文名字
- */
 export function generateRandomName(): string {
   const surname = randomPick(SURNAMES)
   const givenName = randomPick(GIVEN_NAMES)
   return surname + givenName
 }
 
-/**
- * 生成随机行业和相关数据
- */
 function getRandomIndustryData(): {
   industry: string
+  category: string
   tag: string[]
   companies: string[]
   titles: string[]
@@ -117,15 +110,13 @@ function getRandomIndustryData(): {
   const data = INDUSTRY_TAGS[category]
   return {
     industry: randomPick(data.industries),
+    category,
     tag: data.baseTag,
     companies: data.companies,
     titles: data.titles,
   }
 }
 
-/**
- * 选择关系角色（根据权重）
- */
 function selectRelationRole(): RelationRole {
   const roles = Object.entries(ROLE_DISTRIBUTION)
   const random = Math.random()
@@ -141,78 +132,50 @@ function selectRelationRole(): RelationRole {
   return 'COMRADE'
 }
 
-/**
- * 生成随机标签
- */
-function generateRandomTags(
-  baseTags: string[],
-  tagVariability: number, // 0-100
-): string[] {
-  const count = Math.floor(Math.random() * 3) + 1 // 1-3 个标签
+function generateRandomTags(baseTags: string[], tagVariability: number): string[] {
+  const count = Math.floor(Math.random() * 3) + 1
 
-  if (tagVariability === 0) {
-    // 完全固定
-    return baseTags.slice(0, count)
-  }
+  if (tagVariability === 0) return baseTags.slice(0, count)
 
   if (tagVariability === 100) {
-    // 完全随机
-    const allTags = Object.values(INDUSTRY_TAGS)
-      .flatMap((d) => d.baseTag)
+    const allTags = Object.values(INDUSTRY_TAGS).flatMap((d) => d.baseTag)
     return randomPickMultiple(allTags, count)
   }
 
-  // 混合：baseTag 占 (100 - variability)% 的权重
   const result: string[] = []
   for (let i = 0; i < count; i++) {
     if (Math.random() * 100 < 100 - tagVariability) {
-      // 使用 base tag
       result.push(randomPick(baseTags))
     } else {
-      // 使用其他 tag
-      const allOtherTags = Object.values(INDUSTRY_TAGS)
-        .flatMap((d) => d.baseTag)
+      const allOtherTags = Object.values(INDUSTRY_TAGS).flatMap((d) => d.baseTag)
       result.push(randomPick(allOtherTags))
     }
   }
 
-  return [...new Set(result)] // 去重
+  return [...new Set(result)]
 }
 
-/**
- * 生成随机温度
- */
 function generateRandomTemperature(): Temperature | null {
   const random = Math.random() * 100
-  if (random < 70) return null // 70% 概率无温度
+  if (random < 70) return null
   if (random < 80) return 'HOT'
   if (random < 90) return 'WARM'
   return 'COLD'
 }
 
-/**
- * 生成随机信任度
- */
 function generateRandomTrustLevel(): number | null {
-  const random = Math.random() * 100
-  if (random < 60) return null // 60% 概率无信任度
-
-  return Math.floor(Math.random() * 5) + 1 // 1-5
+  if (Math.random() * 100 < 60) return null
+  return Math.floor(Math.random() * 5) + 1
 }
 
-/**
- * 生成随机能量值
- */
 function generateRandomEnergyScore(): number {
-  return Math.floor(Math.random() * 61) + 20 // 20-80
+  return Math.floor(Math.random() * 61) + 20
 }
 
-/**
- * 生成完整的随机联系人
- */
 export function generateRandomContact(tagVariability: number = 50): {
   name: string
   relationRole: RelationRole
+  spiritAnimal: SpiritAnimal | null
   tags: string[]
   energyScore: number
   temperature: Temperature | null
@@ -220,36 +183,74 @@ export function generateRandomContact(tagVariability: number = 50): {
   company: string | null
   title: string | null
   notes: string | null
+  wechat: string | null
+  phone: string | null
+  email: string | null
+  companyIndustry: string | null
+  companyScale: 'STARTUP' | 'SME' | 'MID' | 'LARGE' | null
+  companyMainBusiness: string | null
+  companyWebsite: string | null
+  companyFounderName: string | null
+  companyInvestors: string[]
+  companyUpstreams: string[]
+  companyDownstreams: string[]
+  companyTags: string[]
+  companyTemperature: Temperature | null
+  companyFamiliarityLevel: number | null
+  companyEnergyScore: number
 } {
   const name = generateRandomName()
   const industryData = getRandomIndustryData()
   const completenessRandom = Math.random() * 100
 
-  // 数据完整度随机
   const hasCompany = completenessRandom > 20
   const hasTitle = completenessRandom > 15
+
+  const companyName = hasCompany ? randomPick(industryData.companies) : null
+  const scaleOptions = COMPANY_SCALE_BY_CATEGORY[industryData.category] ?? ['STARTUP', 'SME', 'MID', 'LARGE']
+  const companyScale = hasCompany ? randomPick(scaleOptions) : null
+  const companyMainBusiness = hasCompany
+    ? `${industryData.industry}领域${randomPick(['产品研发', '业务运营', '平台服务', '解决方案', '技术创新'])}`
+    : null
+
+  const spiritAnimal = generateRandomSpiritAnimal()
+  const phoneTail = Math.floor(1000 + Math.random() * 9000)
+  const mobile = `13${Math.floor(100000000 + Math.random() * 900000000)}`
+  const emailLocal = `user${phoneTail}`
+  const domain = randomPick(['qq.com', '163.com', 'gmail.com', 'outlook.com'])
+
+  const companyTags = hasCompany ? generateRandomTags(industryData.tag, tagVariability) : []
+  const ecosystemPool = Object.values(INDUSTRY_TAGS).flatMap((d) => d.companies)
 
   return {
     name,
     relationRole: selectRelationRole(),
+    spiritAnimal,
     tags: generateRandomTags(industryData.tag, tagVariability),
     energyScore: generateRandomEnergyScore(),
     temperature: generateRandomTemperature(),
     trustLevel: generateRandomTrustLevel(),
-    company: hasCompany ? randomPick(industryData.companies) : null,
+    company: companyName,
     title: hasTitle ? randomPick(industryData.titles) : null,
     notes: `自动生成的测试数据，行业：${industryData.industry}`,
+    wechat: Math.random() < 0.75 ? `wx_${emailLocal}` : null,
+    phone: Math.random() < 0.8 ? mobile : null,
+    email: Math.random() < 0.7 ? `${emailLocal}@${domain}` : null,
+    companyIndustry: hasCompany ? industryData.industry : null,
+    companyScale,
+    companyMainBusiness,
+    companyWebsite: hasCompany ? `https://www.${(companyName || 'company').replace(/\s+/g, '').toLowerCase()}.com` : null,
+    companyFounderName: hasCompany && Math.random() < 0.6 ? generateRandomName() : null,
+    companyInvestors: hasCompany ? randomPickMultiple(ecosystemPool, Math.floor(Math.random() * 3)) : [],
+    companyUpstreams: hasCompany ? randomPickMultiple(ecosystemPool, Math.floor(Math.random() * 3) + 1) : [],
+    companyDownstreams: hasCompany ? randomPickMultiple(ecosystemPool, Math.floor(Math.random() * 3) + 1) : [],
+    companyTags,
+    companyTemperature: hasCompany ? generateRandomTemperature() : null,
+    companyFamiliarityLevel: hasCompany ? generateRandomTrustLevel() : null,
+    companyEnergyScore: hasCompany ? generateRandomEnergyScore() : 50,
   }
 }
 
-/**
- * 生成多个随机联系人
- */
-export function generateRandomContacts(
-  count: number,
-  tagVariability: number = 50,
-): ReturnType<typeof generateRandomContact>[] {
-  return Array.from({ length: count }, () =>
-    generateRandomContact(tagVariability),
-  )
+export function generateRandomContacts(count: number, tagVariability: number = 50): ReturnType<typeof generateRandomContact>[] {
+  return Array.from({ length: count }, () => generateRandomContact(tagVariability))
 }

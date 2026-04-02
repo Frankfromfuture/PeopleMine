@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/session'
+import { getAuthUserId } from '@/lib/session'
 
-async function resolveUserId() {
-  try {
-    const { userId } = await requireAuth()
-    return userId
-  } catch {
-    const withContacts = await db.contact.findFirst({
-      select: { userId: true },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => null)
-    return withContacts?.userId ?? 'dev-user'
-  }
-}
+
 
 export async function GET() {
-  const userId = await resolveUserId()
+  const userId = await getAuthUserId()
   const user = await db.user.findUnique({
     where: { id: userId },
     select: {
@@ -34,7 +23,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const userId = await resolveUserId()
+  const userId = await getAuthUserId()
   const body = await req.json()
 
   const user = await db.user.update({

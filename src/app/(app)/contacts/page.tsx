@@ -1,27 +1,46 @@
+export const dynamic = 'force-dynamic'
+
 import Link from "next/link"
-import { db } from "@/lib/db"
-import { requireAuth } from "@/lib/session"
+import { getAuthUserId } from "@/lib/session"
 import ContactsTable from "./ContactsTable"
 
 export default async function ContactsPage() {
-  let userId: string
-  try {
-    ;({ userId } = await requireAuth())
-  } catch {
-    const withContacts = await db.contact.findFirst({
-      select: { userId: true },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => null)
-    userId = withContacts?.userId ?? 'dev-user'
-  }
+  const userId = await getAuthUserId()
 
-  let contacts: Awaited<ReturnType<typeof db.contact.findMany>> = []
+  let contacts: Array<{
+    id: string
+    name: string
+    relationRole: 'BIG_INVESTOR' | 'GATEWAY' | 'ADVISOR' | 'THERMOMETER' | 'LIGHTHOUSE' | 'COMRADE'
+    tags: string | null
+    temperature: 'COLD' | 'WARM' | 'HOT' | null
+    trustLevel: number | null
+    company: string | null
+    title: string | null
+    notes: string | null
+    createdAt: Date
+    updatedAt: Date
+    lastContactedAt: Date | null
+  }> = []
   let dbError = null
 
   try {
     const result = await db.contact.findMany({
       where: { userId },
       orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        relationRole: true,
+        tags: true,
+        temperature: true,
+        trustLevel: true,
+        company: true,
+        title: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        lastContactedAt: true,
+      },
     })
     contacts = result
   } catch (error) {
@@ -38,7 +57,7 @@ export default async function ContactsPage() {
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
           <p className="text-xs text-amber-700 mt-1">
-            请检查 DATABASE_URL 配置或联系管理员。可以使用「生成测试数据」功能预览功能。
+            Supabase 闲置连接被回收，刷新页面即可恢复。
           </p>
         </div>
       )}

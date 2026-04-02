@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import AppTopBar from "@/components/AppTopBar"
 import AppSidebar from "@/components/AppSidebar"
 import { LoadingProvider } from "@/components/ThinkingToast"
+import AppProviders from "@/components/AppProviders"
 import { redirect } from "next/navigation"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,14 +24,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <LoadingProvider>
-      <div className="min-h-screen bg-gray-50">
-        <AppTopBar phone={user?.phone} name={user?.name} />
-        <AppSidebar />
-        <main className="pt-12 ml-[220px] min-h-screen">
-          {children}
-        </main>
-      </div>
-    </LoadingProvider>
+    <AppProviders>
+      <LoadingProvider>
+        <div className="min-h-screen tech-grid-bg">
+          <AppTopBar phone={user?.phone} name={user?.name} />
+          <AppSidebar />
+          <main className="app-accent-theme pt-12 ml-[var(--sidebar-width)] min-h-screen transition-[margin-left] duration-150">
+            {children}
+          </main>
+        </div>
+      </LoadingProvider>
+    </AppProviders>
   )
 }

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/session'
+import { getAuthUserId } from '@/lib/session'
 import NewContactForm from '../../new/NewContactForm'
 import { loadTagConfig, flattenTags } from '@/lib/dev/tag-store'
 
@@ -18,25 +18,25 @@ function parseSavedTagOptions(raw: string | null) {
 }
 
 export default async function EditContactPage({ params }: { params: { id: string } }) {
-  let userId: string
-  try {
-    ;({ userId } = await requireAuth())
-  } catch {
-    const devUser = await db.user.upsert({
-      where: { phone: '13800138000' },
-      update: { name: 'Demo 用户' },
-      create: { phone: '13800138000', name: 'Demo 用户' },
-    })
-    userId = devUser.id
-  }
+  const userId = await getAuthUserId()
 
-  const [contact, user] = await Promise.all([
+  const [contact, user, companies] = await Promise.all([
     db.contact.findFirst({
       where: { id: params.id, userId },
+      include: {
+        linkedCompany: {
+          select: { id: true, name: true },
+        },
+      },
     }),
     db.user.findUnique({
       where: { id: userId },
       select: { industry: true },
+    }),
+    db.company.findMany({
+      where: { userId },
+      select: { id: true, name: true },
+      orderBy: { updatedAt: 'desc' },
     }),
   ])
   if (!contact) notFound()
@@ -50,11 +50,13 @@ export default async function EditContactPage({ params }: { params: { id: string
     <NewContactForm
       mode="edit"
       initialTagOptions={initialTagOptions}
+      initialCompanies={companies}
       tagConfig={process.env.NODE_ENV === 'development' ? loadTagConfig() : null}
       initialContact={{
         id: contact.id,
         name: contact.name,
         company: contact.company,
+        companyId: contact.linkedCompany?.id ?? contact.companyId ?? null,
         title: contact.title,
         jobPosition: contact.jobPosition,
         trustLevel: contact.trustLevel,

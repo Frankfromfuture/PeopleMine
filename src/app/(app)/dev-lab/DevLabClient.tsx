@@ -5,8 +5,9 @@ import type { TagConfig } from '@/lib/dev/tag-store'
 import type { FormulaConfig } from '@/lib/dev/formula-store'
 import TagEditor from './TagEditor'
 import FormulaEditor from './FormulaEditor'
+import CompanyTestPanel from './CompanyTestPanel'
 
-type Tab = 'tags' | 'formula'
+type Tab = 'tags' | 'formula' | 'company'
 
 export default function DevLabClient({
   tagConfig,
@@ -41,6 +42,9 @@ export default function DevLabClient({
         <TabBtn active={tab === 'formula'} onClick={() => setTab('formula')}>
           🧮 航程公式编辑器
         </TabBtn>
+        <TabBtn active={tab === 'company'} onClick={() => setTab('company')}>
+          🏢 企业测试
+        </TabBtn>
       </div>
 
       {/* Content */}
@@ -61,6 +65,11 @@ export default function DevLabClient({
             <div className="h-[calc(100%-2.5rem)] overflow-hidden">
               <FormulaEditor initialConfig={formulaConfig} />
             </div>
+          </div>
+        )}
+        {tab === 'company' && (
+          <div className="h-full overflow-y-auto pr-1">
+            <CompanyTestPanel />
           </div>
         )}
       </div>

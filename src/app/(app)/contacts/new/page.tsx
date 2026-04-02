@@ -1,5 +1,7 @@
+export const dynamic = 'force-dynamic'
+
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/session'
+import { getAuthUserId } from '@/lib/session'
 import NewContactForm from './NewContactForm'
 import { loadTagConfig, flattenTags } from '@/lib/dev/tag-store'
 
@@ -17,27 +19,40 @@ function parseSavedTagOptions(raw: string | null) {
 }
 
 export default async function NewContactPage() {
-  let userId: string
+  let userId = ''
+  let savedTags: string[] = []
+  let companies: Array<{ id: string; name: string }> = []
+
   try {
-    ;({ userId } = await requireAuth())
+    userId = await getAuthUserId()
+
+    if (userId) {
+      const [user, companyList] = await Promise.all([
+        db.user.findUnique({
+        where: { id: userId },
+        select: { industry: true },
+        }),
+        db.company.findMany({
+          where: { userId },
+          select: { id: true, name: true },
+          orderBy: { updatedAt: 'desc' },
+        }),
+      ])
+      savedTags = parseSavedTagOptions(user?.industry ?? null)
+      companies = companyList
+    }
   } catch {
-    const devUser = await db.user.upsert({
-      where: { phone: '13800138000' },
-      update: { name: 'Demo 用户' },
-      create: { phone: '13800138000', name: 'Demo 用户' },
-    })
-    userId = devUser.id
+    // DB 不可用时降级到默认标签，表单仍可渲染
   }
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { industry: true },
-  })
-
-  const saved = parseSavedTagOptions(user?.industry ?? null)
-  // In dev mode, merge tags from the dev lab tag config
   const devTags = process.env.NODE_ENV === 'development' ? flattenTags(loadTagConfig()) : []
-  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...devTags, ...saved]))
+  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...devTags, ...savedTags]))
 
-  return <NewContactForm initialTagOptions={initialTagOptions} tagConfig={process.env.NODE_ENV === 'development' ? loadTagConfig() : null} />
+  return (
+    <NewContactForm
+      initialTagOptions={initialTagOptions}
+      initialCompanies={companies}
+      tagConfig={process.env.NODE_ENV === 'development' ? loadTagConfig() : null}
+    />
+  )
 }

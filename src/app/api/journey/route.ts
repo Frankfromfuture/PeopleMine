@@ -8,7 +8,7 @@ import {
 import {
   buildCandidatePaths,
 } from '@/lib/journey/pathfinding'
-import { analyzeJourneyWithClaude } from '@/lib/journey/prompt'
+import { analyzeJourneyWithClaude, CompanyContext } from '@/lib/journey/prompt'
 import { JourneyAnalysisResponse } from '@/lib/journey/types'
 
 /**
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
       userId = withContacts?.userId ?? 'dev-user'
     }
 
-    // 1. 加载用户档案 + 所有联系人和关系
-    const [selfProfile, contacts] = await Promise.all([
+    // 1. 加载用户档案 + 所有联系人和关系 + 企业数据
+    const [selfProfile, contacts, rawCompanies] = await Promise.all([
       db.user.findUnique({
         where: { id: userId },
         select: {
@@ -120,6 +120,10 @@ export async function POST(request: NextRequest) {
         },
       }),
       db.contact.findMany({ where: { userId } }),
+      db.company.findMany({
+        where: { userId },
+        include: { contacts: { select: { id: true } } },
+      }).catch(() => [] as never[]),
     ])
 
     if (contacts.length === 0) {
@@ -128,6 +132,28 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
+
+    // 格式化企业数据为 CompanyContext
+    const companies: CompanyContext[] = rawCompanies.map((c) => {
+      function parseArr(raw: string | null | undefined): string[] {
+        if (!raw) return []
+        try { return JSON.parse(raw) } catch { return [] }
+      }
+      return {
+        id: c.id,
+        name: c.name,
+        industry: c.industry,
+        scale: c.scale,
+        mainBusiness: c.mainBusiness,
+        tags: parseArr(c.tags),
+        familiarityLevel: c.familiarityLevel,
+        temperature: c.temperature,
+        energyScore: c.energyScore,
+        founderName: c.founderName,
+        investors: parseArr(c.investors),
+        linkedContactIds: (c as never as { contacts: { id: string }[] }).contacts.map((x: { id: string }) => x.id),
+      }
+    })
 
     const relations = await db.contactRelation.findMany({
       where: {
@@ -171,6 +197,7 @@ export async function POST(request: NextRequest) {
         relations,
         candidatePaths,
         selfProfile ?? undefined,
+        companies.length > 0 ? companies : undefined,
       )
     } catch (claudeError) {
       console.error('Claude 分析失败:', claudeError)

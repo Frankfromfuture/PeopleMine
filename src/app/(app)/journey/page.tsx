@@ -1,15 +1,19 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import { useLoading } from '@/components/ThinkingToast'
 import JourneyGraph, {
   NetworkContact,
   NetworkRelation,
-  ROLE_LABEL,
   ROLE_COLOR,
   CHANNEL_ICON,
 } from './JourneyGraph'
+import CompanyUniverseView from './CompanyUniverseView'
 import { JourneyPathData, JourneyAnalysisResponse, PathStep, AlternativePath } from '@/lib/journey/types'
+
+type ViewMode = 'people' | 'company'
 
 // ─── 加载步骤 ──────────────────────────────────────────────────────────────────
 
@@ -44,12 +48,15 @@ function RouteCard({
   const [expandedStep, setExpandedStep] = useState<number | null>(null)
 
   return (
-    <div
+    <motion.div
+      layout
       className={`rounded-xl border-2 p-4 cursor-pointer transition-all ${
         isActive
           ? 'border-amber-400 bg-amber-50 shadow-md'
           : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
       }`}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.995 }}
       onClick={onClick}
     >
       {/* 标题行 */}
@@ -88,7 +95,6 @@ function RouteCard({
           你
         </div>
         {steps.map((step, i) => {
-          const colors = ROLE_COLOR[step.communicationAdvice ? '' : '']
           const nodeColors = Object.values(ROLE_COLOR)[i % 6]
           return (
             <React.Fragment key={step.contactId}>
@@ -156,7 +162,7 @@ function RouteCard({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   )
 }
 
@@ -174,6 +180,7 @@ export default function JourneyPage() {
   const [loadingStep, setLoadingStep] = useState<LoadingStep>('idle')
   const [error, setError] = useState<string | null>(null)
   const [networkLoading, setNetworkLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('people')
 
   // 加载全量网络
   useEffect(() => {
@@ -221,8 +228,11 @@ export default function JourneyPage() {
       }
       const data = (await res.json()) as JourneyAnalysisResponse
       setPathData(data.journey.pathData)
+      toast.success('航程分析已完成')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '未知错误')
+      const message = err instanceof Error ? err.message : '未知错误'
+      setError(message)
+      toast.error(message)
     } finally {
       setIsLoading(false)
       setLoadingStep('idle')
@@ -254,41 +264,74 @@ export default function JourneyPage() {
     <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden">
       {/* ── 顶部工具栏 ── */}
       <div className="shrink-0 px-5 py-3 bg-white border-b border-gray-200 flex items-center gap-3">
-        <h1 className="text-lg font-bold text-gray-900 shrink-0">人脉航程</h1>
-        <div className="flex-1 flex items-center gap-2 max-w-2xl">
-          <input
-            className="flex-1 h-9 px-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
-            placeholder="输入目标，例如：我想认识 A 轮投资人，推进融资…"
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-            disabled={isLoading}
-          />
+        <h1 className="text-lg font-bold text-gray-900 shrink-0">
+          {viewMode === 'people' ? '人脉航程' : '企业宇宙'}
+        </h1>
+
+        {/* View toggle */}
+        <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0">
           <button
-            className="h-9 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
-            onClick={handleAnalyze}
-            disabled={isLoading || !goal.trim()}
+            onClick={() => setViewMode('people')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              viewMode === 'people' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            {isLoading ? '分析中…' : '开始分析'}
+            👥 人脉
           </button>
-          {pathData && (
-            <button
-              className="h-9 px-3 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition shrink-0"
-              onClick={() => { setPathData(null); setGoal(''); setError(null) }}
-            >
-              清除
-            </button>
-          )}
+          <button
+            onClick={() => setViewMode('company')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              viewMode === 'company' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            🏢 企业
+          </button>
         </div>
-        <div className="shrink-0 text-xs text-gray-400">
-          {contacts.length} 位联系人
+
+        {viewMode === 'people' && (
+          <div className="flex-1 flex items-center gap-2 max-w-2xl">
+            <input
+              className="flex-1 h-9 px-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+              placeholder="输入目标，例如：我想认识 A 轮投资人，推进融资…"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+              disabled={isLoading}
+            />
+            <button
+              className="h-9 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
+              onClick={handleAnalyze}
+              disabled={isLoading || !goal.trim()}
+            >
+              {isLoading ? '分析中…' : '开始分析'}
+            </button>
+            {pathData && (
+              <button
+                className="h-9 px-3 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition shrink-0"
+                onClick={() => { setPathData(null); setGoal(''); setError(null) }}
+              >
+                清除
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="ml-auto shrink-0 text-xs text-gray-400">
+          {viewMode === 'people' ? `${contacts.length} 位联系人` : '按行业聚类'}
         </div>
       </div>
 
-      {/* ── 主体：画布 + 右侧面板 ── */}
+      {/* ── 主体 ── */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* 画布 */}
-        <div className="flex-1 relative min-w-0">
+        {/* 企业宇宙视图 */}
+        {viewMode === 'company' && (
+          <div className="flex-1 relative min-w-0 flex overflow-hidden">
+            <CompanyUniverseView />
+          </div>
+        )}
+
+        {/* 人脉视图 */}
+        {viewMode === 'people' && <div className="flex-1 relative min-w-0">
           {networkLoading ? (
             <div className="flex items-center justify-center h-full text-gray-400">
               <div className="text-center">
@@ -350,10 +393,10 @@ export default function JourneyPage() {
               </div>
             </div>
           )}
-        </div>
+        </div>}
 
-        {/* ── 右侧面板 ── */}
-        {(pathData || error) && (
+        {/* ── 右侧面板（仅人脉模式）── */}
+        {viewMode === 'people' && (pathData || error) && (
           <div className="w-[360px] shrink-0 border-l border-gray-200 bg-white overflow-y-auto flex flex-col">
             {/* 错误 */}
             {error && (

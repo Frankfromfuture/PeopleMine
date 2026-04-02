@@ -11,7 +11,4 @@ export default defineConfig({
   datasource: {
     url: process.env["DATABASE_URL"],
   },
-  prismaClientConfig: {
-    isBundled: true,
-  },
 });

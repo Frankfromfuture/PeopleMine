@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/session'
+import { getAuthUserId } from '@/lib/session'
 
 function normalizeTagLibrary(input: unknown): string[] {
   if (!Array.isArray(input)) return []
@@ -11,16 +11,6 @@ function normalizeTagLibrary(input: unknown): string[] {
         .filter(Boolean),
     ),
   )
-}
-
-function parseJsonArray(raw: FormDataEntryValue | null): unknown[] {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(String(raw))
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
 }
 
 function parseManualTags(raw: unknown): string[] {
@@ -35,22 +25,11 @@ function parseManualTags(raw: unknown): string[] {
   )
 }
 
-async function getRequestUserId() {
-  try {
-    const { userId } = await requireAuth()
-    return userId
-  } catch {
-    if (process.env.NODE_ENV !== 'development') {
-      throw new Error('未登录')
-    }
-    // 开发模式：使用固定的 demo 用户 ID
-    return 'dev-user'
-  }
-}
+
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getRequestUserId()
+    const userId = await getAuthUserId()
     const { searchParams } = new URL(req.url)
     const role = searchParams.get('role')
     const animal = searchParams.get('animal')
@@ -72,7 +51,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await getRequestUserId()
+    const userId = await getAuthUserId()
     const contentType = req.headers.get('content-type') ?? ''
     const isJson = contentType.includes('application/json')
     const body = isJson
@@ -83,6 +62,7 @@ export async function POST(req: NextRequest) {
           tags: fd.getAll('tags').map((v) => String(v)),
           spiritAnimal: fd.get('spiritAnimal') ? String(fd.get('spiritAnimal')) : null,
           company: fd.get('company') ? String(fd.get('company')) : null,
+          companyId: fd.get('companyId') ? String(fd.get('companyId')) : null,
           title: fd.get('title') ? String(fd.get('title')) : null,
           jobPosition: fd.get('jobPosition') ? String(fd.get('jobPosition')) : null,
           phone: fd.get('phone') ? String(fd.get('phone')) : null,
@@ -91,8 +71,11 @@ export async function POST(req: NextRequest) {
           notes: fd.get('notes') ? String(fd.get('notes')) : null,
           trustLevel: fd.get('trustLevel') ? Number(fd.get('trustLevel')) : null,
           temperature: fd.get('temperature') ? String(fd.get('temperature')) : null,
-          tagLibrary: parseJsonArray(fd.get('tagLibrary')),
+          tagLibrary: (() => { try { const p = JSON.parse(String(fd.get('tagLibrary') ?? '[]')); return Array.isArray(p) ? p : [] } catch { return [] } })(),
           manualTags: fd.get('manualTags') ? String(fd.get('manualTags')) : '',
+          companyIndustry: fd.get('companyIndustry') ? String(fd.get('companyIndustry')) : null,
+          companyScale: fd.get('companyScale') ? String(fd.get('companyScale')) : null,
+          companyMainBusiness: fd.get('companyMainBusiness') ? String(fd.get('companyMainBusiness')) : null,
         }))
 
     console.log('[contacts POST] received body:', JSON.stringify(body))
@@ -107,33 +90,37 @@ export async function POST(req: NextRequest) {
       new Set([...(Array.isArray(body.tags) ? body.tags : []), ...manualTags]),
     )
 
-    // 确保用户存在
-    try {
-      await db.user.create({
-        data: {
-          id: userId,
-          phone: userId === 'dev-user' ? '13800138000' : userId,
-          name: userId === 'dev-user' ? 'Demo 用户' : undefined,
-        },
+    const selectedCompanyId = typeof body.companyId === 'string' ? body.companyId.trim() : ''
+    let linkedCompanyId: string | null = null
+    let companyNameForContact = (body.company as string | null) ?? null
+
+    if (selectedCompanyId) {
+      const selected = await db.company.findFirst({
+        where: { id: selectedCompanyId, userId },
+        select: { id: true, name: true },
       })
-    } catch {
-      // 用户已存在，忽略
+      if (selected) {
+        linkedCompanyId = selected.id
+        companyNameForContact = selected.name
+      }
     }
 
     const contact = await db.contact.create({
       data: {
         userId,
         name: body.name,
-        relationRole: body.relationRole,
+        relationRole: body.relationRole as never,
         tags: mergedTags.length > 0 ? JSON.stringify(mergedTags) : null,
-        spiritAnimal: body.spiritAnimal ?? null,
-        company: body.company ?? null,
+        spiritAnimal: (body.spiritAnimal as never) ?? null,
+        company: companyNameForContact,
+        companyId: linkedCompanyId,
         title: body.title ?? null,
         jobPosition: body.jobPosition ?? null,
         phone: body.phone ?? null,
         wechat: body.wechat ?? null,
         email: body.email ?? null,
-        industry: body.industry ?? null,
+        temperature: (body.temperature as never) ?? null,
+        trustLevel: body.trustLevel ? Number(body.trustLevel) : null,
         notes: body.notes ?? null,
         energyScore: 50,
       },
@@ -147,12 +134,36 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Create / link company if company name was provided
+    const companyName = (body.company as string)?.trim()
+    if (!linkedCompanyId && companyName) {
+      try {
+        let company = await db.company.findFirst({ where: { userId, name: companyName } })
+        if (!company) {
+          company = await db.company.create({
+            data: {
+              userId,
+              name: companyName,
+              industry: (body.companyIndustry as string) || null,
+              scale: (body.companyScale as never) || null,
+              mainBusiness: (body.companyMainBusiness as string) || null,
+              tags: JSON.stringify([]),
+              energyScore: 50,
+            },
+          })
+        }
+        await db.contact.update({ where: { id: contact.id }, data: { companyId: company.id } })
+      } catch (err) {
+        console.error('[contacts POST] company link failed:', err)
+      }
+    }
+
     if (!isJson) {
       return NextResponse.redirect(new URL('/contacts', req.url), { status: 303 })
     }
     return NextResponse.json({ contact }, { status: 201 })
   } catch (err) {
     console.error('[contacts POST]', err)
-    return NextResponse.json({ error: '创建失败' }, { status: 500 })
+    return NextResponse.json({ error: '创建失败', detail: String(err) }, { status: 500 })
   }
 }

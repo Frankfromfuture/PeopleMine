@@ -1,9 +1,10 @@
-import { requireAuth } from "@/lib/session"
+import { getAuthUserId } from "@/lib/session"
 import { db } from "@/lib/db"
 import Link from "next/link"
 import { RELATION_ROLE_LABELS } from "@/types"
 import type { RelationRole, Temperature } from "@/types"
 import TestDataGenerator from "./TestDataGenerator"
+import FreeMoveCanvas from "./FreeMoveCanvas"
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -63,20 +64,38 @@ function formatLastContact(date: Date | null) {
   return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" })
 }
 
+function WidgetMenu({ expandHref, createHref }: { expandHref: string; createHref: string }) {
+  return (
+    <details data-widget-menu className="absolute right-3 top-3 z-10 group">
+      <summary
+        title="菜单"
+        className="list-none cursor-pointer text-gray-400 hover:text-violet-500 rounded-md px-1.5 py-0.5"
+      >
+        <span className="tracking-[2px] text-sm">...</span>
+      </summary>
+      <div className="absolute right-0 mt-1 w-40 rounded-lg border border-gray-200 bg-white shadow-lg py-1 text-xs text-gray-700">
+        <Link href={createHref} className="block px-3 py-1.5 hover:bg-gray-50">新建</Link>
+        <button data-widget-action="size-sm" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">尺寸：小</button>
+        <button data-widget-action="size-md" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">尺寸：中</button>
+        <button data-widget-action="size-lg" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">尺寸：大</button>
+        <button data-widget-action="pin-top" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">固定到顶部</button>
+        <button data-widget-action="duplicate" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">复制组件</button>
+        <button data-widget-action="delete-duplicate" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">删除副本</button>
+        <button data-widget-action="close" className="w-full text-left px-3 py-1.5 hover:bg-gray-50">关闭</button>
+        <Link href={expandHref} className="block px-3 py-1.5 hover:bg-gray-50">展开</Link>
+      </div>
+    </details>
+  )
+}
+
+function DragBlankZone() {
+  return <div data-drag-zone="blank" className="absolute inset-x-0 top-0 h-4 cursor-grab" aria-hidden="true" />
+}
+
 // ─── page ──────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  let userId: string
-  try {
-    ;({ userId } = await requireAuth())
-  } catch {
-    // 开发模式：找有联系人的用户，避免 dev-user 与 OTP 创建的用户 ID 不一致
-    const withContacts = await db.contact.findFirst({
-      select: { userId: true },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => null)
-    userId = withContacts?.userId ?? 'dev-user'
-  }
+  const userId = await getAuthUserId().catch(() => '')
 
   let user: { name: string | null; phone: string | null } | null = null
   let allContacts: Awaited<ReturnType<typeof db.contact.findMany>> = []
@@ -129,7 +148,8 @@ export default async function DashboardPage() {
   })
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full asana-board-bg">
+      <FreeMoveCanvas />
       {/* ── Database error warning ── */}
       {dbError && (
         <div className="bg-amber-50 border-b border-amber-200 px-8 py-4">
@@ -137,7 +157,7 @@ export default async function DashboardPage() {
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
           <p className="text-xs text-amber-700 mt-1">
-            请检查 DATABASE_URL 配置或联系管理员。可以使用「生成测试数据」功能预览功能。
+            Supabase 闲置连接被回收，刷新页面即可恢复。若持续出现请检查 DATABASE_URL 配置。
           </p>
         </div>
       )}
@@ -188,11 +208,18 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Section: Today ── */}
+      <div data-section-track className="px-8 pb-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8f867a]">Today</p>
+      </div>
+
       {/* ── Two-column main cards ── */}
-      <div className="px-8 pb-6 grid grid-cols-2 gap-5">
+      <div className="widget-grid-2 px-8 pb-6 grid grid-cols-2 gap-5">
 
         {/* LEFT: 待跟进人脉 */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div data-free-move-id="followup-card" className="widget-shell relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <DragBlankZone />
+          <WidgetMenu createHref="/contacts/new" expandHref="/contacts" />
           {/* Card header */}
           <div className="flex items-center justify-between px-5 pt-4 pb-0">
             <div className="flex items-center gap-2.5">
@@ -211,7 +238,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex px-5 mt-3 gap-5 border-b border-gray-100">
+          <div className="widget-detail-md flex px-5 mt-3 gap-5 border-b border-gray-100">
             <button className="pb-2.5 text-sm font-medium text-violet-600 border-b-2 border-violet-600 -mb-px">
               即将联系
             </button>
@@ -271,7 +298,7 @@ export default async function DashboardPage() {
                       </div>
 
                       {/* Role + temp + date */}
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <div className="widget-detail-lg flex items-center gap-1.5 flex-shrink-0">
                         {tempBadge && (
                           <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${tempBadge.cls}`}>
                             {tempBadge.label}
@@ -303,7 +330,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* RIGHT: 人脉分布 */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div data-free-move-id="distribution-card" className="widget-shell relative bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <DragBlankZone />
+          <WidgetMenu createHref="/contacts/new" expandHref="/journey" />
           <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900">人脉分布</h2>
             <button className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors">
@@ -375,8 +404,10 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Energy stats row ── */}
-      <div className="px-8 pb-6">
-        <div className="grid grid-cols-4 gap-4">
+      <div data-free-move-id="stats-row" className="widget-shell relative px-8 pb-6">
+        <DragBlankZone />
+        <WidgetMenu createHref="/contacts/new" expandHref="/contacts" />
+        <div className="widget-grid-4 grid grid-cols-4 gap-4">
           {[
             {
               label: "总联系人",
@@ -433,17 +464,33 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* ── Section: Pipeline ── */}
+      <div data-section-track className="px-8 pb-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8f867a]">Pipeline</p>
+      </div>
+
       {/* ── Test Data Generator section (Dev/Demo mode) ── */}
-      <div className="px-8 pb-8">
-        <TestDataGenerator />
+      <div data-free-move-id="test-data-card" className="widget-shell relative px-8 pb-8">
+        <DragBlankZone />
+        <WidgetMenu createHref="/contacts/new" expandHref="/dev-lab" />
+        <div className="rounded-xl border border-gray-200 bg-white/90 backdrop-blur-sm p-1">
+          <TestDataGenerator />
+        </div>
+      </div>
+
+      {/* ── Section: Insights ── */}
+      <div data-section-track className="px-8 pb-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8f867a]">Insights</p>
       </div>
 
       {/* ── Quick features section ── */}
-      <div className="px-8 pb-10">
+      <div data-free-move-id="feature-cards" className="widget-shell relative px-8 pb-10">
+        <DragBlankZone />
+        <WidgetMenu createHref="/contacts/new" expandHref="/journey" />
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
           快速了解人迈
         </h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="widget-grid-3 grid grid-cols-3 gap-4">
           {FEATURE_CARDS.map((card) => (
             <Link
               key={card.title}
@@ -454,7 +501,7 @@ export default async function DashboardPage() {
                 {card.emoji}
               </div>
               <h3 className="text-sm font-semibold text-gray-800 mb-1.5">{card.title}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">{card.desc}</p>
+              <p className="widget-detail-lg text-xs text-gray-500 leading-relaxed">{card.desc}</p>
               <div className="mt-4 flex items-center gap-1 text-xs text-violet-600 group-hover:text-violet-700 font-medium">
                 开始使用
                 <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

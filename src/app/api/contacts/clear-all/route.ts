@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/session'
+import { getAuthUserId } from '@/lib/session'
 
 /**
  * DELETE /api/contacts/clear-all
@@ -9,20 +9,7 @@ import { requireAuth } from '@/lib/session'
 export async function DELETE() {
   try {
     // 认证
-    let userId: string
-    try {
-      const { userId: authUserId } = await requireAuth()
-      userId = authUserId
-    } catch {
-      if (process.env.NODE_ENV !== 'development') {
-        return NextResponse.json(
-          { error: '未登录' },
-          { status: 401 },
-        )
-      }
-      // 开发模式：使用固定的 demo 用户 ID
-      userId = 'dev-user'
-    }
+    userId = await getAuthUserId()
 
     // 获取该用户的所有联系人 ID
     const contacts = await db.contact.findMany({
@@ -60,10 +47,33 @@ export async function DELETE() {
       where: { userId },
     })
 
+    // 人物清空后，连带清空该用户企业及企业关系
+    const companies = await db.company.findMany({
+      where: { userId },
+      select: { id: true },
+    })
+    const companyIds = companies.map((c) => c.id)
+
+    if (companyIds.length > 0) {
+      await db.companyRelation.deleteMany({
+        where: {
+          OR: [
+            { companyIdA: { in: companyIds } },
+            { companyIdB: { in: companyIds } },
+          ],
+        },
+      })
+    }
+
+    const deletedCompanies = await db.company.deleteMany({
+      where: { userId },
+    })
+
     return NextResponse.json({
       success: true,
-      message: `成功删除 ${result.count} 个联系人`,
+      message: `成功删除 ${result.count} 个联系人，${deletedCompanies.count} 个企业`,
       count: result.count,
+      companyCount: deletedCompanies.count,
     })
   } catch (error) {
     console.error('DELETE /api/contacts/clear-all 错误:', error)

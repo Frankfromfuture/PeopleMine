@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    --sidebar-width: 220px;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -47,5 +48,284 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.6) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(167, 139, 250, 0.6), rgba(129, 140, 248, 0.55));
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  [role="button"] {
+    transition: all 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.asana-board-bg {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #fdfcf7;
+  background-image:
+    linear-gradient(135deg, rgba(229, 229, 226, 0.131) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(229, 229, 226, 0.131) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(239, 238, 233, 0.194) 25%, transparent 25%),
+    linear-gradient(45deg, rgba(239, 238, 233, 0.194) 25%, transparent 25%),
+    linear-gradient(135deg, transparent 24.6%, rgba(162, 162, 162, 0.081) 24.85%, transparent 25.1%),
+    linear-gradient(225deg, transparent 24.6%, rgba(162, 162, 162, 0.081) 24.85%, transparent 25.1%),
+    linear-gradient(315deg, transparent 24.6%, rgba(162, 162, 162, 0.069) 24.85%, transparent 25.1%),
+    linear-gradient(45deg, transparent 24.6%, rgba(162, 162, 162, 0.069) 24.85%, transparent 25.1%);
+  background-size: 80px 80px;
+  background-position:
+    -40px 0,
+    -40px 0,
+    0 0,
+    0 0,
+    -40px 0,
+    -40px 0,
+    0 0,
+    0 0;
+}
+
+.widget-shell {
+  transition: transform 140ms ease, opacity 140ms ease, max-width 180ms ease;
+}
+
+.widget-shell[data-widget-size="sm"] {
+  max-width: 66%;
+  opacity: 0.98;
+}
+
+.widget-shell[data-widget-size="md"] {
+  max-width: 86%;
+}
+
+.widget-shell[data-widget-size="lg"] {
+  max-width: 100%;
+}
+
+.widget-shell[data-widget-size="sm"] .widget-grid-2,
+.widget-shell[data-widget-size="sm"] .widget-grid-3,
+.widget-shell[data-widget-size="sm"] .widget-grid-4 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.widget-shell[data-widget-size="sm"] .widget-detail-md,
+.widget-shell[data-widget-size="sm"] .widget-detail-lg {
+  display: none;
+}
+
+.widget-shell[data-widget-size="md"] .widget-detail-lg {
+  display: none;
+}
+
+.widget-shell[data-widget-size="md"] .widget-grid-3,
+.widget-shell[data-widget-size="md"] .widget-grid-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.widget-shell[data-widget-size="lg"] .widget-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.widget-shell[data-widget-size="lg"] .widget-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tech-grid-bg {
+  background-color: #f3f4f6;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.06) 0, transparent 28%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.06) 0, transparent 32%);
+  background-size: 24px 24px, 24px 24px, 520px 520px, 680px 680px;
+  background-position: 0 0, 0 0, 0 0, 100% 0;
+}
+
+/* App 主内容主题色（不影响背景与边栏） */
+.app-accent-theme {
+  --pm-primary: #b92045;
+  --pm-secondary: #b9c3d1;
+  --pm-warm-a: #e8c6b9;
+  --pm-warm-b: #e3cca8;
+}
+
+.app-accent-theme :is(
+  .bg-violet-600,
+  .bg-violet-700,
+  .bg-violet-500,
+  .bg-cyan-600,
+  .bg-cyan-500,
+  .bg-indigo-600,
+  .bg-indigo-700,
+  .bg-emerald-600,
+  .bg-sky-600,
+  .bg-blue-600,
+  .bg-rose-600,
+  .bg-rose-700
+) {
+  background-color: var(--pm-primary) !important;
+  border-color: var(--pm-primary) !important;
+  color: #fff !important;
+}
+
+.app-accent-theme :is(
+  .hover\:bg-violet-700:hover,
+  .hover\:bg-violet-600:hover,
+  .hover\:bg-violet-500:hover,
+  .hover\:bg-cyan-700:hover,
+  .hover\:bg-cyan-600:hover,
+  .hover\:bg-cyan-500:hover,
+  .hover\:bg-indigo-700:hover,
+  .hover\:bg-indigo-600:hover,
+  .hover\:bg-rose-700:hover,
+  .hover\:bg-rose-600:hover
+) {
+  background-color: #a91c3f !important;
+  border-color: #a91c3f !important;
+  color: #fff !important;
+}
+
+.app-accent-theme :is(
+  .border-indigo-300,
+  .border-indigo-200,
+  .border-cyan-300,
+  .border-cyan-400,
+  .border-cyan-600,
+  .border-sky-300,
+  .border-emerald-300,
+  .border-violet-300,
+  .border-violet-200,
+  .border-slate-300,
+  .border-slate-200
+) {
+  border-color: var(--pm-secondary) !important;
+}
+
+.app-accent-theme :is(
+  .text-indigo-700,
+  .text-indigo-800,
+  .text-cyan-700,
+  .text-cyan-800,
+  .text-violet-700,
+  .text-violet-800,
+  .text-sky-800,
+  .text-emerald-700,
+  .text-blue-700,
+  .text-rose-700
+) {
+  color: var(--pm-primary) !important;
+}
+
+.app-accent-theme :is(
+  .bg-indigo-50,
+  .bg-indigo-50\/50,
+  .bg-sky-50,
+  .bg-amber-50,
+  .bg-rose-50,
+  .bg-cyan-50\/40,
+  .bg-cyan-50,
+  .bg-slate-50,
+  .bg-slate-100
+) {
+  background-color: color-mix(in srgb, var(--pm-warm-a) 45%, white) !important;
+}
+
+.app-accent-theme :is(
+  .text-amber-700,
+  .text-amber-800,
+  .text-amber-500,
+  .text-orange-700,
+  .text-green-700,
+  .text-slate-700,
+  .text-slate-600
+) {
+  color: #7e5d53 !important;
+}
+
+/* 进一步统一：tabs / badges / 表格 hover */
+.app-accent-theme :is(
+  .bg-amber-100,
+  .bg-orange-100,
+  .bg-rose-100,
+  .bg-violet-100,
+  .bg-blue-100,
+  .bg-sky-100,
+  .bg-green-100
+) {
+  background-color: color-mix(in srgb, var(--pm-warm-b) 34%, white) !important;
+}
+
+.app-accent-theme :is(
+  .border-amber-200,
+  .border-orange-200,
+  .border-rose-200,
+  .border-violet-200,
+  .border-blue-200,
+  .border-sky-200,
+  .border-green-200
+) {
+  border-color: color-mix(in srgb, var(--pm-secondary) 78%, white) !important;
+}
+
+.app-accent-theme :is(
+  .text-amber-600,
+  .text-amber-700,
+  .text-orange-700,
+  .text-rose-700,
+  .text-violet-700,
+  .text-blue-700,
+  .text-sky-700,
+  .text-green-700
+) {
+  color: #8f4d43 !important;
+}
+
+.app-accent-theme :is(
+  .hover\:bg-cyan-50\/40:hover,
+  .hover\:bg-cyan-50:hover,
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover
+) {
+  background-color: color-mix(in srgb, var(--pm-warm-a) 35%, white) !important;
+}
+
+.app-accent-theme :is(
+  .hover\:text-cyan-700:hover,
+  .hover\:text-cyan-800:hover,
+  .hover\:text-violet-700:hover,
+  .hover\:text-indigo-700:hover,
+  .hover\:text-blue-700:hover
+) {
+  color: var(--pm-primary) !important;
+}
+
