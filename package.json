@@ -1,12 +1,14 @@
 {
-  "name": "peoplemine-temp",
-  "version": "0.1.0",
+  "name": "peoplemine",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backfill:industry": "node scripts/backfill-contact-industry.mjs",
+    "backfill:industry:apply": "node scripts/backfill-contact-industry.mjs --apply"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^4.5.0",
@@ -32,6 +34,7 @@
     "prisma": "^7.6.0",
     "react": "^18",
     "react-dom": "^18",
+    "recharts": "^3.8.1",
     "shadcn": "^4.1.1",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.5.0",
