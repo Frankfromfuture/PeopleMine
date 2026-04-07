@@ -1,47 +1,107 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { db } from '@/lib/db'
-import { requireAuth } from '@/lib/session'
-import {
-  scoreAllContacts,
-  selectTopContacts,
-} from '@/lib/journey/scoring'
-import {
-  buildCandidatePaths,
-} from '@/lib/journey/pathfinding'
+import { getAuthUserId, requireAuth } from '@/lib/session'
+import { scoreAllContacts, selectTopContacts } from '@/lib/journey/scoring'
+import { buildCandidatePaths } from '@/lib/journey/pathfinding'
 import { analyzeJourneyWithClaude, CompanyContext } from '@/lib/journey/prompt'
 import { JourneyAnalysisResponse } from '@/lib/journey/types'
 
-/**
- * GET /api/journey
- * 返回用户的历史航程分析
- */
+async function resolveDevUserId(): Promise<string> {
+  const withContacts = await db.contact.findFirst({
+    select: { userId: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (withContacts) return withContacts.userId
+
+  const existing = await db.user.findFirst({
+    where: { OR: [{ id: 'dev-user' }, { phone: '13800138000' }] },
+    select: { id: true },
+  })
+  if (existing) return existing.id
+
+  const created = await db.user.create({
+    data: { id: 'dev-user', phone: '13800138000', name: 'Demo 用户' },
+    select: { id: true },
+  })
+  return created.id
+}
+
+async function resolveJourneyUserId(): Promise<string> {
+  try {
+    const { userId } = await requireAuth()
+    return userId
+  } catch {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error('UNAUTHORIZED')
+    }
+    return resolveDevUserId()
+  }
+}
+
+function summarizeArchetypes(scoredContacts: ReturnType<typeof scoreAllContacts>) {
+  const counter = new Map<string, number>()
+  for (const c of scoredContacts) {
+    if (!c.archetype) continue
+    counter.set(c.archetype, (counter.get(c.archetype) ?? 0) + 1)
+  }
+  return Array.from(counter.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name, count]) => ({ name, count }))
+}
+
+async function loadContactsWithArcFallback(userId: string) {
+  try {
+    return await db.contact.findMany({ where: { userId } })
+  } catch (error) {
+    const msg = error instanceof Error ? error.message.toLowerCase() : ''
+    const arcColumnMissing =
+      msg.includes('does not exist') &&
+      (msg.includes('contact.relationvector') || msg.includes('contact.quickcontext') || msg.includes('contact.archetype'))
+
+    if (!arcColumnMissing) throw error
+
+    const legacy = await db.contact.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+        name: true,
+        wechat: true,
+        phone: true,
+        email: true,
+        spiritAnimal: true,
+        relationRole: true,
+        tags: true,
+        industry: true,
+        company: true,
+        title: true,
+        jobPosition: true,
+        trustLevel: true,
+        temperature: true,
+        energyScore: true,
+        notes: true,
+        lastContactedAt: true,
+        companyId: true,
+      },
+    })
+
+    return legacy.map((c) => ({
+      ...c,
+      quickContext: null,
+      relationVector: null,
+      archetype: null,
+    }))
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
-    let userId: string
-
-    try {
-      const { userId: authUserId } = await requireAuth()
-      userId = authUserId
-    } catch {
-      if (process.env.NODE_ENV !== 'development') {
-        return NextResponse.json(
-          { error: '未登录' },
-          { status: 401 },
-        )
-      }
-      // 开发模式：使用固定的 demo 用户 ID
-      userId = 'dev-user'
-    }
-
-    // 查询历史
-    const limit = Math.min(
-      parseInt(request.nextUrl.searchParams.get('limit') || '10'),
-      50,
-    )
-    const offset = Math.max(
-      parseInt(request.nextUrl.searchParams.get('offset') || '0'),
-      0,
-    )
+    const userId = await resolveJourneyUserId()
+    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '10'), 50)
+    const offset = Math.max(parseInt(request.nextUrl.searchParams.get('offset') || '0'), 0)
 
     const journeys = await db.journey.findMany({
       where: { userId },
@@ -60,51 +120,25 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (error) {
+    if (error instanceof Error && error.message === 'UNAUTHORIZED') {
+      return NextResponse.json({ error: '未登录' }, { status: 401 })
+    }
     console.error('GET /api/journey 错误:', error)
-    return NextResponse.json(
-      { error: '获取历史失败' },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: '获取历史失败' }, { status: 500 })
   }
 }
 
-/**
- * POST /api/journey
- * 创建新的航程分析
- */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { goal } = body
 
     if (!goal || typeof goal !== 'string' || goal.trim().length === 0) {
-      return NextResponse.json(
-        { error: '目标不能为空' },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: '目标不能为空' }, { status: 400 })
     }
 
-    // 认证
-    let userId: string
-    try {
-      const { userId: authUserId } = await requireAuth()
-      userId = authUserId
-    } catch {
-      if (process.env.NODE_ENV !== 'development') {
-        return NextResponse.json(
-          { error: '未登录' },
-          { status: 401 },
-        )
-      }
-      // 开发模式：使用固定的 demo 用户 ID
-      const withContacts = await db.contact.findFirst({
-        select: { userId: true },
-        orderBy: { createdAt: 'desc' },
-      }).catch(() => null)
-      userId = withContacts?.userId ?? 'dev-user'
-    }
+    const userId = await resolveJourneyUserId()
 
-    // 1. 加载用户档案 + 所有联系人和关系 + 企业数据
     const [selfProfile, contacts, rawCompanies] = await Promise.all([
       db.user.findUnique({
         where: { id: userId },
@@ -119,7 +153,7 @@ export async function POST(request: NextRequest) {
           selfBio: true,
         },
       }),
-      db.contact.findMany({ where: { userId } }),
+      loadContactsWithArcFallback(userId),
       db.company.findMany({
         where: { userId },
         include: { contacts: { select: { id: true } } },
@@ -133,7 +167,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 格式化企业数据为 CompanyContext
     const companies: CompanyContext[] = rawCompanies.map((c) => {
       function parseArr(raw: string | null | undefined): string[] {
         if (!raw) return []
@@ -164,31 +197,26 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 2. 计算多维评分
-    const scoredContacts = scoreAllContacts(contacts, relations, goal)
+    const scoredContacts = scoreAllContacts(contacts as never, relations, goal)
+    const averageArcScore = scoredContacts.length > 0
+      ? scoredContacts.reduce((sum, item) => sum + item.arcScore, 0) / scoredContacts.length
+      : 0
+    const arcCoverage = scoredContacts.length > 0
+      ? scoredContacts.filter((c) => c.relationVector != null).length / scoredContacts.length
+      : 0
+    const topArcArchetypes = summarizeArchetypes(scoredContacts)
 
-    // 3. 选择 Top-15 联系人用于 Claude 分析
     const topContacts = selectTopContacts(scoredContacts, 15)
-
-    // 4. 构建候选路径
     const candidatePaths = buildCandidatePaths(topContacts, relations)
 
     if (candidatePaths.length === 0) {
-      return NextResponse.json(
-        { error: '无法分析路径，请检查人脉数据' },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: '无法分析路径，请检查人脉数据' }, { status: 400 })
     }
 
-    // 5. 检查 Claude API 是否配置
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json(
-        { error: 'AI 服务未配置' },
-        { status: 503 },
-      )
+    if (!process.env.QWEN_API_KEY) {
+      return NextResponse.json({ error: 'AI 服务未配置' }, { status: 503 })
     }
 
-    // 6. 调用 Claude 进行深度分析
     let pathData
     try {
       pathData = await analyzeJourneyWithClaude(
@@ -200,14 +228,14 @@ export async function POST(request: NextRequest) {
         companies.length > 0 ? companies : undefined,
       )
     } catch (claudeError) {
-      console.error('Claude 分析失败:', claudeError)
-      return NextResponse.json(
-        { error: 'AI 分析失败: ' + String(claudeError) },
-        { status: 503 },
-      )
+      console.error('Qwen 分析失败:', claudeError)
+      return NextResponse.json({ error: 'AI 分析失败: ' + String(claudeError) }, { status: 503 })
     }
 
-    // 7. 保存到数据库
+    pathData.meta.averageArcScore = Number(averageArcScore.toFixed(3))
+    pathData.meta.arcCoverage = Number(arcCoverage.toFixed(3))
+    pathData.meta.topArcArchetypes = topArcArchetypes
+
     const journey = await db.journey.create({
       data: {
         userId,
@@ -217,23 +245,22 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 8. 返回结果
     const response: JourneyAnalysisResponse = {
       journey: {
         id: journey.id,
         goal: journey.goal,
         aiAnalysis: journey.aiAnalysis,
-        pathData: pathData,
+        pathData,
         createdAt: journey.createdAt.toISOString(),
       },
     }
 
     return NextResponse.json(response)
   } catch (error) {
+    if (error instanceof Error && error.message === 'UNAUTHORIZED') {
+      return NextResponse.json({ error: '未登录' }, { status: 401 })
+    }
     console.error('POST /api/journey 错误:', error)
-    return NextResponse.json(
-      { error: '分析失败: ' + String(error) },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: '分析失败: ' + String(error) }, { status: 500 })
   }
 }

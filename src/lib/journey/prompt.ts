@@ -1,5 +1,4 @@
 import OpenAI from 'openai'
-import Anthropic from '@anthropic-ai/sdk'
 import {
   ScoredContact,
   CandidatePath,
@@ -8,32 +7,22 @@ import {
   AlternativePath,
   MissingNode,
 } from './types'
-import { RelationRole } from '@/types'
+import { ROLE_ARCHETYPE_LABELS, RoleArchetype } from '@/types'
 import { ContactRelation } from '@prisma/client'
 
-// 根据配置选择 AI 客户端（在函数调用时动态读取环境变量）
+//统一使用 Qwen 客户端（在函数调用时动态读取环境变量）
 function getAIClient() {
-  const kimiKey = process.env.KIMI_API_KEY
-  const anthropicKey = process.env.ANTHROPIC_API_KEY
+ const qwenKey = process.env.QWEN_API_KEY
 
-  console.log('[AI客户端] KIMI_API_KEY:', kimiKey ? `${kimiKey.slice(0, 10)}...` : '未配置')
-  console.log('[AI客户端] ANTHROPIC_API_KEY:', anthropicKey ? `${anthropicKey.slice(0, 10)}...` : '未配置')
+ if (!qwenKey) return null
 
-  if (kimiKey) {
-    console.log('[AI客户端] 使用 Kimi API, baseURL: https://api.moonshot.cn/v1')
-    return {
-      type: 'kimi' as const,
-      client: new OpenAI({ apiKey: kimiKey, baseURL: 'https://api.moonshot.cn/v1' }),
-    }
-  }
-  if (anthropicKey) {
-    console.log('[AI客户端] 使用 Anthropic API')
-    return {
-      type: 'anthropic' as const,
-      client: new Anthropic({ apiKey: anthropicKey }),
-    }
-  }
-  return null
+ return {
+ type: 'qwen' as const,
+ client: new OpenAI({
+ apiKey: qwenKey,
+ baseURL: process.env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+ }),
+ }
 }
 
 /**
@@ -41,22 +30,34 @@ function getAIClient() {
  */
 function formatContactsForPrompt(
   contacts: ScoredContact[],
-): Record<string, string | number | string[] | null>[] {
+): Record<string, unknown>[] {
   return contacts.map((c) => ({
     id: c.id,
     name: c.name,
     company: c.company,
     title: c.title,
-    relationRole: c.relationRole,
-    tags: c.tags.slice(0, 5), // 最多 5 个标签
+    roleArchetype: c.roleArchetype,
+    archetype: c.archetype,
+    tags: c.tags.slice(0, 5),
     temperature: c.temperature,
     trustLevel: c.trustLevel,
     energyScore: c.energyScore,
     journeyScore: c.journeyScore.toFixed(2),
+    arcScore: c.arcScore.toFixed(2),
     relevanceScore: c.relevanceScore.toFixed(2),
     accessibilityScore: c.accessibilityScore.toFixed(2),
     centralityScore: c.centralityScore.toFixed(2),
-    notes: (c.notes || '').substring(0, 100), // 最多 100 字
+    relationVector: c.relationVector
+      ? {
+          trust: c.relationVector.trust,
+          powerDelta: c.relationVector.powerDelta,
+          goalAlignment: c.relationVector.goalAlignment,
+          emotionalVolatility: c.relationVector.emotionalVolatility,
+          reciprocity: c.relationVector.reciprocity,
+          boundaryStability: c.relationVector.boundaryStability,
+        }
+      : null,
+    notes: (c.notes || '').substring(0, 100),
   }))
 }
 
@@ -275,7 +276,7 @@ ${JSON.stringify(
   ],
   "missingNodes": [
     {
-      "missingRole": "BIG_INVESTOR|GATEWAY|ADVISOR|THERMOMETER|LIGHTHOUSE|COMRADE",
+      "missingRole": "BREAKER|EVANGELIST|ANALYST|BINDER",
       "roleName": "中文名称",
       "whyNeeded": "为什么对这个目标很重要",
       "howToFind": "建议在哪儿或怎么找这类人脉"
@@ -308,8 +309,8 @@ export async function analyzeJourneyWithClaude(
   companies?: CompanyContext[],
 ): Promise<JourneyPathData> {
   // 如果没有 API key，返回使用预计算数据的兜底结果（用于测试）
-  if (!process.env.KIMI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
-    console.warn('未配置 KIMI_API_KEY 或 ANTHROPIC_API_KEY，使用预计算数据生成响应')
+  if (!process.env.QWEN_API_KEY) {
+    console.warn('未配置 QWEN_API_KEY，使用预计算数据生成响应')
     return generateFallbackPathData(goal, scoredContacts, relations, candidatePaths)
   }
 
@@ -320,40 +321,20 @@ export async function analyzeJourneyWithClaude(
 
   let responseText = ''
   try {
-    if (aiClient.type === 'kimi') {
-      const model = 'kimi-k2.5'
-      console.log(`[Kimi请求] model=${model}, prompt长度=${prompt.length}字符`)
-      const response = await (aiClient.client as OpenAI).chat.completions.create({
-        model,
-        max_tokens: 8192,
-        messages: [
-          {
-            role: 'system',
-            content: '你是一名专业的人脉策略顾问，擅长分析社交网络并制定最优的人脉拓展路径。你的输出必须是严格的 JSON 格式，不包含任何额外文字、markdown 代码块或其他符号。',
-          },
-          { role: 'user', content: prompt },
-        ],
-      })
-      const msg = response.choices[0].message as unknown as Record<string, unknown>
-      console.log('[Kimi响应] finish_reason:', response.choices[0].finish_reason)
-      console.log('[Kimi响应] content前200字:', String(msg.content || '').slice(0, 200))
-      console.log('[Kimi响应] reasoning_content前200字:', String(msg.reasoning_content || '').slice(0, 200))
-      // kimi-k2.5 是推理模型，实际内容在 content 字段，推理过程在 reasoning_content
-      responseText = (msg.content as string) || ''
-    } else {
-      const model = 'claude-opus-4-6'
-      console.log(`[Anthropic请求] model=${model}, prompt长度=${prompt.length}字符`)
-      const response = await (aiClient.client as Anthropic).messages.create({
-        model,
-        max_tokens: 2048,
-        system: '你是一名专业的人脉策略顾问，擅长分析社交网络并制定最优的人脉拓展路径。你的输出必须是严格的 JSON 格式，不包含任何额外文字、markdown 代码块或其他符号。',
-        messages: [{ role: 'user', content: prompt }],
-      })
-      console.log('[Anthropic响应] stop_reason:', response.stop_reason)
-      if (response.content[0].type === 'text') {
-        responseText = response.content[0].text
-      }
-    }
+    const model = 'qwen3.5-flash'
+    const response = await (aiClient.client as OpenAI).chat.completions.create({
+      model,
+      max_tokens: 8192,
+      messages: [
+        {
+          role: 'system',
+          content: '你是一名专业的人脉策略顾问，擅长分析社交网络并制定最优的人脉拓展路径。你的输出必须是严格的 JSON 格式，不包含任何额外文字、markdown 代码块或其他符号。',
+        },
+        { role: 'user', content: prompt },
+      ],
+    })
+    const msg = response.choices[0].message as unknown as Record<string, unknown>
+    responseText = (msg.content as string) || ''
   } catch (error) {
     console.error('[AI API 错误]', JSON.stringify(error, null, 2))
     throw new Error('AI 分析失败：' + String(error))
@@ -440,7 +421,7 @@ export async function analyzeJourneyWithClaude(
     (missing: unknown) => {
       const missingData = missing as Record<string, unknown>
       return ({
-        missingRole: (missingData.missingRole as string) as RelationRole,
+        missingRole: (missingData.missingRole as string) as RoleArchetype,
         roleName: (missingData.roleName as string) || '未知角色',
         whyNeeded: (missingData.whyNeeded as string) || '',
         howToFind: (missingData.howToFind as string) || '',
@@ -456,12 +437,12 @@ export async function analyzeJourneyWithClaude(
       totalContacts: scoredContacts.length,
       analyzedContacts: scoredContacts.length,
       computedAt: now,
-      modelUsed: 'claude-haiku-4-5-20251001',
+      modelUsed: 'qwen3.5-flash',
     },
     nodes: scoredContacts.map((c) => ({
       ...c,
       contactId: c.id,
-      journeyRoleLabel: getRoleLabel(c.relationRole),
+      journeyRoleLabel: getRoleLabel(c.roleArchetype),
       isOnPrimaryPath: primaryPathSteps.some(
         (s) => s.contactId === c.id,
       ),
@@ -483,18 +464,10 @@ export async function analyzeJourneyWithClaude(
 }
 
 /**
- * 获取角色的标签（中文标签）
+ * 获取角色原型的标签（中文标签）
  */
-function getRoleLabel(role: RelationRole): string {
-  const roleLabels: Record<RelationRole, string> = {
-    BIG_INVESTOR: '核心目标节点',
-    GATEWAY: '关键路径中转站',
-    ADVISOR: '决策支撑节点',
-    THERMOMETER: '关系维护节点',
-    LIGHTHOUSE: '远期目标节点',
-    COMRADE: '协作节点',
-  }
-  return roleLabels[role] || '网络节点'
+function getRoleLabel(role: RoleArchetype): string {
+  return ROLE_ARCHETYPE_LABELS[role]?.journeyRole || '网络节点'
 }
 
 /**
@@ -574,7 +547,7 @@ function generateFallbackPathData(
     nodes: scoredContacts.map((contact) => ({
       ...contact,
       contactId: contact.id,
-      journeyRoleLabel: getRoleLabel(contact.relationRole),
+      journeyRoleLabel: getRoleLabel(contact.roleArchetype),
       isOnPrimaryPath: primaryPath.includes(contact.id),
       isOnAnyPath: selectedPaths.some((p) => p.path.includes(contact.id)),
     })),

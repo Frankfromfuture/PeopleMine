@@ -63,11 +63,11 @@ export const DEFAULT_FORMULA_CONFIG: FormulaConfig = {
   relevanceExpr: 'keyword * w_keyword + roleAffinity * w_role',
   accessibilityExpr: 'Math.min(1, (energy / 100) * tempMult * trustMult * recencyDecay)',
   roleAffinityMatrix: {
-    introduction: { BIG_INVESTOR: 0.4, GATEWAY: 1.0, ADVISOR: 0.3, THERMOMETER: 0.6, LIGHTHOUSE: 0.5, COMRADE: 0.4 },
-    resource: { BIG_INVESTOR: 1.0, GATEWAY: 0.7, ADVISOR: 0.5, THERMOMETER: 0.3, LIGHTHOUSE: 0.6, COMRADE: 0.3 },
-    advice: { BIG_INVESTOR: 0.3, GATEWAY: 0.4, ADVISOR: 1.0, THERMOMETER: 0.5, LIGHTHOUSE: 0.7, COMRADE: 0.4 },
-    collaboration: { BIG_INVESTOR: 0.4, GATEWAY: 0.5, ADVISOR: 0.4, THERMOMETER: 0.6, LIGHTHOUSE: 0.3, COMRADE: 1.0 },
-    information: { BIG_INVESTOR: 0.5, GATEWAY: 0.6, ADVISOR: 0.9, THERMOMETER: 0.4, LIGHTHOUSE: 0.8, COMRADE: 0.5 },
+    introduction: { BREAKER: 0.4, EVANGELIST: 1.0, ANALYST: 0.3, BINDER: 0.5 },
+    resource: { BREAKER: 1.0, EVANGELIST: 0.7, ANALYST: 0.5, BINDER: 0.3 },
+    advice: { BREAKER: 0.3, EVANGELIST: 0.4, ANALYST: 1.0, BINDER: 0.5 },
+    collaboration: { BREAKER: 0.4, EVANGELIST: 0.5, ANALYST: 0.4, BINDER: 1.0 },
+    information: { BREAKER: 0.5, EVANGELIST: 0.6, ANALYST: 0.9, BINDER: 0.5 },
   },
   inferLinksWeights: {
     roleComplement: 0.6, tagOverlap: 0.3, temperatureBonus: 0.1,
@@ -93,7 +93,7 @@ export function saveFormulaConfig(config: FormulaConfig): void {
 export interface ContactInput {
   id: string
   name: string
-  relationRole: string
+  roleArchetype: string
   energyScore: number
   trustLevel: number | null
   temperature: string | null
@@ -108,7 +108,7 @@ export interface ScoreResult {
   name: string
   company: string | null
   title: string | null
-  relationRole: string
+  roleArchetype: string
   energyScore: number
   journeyScore: number
   relevanceScore: number
@@ -212,7 +212,7 @@ export function computeScores(
   return contacts.map((contact) => {
     // --- relevance ---
     const keyword = computeKeywordMatch(goal, contact)
-    const roleAffinity = computeRoleAffinity(goal, contact.relationRole, cfg.roleAffinityMatrix)
+    const roleAffinity = computeRoleAffinity(goal, contact.roleArchetype, cfg.roleAffinityMatrix)
     const relevanceScore = evalExpr(cfg.relevanceExpr, {
       keyword,
       roleAffinity,
@@ -275,7 +275,7 @@ export function computeScores(
       name: contact.name,
       company: contact.company,
       title: contact.title,
-      relationRole: contact.relationRole,
+      roleArchetype: contact.roleArchetype,
       energyScore: contact.energyScore,
       journeyScore: Math.round(journeyScore * 1000) / 1000,
       relevanceScore: Math.round(relevanceScore * 1000) / 1000,

@@ -174,6 +174,20 @@ npx shadcn@latest add <component-name>
 - **数据库操作**：统一通过 `src/lib/prisma.ts` 的 Prisma Client 单例
 - **组件命名**：PascalCase，文件名 kebab-case（shadcn/ui 组件除外）
 - **样式**：优先使用 Tailwind CSS 工具类，shadcn/ui 组件为基础 UI 层
+- **行尾符**：全项目统一 LF（`.gitattributes` + `.editorconfig` 强制），禁止 CRLF
+
+---
+
+## Edit 工具使用规范（防止 old_string 匹配失败）
+
+> 本项目在 Windows 上开发，行尾符混乱是 Edit 工具报错的首要原因。已通过 `.gitattributes`（`eol=lf`）和 `.editorconfig`（`end_of_line=lf`）统一为 LF。如果仍遇到 Edit 失败，按以下清单排查：
+
+1. **必须先 Read 再 Edit**：每次编辑前必须用 Read 工具读取目标文件，确认实际内容
+2. **old_string 必须精确**：从 Read 输出中精确复制，注意缩进是空格还是 Tab、行尾是否有多余空格
+3. **不要从 line number prefix 复制**：Read 工具输出格式为 `行号\t内容`，old_string 只取 `\t` 之后的部分
+4. **确保唯一性**：如果 old_string 在文件中出现多次，扩大上下文使其唯一，或使用 `replace_all: true`
+5. **大段替换用 Write**：如果要替换的内容超过 50 行，直接用 Write 重写整个文件更可靠
+6. **CRLF 修复**：如果某文件 Edit 反复失败，先执行 `sed -i 's/\r$//' <file>` 清除 CRLF 后再 Edit
 
 ## 环境变量
 

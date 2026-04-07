@@ -3,10 +3,9 @@
 import { useState, useCallback, useRef } from 'react'
 import type { FormulaConfig, FormulaCondition, ScoreResult } from '@/lib/dev/formula-store'
 
-const ROLES = ['BIG_INVESTOR', 'GATEWAY', 'ADVISOR', 'THERMOMETER', 'LIGHTHOUSE', 'COMRADE'] as const
+const ROLES = ['BREAKER', 'EVANGELIST', 'ANALYST', 'BINDER'] as const
 const ROLE_LABELS: Record<string, string> = {
-  BIG_INVESTOR: '大金主', GATEWAY: '传送门', ADVISOR: '智囊',
-  THERMOMETER: '温度计', LIGHTHOUSE: '灯塔', COMRADE: '战友',
+  BREAKER: '破局者', EVANGELIST: '布道者', ANALYST: '分析师', BINDER: '粘合剂',
 }
 const GOAL_TYPES = ['introduction', 'resource', 'advice', 'collaboration', 'information'] as const
 const GOAL_LABELS: Record<string, string> = {
@@ -24,13 +23,13 @@ function WeightSlider({ label, value, onChange }: { label: string; value: number
         type="range" min={0} max={1} step={0.01}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="flex-1 accent-violet-600"
+        className="flex-1 accent-gray-600"
       />
       <input
         type="number" min={0} max={1} step={0.01}
         value={value}
         onChange={(e) => onChange(Math.max(0, Math.min(1, parseFloat(e.target.value) || 0)))}
-        className="w-16 text-xs text-right border border-zinc-200 rounded px-2 py-1 outline-none focus:border-violet-400"
+        className="w-16 text-xs text-right border border-zinc-200 rounded px-2 py-1 outline-none focus:border-gray-400"
       />
     </div>
   )
@@ -38,7 +37,7 @@ function WeightSlider({ label, value, onChange }: { label: string; value: number
 
 function ScoreBar({ value, label }: { value: number; label?: string }) {
   const pct = Math.round(value * 100)
-  const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500'
+  const color = pct >= 70 ? 'bg-gray-500' : pct >= 40 ? 'bg-gray-500' : 'bg-gray-500'
   return (
     <div className="flex items-center gap-1.5 min-w-0">
       <div className="w-16 bg-zinc-200 rounded-full h-1.5 shrink-0">
@@ -123,7 +122,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
         <div className="flex justify-end">
           <button
             onClick={save} disabled={saving}
-            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition ${saved ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-violet-600 hover:bg-violet-700 text-white'}`}
+            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition ${saved ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-gray-600 hover:bg-gray-700 text-white'}`}
           >
             {saved ? '✓ 公式已保存' : saving ? '保存中…' : '保存公式'}
           </button>
@@ -131,7 +130,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
 
         {/* Journey weights */}
         <Section title="综合航程得分权重">
-          <code className="block text-xs bg-zinc-900 text-emerald-400 rounded-lg px-3 py-2 mb-3 font-mono leading-relaxed">
+          <code className="block text-xs bg-zinc-900 text-gray-400 rounded-lg px-3 py-2 mb-3 font-mono leading-relaxed">
             journeyScore = relevance × {cfg.journeyWeights.relevance.toFixed(2)} + accessibility × {cfg.journeyWeights.accessibility.toFixed(2)} + centrality × {cfg.journeyWeights.centrality.toFixed(2)}
           </code>
           <WeightSlider label="relevance (相关性)" value={cfg.journeyWeights.relevance}
@@ -143,7 +142,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
           <p className="text-xs text-zinc-400 mt-1">
             三项之和：{(cfg.journeyWeights.relevance + cfg.journeyWeights.accessibility + cfg.journeyWeights.centrality).toFixed(2)}
             {Math.abs(cfg.journeyWeights.relevance + cfg.journeyWeights.accessibility + cfg.journeyWeights.centrality - 1) > 0.01 && (
-              <span className="text-amber-500 ml-2">⚠ 建议权重之和 = 1.00</span>
+              <span className="text-gray-500 ml-2">⚠ 建议权重之和 = 1.00</span>
             )}
           </p>
           <ExprEditor
@@ -156,7 +155,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
 
         {/* Relevance weights */}
         <Section title="相关性分数 (relevance)">
-          <code className="block text-xs bg-zinc-900 text-emerald-400 rounded-lg px-3 py-2 mb-3 font-mono">
+          <code className="block text-xs bg-zinc-900 text-gray-400 rounded-lg px-3 py-2 mb-3 font-mono">
             relevance = keyword × {cfg.relevanceWeights.keyword.toFixed(2)} + roleAffinity × {cfg.relevanceWeights.roleAffinity.toFixed(2)}
           </code>
           <WeightSlider label="keyword (关键词匹配)" value={cfg.relevanceWeights.keyword}
@@ -173,7 +172,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
 
         {/* Accessibility */}
         <Section title="可达性分数 (accessibility)">
-          <code className="block text-xs bg-zinc-900 text-emerald-400 rounded-lg px-3 py-2 mb-3 font-mono">
+          <code className="block text-xs bg-zinc-900 text-gray-400 rounded-lg px-3 py-2 mb-3 font-mono">
             accessibility = (energy/100) × tempMult × trustMult × recencyDecay
           </code>
           <div className="grid grid-cols-3 gap-2 mb-2">
@@ -183,7 +182,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
                 <input type="number" step={0.1} min={0} max={3}
                   value={cfg.tempMultipliers[k]}
                   onChange={(e) => update('tempMultipliers', { ...cfg.tempMultipliers, [k]: parseFloat(e.target.value) || 0 })}
-                  className="w-16 text-xs border border-zinc-200 rounded px-2 py-1 outline-none focus:border-violet-400"
+                  className="w-16 text-xs border border-zinc-200 rounded px-2 py-1 outline-none focus:border-gray-400"
                 />
               </div>
             ))}
@@ -193,21 +192,21 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
               <span className="text-zinc-500">衰减起始天数</span>
               <input type="number" min={0} value={cfg.recencyDecay.warmupDays}
                 onChange={(e) => update('recencyDecay', { ...cfg.recencyDecay, warmupDays: parseInt(e.target.value) || 0 })}
-                className="w-16 border border-zinc-200 rounded px-2 py-1 outline-none focus:border-violet-400"
+                className="w-16 border border-zinc-200 rounded px-2 py-1 outline-none focus:border-gray-400"
               />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-zinc-500">最大衰减天数</span>
               <input type="number" min={0} value={cfg.recencyDecay.maxDays}
                 onChange={(e) => update('recencyDecay', { ...cfg.recencyDecay, maxDays: parseInt(e.target.value) || 0 })}
-                className="w-16 border border-zinc-200 rounded px-2 py-1 outline-none focus:border-violet-400"
+                className="w-16 border border-zinc-200 rounded px-2 py-1 outline-none focus:border-gray-400"
               />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-zinc-500">最低衰减系数</span>
               <input type="number" step={0.05} min={0} max={1} value={cfg.recencyDecay.minDecay}
                 onChange={(e) => update('recencyDecay', { ...cfg.recencyDecay, minDecay: parseFloat(e.target.value) || 0 })}
-                className="w-16 border border-zinc-200 rounded px-2 py-1 outline-none focus:border-violet-400"
+                className="w-16 border border-zinc-200 rounded px-2 py-1 outline-none focus:border-gray-400"
               />
             </div>
           </div>
@@ -246,9 +245,9 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
                               newMatrix[goalType] = { ...(newMatrix[goalType] ?? {}), [role]: parseFloat(e.target.value) || 0 }
                               update('roleAffinityMatrix', newMatrix)
                             }}
-                            className={`w-12 text-center border rounded px-1 py-0.5 outline-none focus:border-violet-400 text-xs ${
-                              val >= 0.8 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                              val >= 0.5 ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                            className={`w-12 text-center border rounded px-1 py-0.5 outline-none focus:border-gray-400 text-xs ${
+                              val >= 0.8 ? 'bg-gray-50 border-gray-200 text-gray-700' :
+                              val >= 0.5 ? 'bg-gray-50 border-gray-200 text-gray-700' :
                               'border-zinc-200 text-zinc-600'
                             }`}
                           />
@@ -279,7 +278,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
                   type="number" step={key === 'maxDegree' ? 1 : 0.05} min={0}
                   value={cfg.inferLinksWeights[key]}
                   onChange={(e) => update('inferLinksWeights', { ...cfg.inferLinksWeights, [key]: parseFloat(e.target.value) || 0 })}
-                  className="flex-1 text-xs border border-zinc-200 rounded px-2 py-1 outline-none focus:border-violet-400"
+                  className="flex-1 text-xs border border-zinc-200 rounded px-2 py-1 outline-none focus:border-gray-400"
                 />
               </div>
             ))}
@@ -318,12 +317,12 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
               onChange={(e) => setTestGoal(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') runTest() }}
               placeholder="输入测试目标…"
-              className="flex-1 h-9 px-3 text-sm rounded-lg border border-zinc-200 outline-none focus:border-violet-400"
+              className="flex-1 h-9 px-3 text-sm rounded-lg border border-zinc-200 outline-none focus:border-gray-400"
             />
             <button
               onClick={runTest}
               disabled={testing}
-              className="px-4 py-2 text-sm rounded-lg bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50 transition"
+              className="px-4 py-2 text-sm rounded-lg bg-gray-600 hover:bg-gray-700 text-white disabled:opacity-50 transition"
             >
               {testing ? '计算中…' : '运行测试'}
             </button>
@@ -332,7 +331,7 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
         </div>
 
         {testError && (
-          <div className="bg-rose-50 border border-rose-200 rounded-lg px-4 py-3 text-sm text-rose-700">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-700">
             {testError}
           </div>
         )}
@@ -358,13 +357,13 @@ export default function FormulaEditor({ initialConfig }: FormulaEditorProps) {
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
                   {testResults.map((r, i) => (
-                    <tr key={r.contactId} className={i === 0 ? 'bg-violet-50' : 'hover:bg-zinc-50'}>
+                    <tr key={r.contactId} className={i === 0 ? 'bg-gray-50' : 'hover:bg-zinc-50'}>
                       <td className="px-4 py-2 text-zinc-400">{i + 1}</td>
                       <td className="px-2 py-2">
                         <div className="font-medium text-zinc-800">{r.name}</div>
                         {r.company && <div className="text-zinc-400">{r.company}</div>}
                       </td>
-                      <td className="px-2 py-2 text-zinc-500">{ROLE_LABELS[r.relationRole] ?? r.relationRole}</td>
+                      <td className="px-2 py-2 text-zinc-500">{ROLE_LABELS[r.roleArchetype] ?? r.roleArchetype}</td>
                       <td className="px-2 py-2">
                         <ScoreBar value={r.journeyScore} />
                       </td>
@@ -411,7 +410,7 @@ function ExprEditor({ label, value, onChange, hint }: { label: string; value: st
   const [open, setOpen] = useState(false)
   return (
     <div className="mt-2">
-      <button onClick={() => setOpen((o) => !o)} className="text-xs text-violet-600 hover:text-violet-700">
+      <button onClick={() => setOpen((o) => !o)} className="text-xs text-gray-600 hover:text-gray-700">
         {open ? '▲ 收起' : '▼ '}{label}
       </button>
       {open && (
@@ -420,7 +419,7 @@ function ExprEditor({ label, value, onChange, hint }: { label: string; value: st
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={2}
-            className="w-full font-mono text-xs border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-violet-400 resize-none"
+            className="w-full font-mono text-xs border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-gray-400 resize-none"
           />
           {hint && <p className="text-xs text-zinc-400 mt-0.5">{hint}</p>}
         </div>
@@ -435,8 +434,8 @@ function ConditionRow({ cond, onChange, onDelete }: {
   onDelete: () => void
 }) {
   return (
-    <div className={`flex items-start gap-2 p-3 rounded-lg border text-xs ${cond.enabled ? 'border-violet-200 bg-violet-50' : 'border-zinc-200 bg-zinc-50 opacity-60'}`}>
-      <input type="checkbox" checked={cond.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} className="mt-0.5 accent-violet-600" />
+    <div className={`flex items-start gap-2 p-3 rounded-lg border text-xs ${cond.enabled ? 'border-gray-200 bg-gray-50' : 'border-zinc-200 bg-zinc-50 opacity-60'}`}>
+      <input type="checkbox" checked={cond.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} className="mt-0.5 accent-gray-600" />
       <div className="flex-1 flex flex-wrap gap-2 items-center">
         <span className="text-zinc-500">如果</span>
         <select value={cond.variable} onChange={(e) => onChange({ variable: e.target.value })}
@@ -444,7 +443,7 @@ function ConditionRow({ cond, onChange, onDelete }: {
           <option value="temperature">temperature</option>
           <option value="trustLevel">trustLevel</option>
           <option value="energyScore">energyScore</option>
-          <option value="relationRole">relationRole</option>
+          <option value="roleArchetype">roleArchetype</option>
         </select>
         <select value={cond.operator} onChange={(e) => onChange({ operator: e.target.value as FormulaCondition['operator'] })}
           className="border border-zinc-200 rounded px-1.5 py-0.5 outline-none bg-white">
@@ -468,7 +467,7 @@ function ConditionRow({ cond, onChange, onDelete }: {
         <input type="number" step={0.05} value={cond.amount} onChange={(e) => onChange({ amount: parseFloat(e.target.value) || 0 })}
           className="w-16 border border-zinc-200 rounded px-1.5 py-0.5 outline-none" />
       </div>
-      <button onClick={onDelete} className="text-rose-400 hover:text-rose-600 px-1">删除</button>
+      <button onClick={onDelete} className="text-gray-400 hover:text-gray-600 px-1">删除</button>
     </div>
   )
 }

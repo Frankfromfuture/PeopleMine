@@ -38,7 +38,7 @@ export default function GoalInput({ onSubmit, isLoading }: GoalInputProps) {
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           placeholder="例如：我想认识更多投资人"
-          className="w-full h-24 px-4 py-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-500 resize-none placeholder-gray-400"
+          className="w-full h-24 px-4 py-3 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-500 resize-none placeholder-gray-400"
           disabled={isLoading}
         />
         <p className="text-xs text-gray-500 mt-1">
@@ -70,7 +70,7 @@ export default function GoalInput({ onSubmit, isLoading }: GoalInputProps) {
         <button
           type="submit"
           disabled={isLoading || goal.trim().length === 0}
-          className="flex-1 px-4 py-2 rounded-lg bg-violet-600 text-white font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="flex-1 px-4 py-2 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {isLoading ? '分析中...' : '开始分析'}
         </button>

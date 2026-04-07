@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { db } from '@/lib/db'
 import { getAuthUserId } from '@/lib/session'
 
@@ -111,7 +111,7 @@ async function refineWithAI(
   companies: CompanyLite[],
   edges: RelationEdge[],
 ): Promise<Map<string, { score: number; strength: RelationStrength; reason: string }>> {
-  const key = process.env.ANTHROPIC_API_KEY
+  const key = process.env.QWEN_API_KEY
   if (!key || edges.length === 0) return new Map()
 
   const companyMap = new Map(companies.map((c) => [c.id, c]))
@@ -153,18 +153,15 @@ async function refineWithAI(
 输入数据：${JSON.stringify(payload)}`
 
   try {
-    const client = new Anthropic({ apiKey: key })
-    const msg = await client.messages.create({
-      model: 'claude-3-5-sonnet-latest',
+    const client = new OpenAI({ apiKey: key, baseURL: process.env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1' })
+    const msg = await client.chat.completions.create({
+      model: 'qwen3.5-flash',
       max_tokens: 2800,
       temperature: 0.1,
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const rawText = msg.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
+    const rawText = String(msg.choices[0]?.message?.content || '')
 
     const jsonText = (() => {
       const trimmed = rawText.trim()
@@ -234,7 +231,7 @@ async function buildEdgesForUser(userId: string): Promise<RelationEdge[]> {
       const explicit = explicitMap.get(key)
       const scored = scoreByIndustryChain(a, b, explicit?.relationDesc)
 
-      if (scored.score < 0.38 && !explicit) continue
+      if (scored.score < 0.18 && !explicit) continue
 
       edges.push({
         companyIdA: a.id,

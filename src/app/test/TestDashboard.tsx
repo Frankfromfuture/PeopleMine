@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react'
 // ─── 预设测试数据 ─────────────────────────────────────────────
 
 const SEED_CONTACTS = [
-  { name: '张伟', relationRole: 'GATEWAY', tags: ['互联网', 'VC'], energyScore: 80, temperature: 'HOT', trustLevel: 4 },
-  { name: '李娜', relationRole: 'BIG_INVESTOR', tags: ['投资', '金融'], energyScore: 70, temperature: 'WARM', trustLevel: 3 },
-  { name: '王强', relationRole: 'ADVISOR', tags: ['AI', '产品'], energyScore: 60, temperature: 'WARM', trustLevel: 4 },
-  { name: '刘芳', relationRole: 'LIGHTHOUSE', tags: ['互联网', '创业'], energyScore: 50, temperature: 'COLD', trustLevel: 2 },
-  { name: '陈磊', relationRole: 'COMRADE', tags: ['工程师', 'AI'], energyScore: 85, temperature: 'HOT', trustLevel: 5 },
+  { name: '张伟', roleArchetype: 'EVANGELIST', tags: ['互联网', 'VC'], energyScore: 80, temperature: 'HOT', trustLevel: 4 },
+  { name: '李娜', roleArchetype: 'BREAKER', tags: ['投资', '金融'], energyScore: 70, temperature: 'WARM', trustLevel: 3 },
+  { name: '王强', roleArchetype: 'ANALYST', tags: ['AI', '产品'], energyScore: 60, temperature: 'WARM', trustLevel: 4 },
+  { name: '刘芳', roleArchetype: 'BREAKER', tags: ['互联网', '创业'], energyScore: 50, temperature: 'COLD', trustLevel: 2 },
+  { name: '陈磊', roleArchetype: 'BINDER', tags: ['工程师', 'AI'], energyScore: 85, temperature: 'HOT', trustLevel: 5 },
 ]
 
 const SEED_COMPANIES = [
@@ -203,9 +203,9 @@ export default function TestDashboard() {
 
   const S = (key: string) => {
     const s = apiStatus[key]
-    if (s === 'loading') return <span className="text-amber-500 text-xs">⏳</span>
-    if (s === 'ok') return <span className="text-emerald-500 text-xs">✓</span>
-    if (s === 'error') return <span className="text-red-500 text-xs">✗</span>
+    if (s === 'loading') return <span className="text-gray-500 text-xs">⏳</span>
+    if (s === 'ok') return <span className="text-gray-500 text-xs">✓</span>
+    if (s === 'error') return <span className="text-gray-500 text-xs">✗</span>
     return <span className="text-gray-300 text-xs">○</span>
   }
 
@@ -223,8 +223,8 @@ export default function TestDashboard() {
           </button>
           {stats && (
             <div className="flex gap-3 text-xs">
-              <span className="px-2 py-1 bg-violet-50 text-violet-700 rounded border border-violet-200">👤 人脉 {stats.contacts}</span>
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-200">🏢 企业 {stats.companies}</span>
+              <span className="px-2 py-1 bg-gray-50 text-gray-700 rounded border border-gray-200">👤 人脉 {stats.contacts}</span>
+              <span className="px-2 py-1 bg-gray-50 text-gray-700 rounded border border-gray-200">🏢 企业 {stats.companies}</span>
             </div>
           )}
         </div>
@@ -294,7 +294,7 @@ export default function TestDashboard() {
             </div>
             <p className="text-[10px] text-gray-400 mb-2">样本文本（固定）：{EXTRACT_SAMPLE.slice(0, 60)}…</p>
             {extractResult && (
-              <pre className={`text-[10px] font-mono p-3 rounded-lg max-h-36 overflow-auto ${extractResult.startsWith('错误') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+              <pre className={`text-[10px] font-mono p-3 rounded-lg max-h-36 overflow-auto ${extractResult.startsWith('错误') ? 'bg-gray-50 text-gray-700 border border-gray-200' : 'bg-gray-50 text-gray-800 border border-gray-200'}`}>
                 {extractResult}
               </pre>
             )}
@@ -309,11 +309,11 @@ export default function TestDashboard() {
             <input
               value={journeyGoal}
               onChange={e => setJourneyGoal(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-violet-400 mb-2"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400 mb-2"
               placeholder="输入测试目标…"
             />
             {journeyResult && (
-              <pre className={`text-[10px] font-mono p-3 rounded-lg max-h-36 overflow-auto whitespace-pre-wrap ${journeyResult.startsWith('错误') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+              <pre className={`text-[10px] font-mono p-3 rounded-lg max-h-36 overflow-auto whitespace-pre-wrap ${journeyResult.startsWith('错误') ? 'bg-gray-50 text-gray-700 border border-gray-200' : 'bg-gray-50 text-gray-800 border border-gray-200'}`}>
                 {journeyResult}
               </pre>
             )}
@@ -334,7 +334,7 @@ export default function TestDashboard() {
               {log.map((e, i) => (
                 <div key={i} className="flex gap-1.5 text-[10px] font-mono">
                   <span className="text-zinc-600 shrink-0">{e.time}</span>
-                  <span className={e.type === 'ok' ? 'text-emerald-400' : e.type === 'err' ? 'text-red-400' : 'text-zinc-300'}>
+                  <span className={e.type === 'ok' ? 'text-gray-400' : e.type === 'err' ? 'text-gray-400' : 'text-zinc-300'}>
                     {e.msg}
                   </span>
                 </div>
@@ -356,7 +356,7 @@ export default function TestDashboard() {
                 { href: '/dev-lab', label: '⚗️ 开发者实验室' },
               ].map(({ href, label }) => (
                 <a key={href} href={href}
-                  className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-violet-700 transition-colors"
+                  className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
                 >
                   {label}
                 </a>
@@ -376,7 +376,7 @@ export default function TestDashboard() {
                   <span className="text-gray-600">{process.env[k] ?? '未设置'}</span>
                 </div>
               ))}
-              <p className="text-[10px] text-gray-300 mt-1">服务端变量（如 ANTHROPIC_API_KEY）需在日志中通过 API 响应间接确认</p>
+              <p className="text-[10px] text-gray-300 mt-1">服务端变量（如 QWEN_API_KEY）需在日志中通过 API 响应间接确认</p>
             </div>
           </div>
         </div>
@@ -399,9 +399,9 @@ function Btn({
   const loading = status === 'loading'
   const base = 'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1'
   const styles = {
-    violet: outline ? 'border border-violet-200 text-violet-600 hover:bg-violet-50' : 'bg-violet-600 text-white hover:bg-violet-700',
-    blue: outline ? 'border border-blue-200 text-blue-600 hover:bg-blue-50' : 'bg-blue-600 text-white hover:bg-blue-700',
-    red: outline ? 'border border-red-200 text-red-500 hover:bg-red-50' : 'bg-red-600 text-white hover:bg-red-700',
+    violet: outline ? 'border border-gray-200 text-gray-600 hover:bg-gray-50' : 'bg-gray-600 text-white hover:bg-gray-700',
+    blue: outline ? 'border border-gray-200 text-gray-600 hover:bg-gray-50' : 'bg-gray-600 text-white hover:bg-gray-700',
+    red: outline ? 'border border-gray-200 text-gray-500 hover:bg-gray-50' : 'bg-gray-600 text-white hover:bg-gray-700',
   }
   return (
     <button onClick={onClick} disabled={loading} className={`${base} ${styles[color]}`}>

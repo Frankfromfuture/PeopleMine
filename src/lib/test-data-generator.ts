@@ -1,4 +1,4 @@
-import { RelationRole, Temperature, SpiritAnimal } from '@/types'
+import { RoleArchetype, Temperature, SpiritAnimalNew, mapArchetypeToRole } from '@/types'
 
 const COMPANY_SCALE_BY_CATEGORY: Record<string, Array<'STARTUP' | 'SME' | 'MID' | 'LARGE'>> = {
   tech: ['STARTUP', 'SME', 'MID', 'LARGE', 'LARGE'],
@@ -9,7 +9,7 @@ const COMPANY_SCALE_BY_CATEGORY: Record<string, Array<'STARTUP' | 'SME' | 'MID' 
   healthcare: ['STARTUP', 'SME', 'MID'],
 }
 
-const SPIRIT_ANIMALS: SpiritAnimal[] = ['LION', 'FOX', 'BEAR', 'CHAMELEON', 'EAGLE', 'DOLPHIN', 'OWL', 'SKUNK']
+const SPIRIT_ANIMALS: SpiritAnimalNew[] = ['TIGER', 'PEACOCK', 'OWL', 'KOALA']
 
 const SURNAMES = [
   '王', '李', '张', '刘', '陈', '杨', '黄', '赵', '吴', '周', '徐', '孙', '朱', '郭', '何',
@@ -70,16 +70,14 @@ const INDUSTRY_TAGS: Record<string, {
   },
 }
 
-const ROLE_DISTRIBUTION = {
-  BIG_INVESTOR: 0.15,
-  GATEWAY: 0.25,
-  ADVISOR: 0.20,
-  THERMOMETER: 0.15,
-  LIGHTHOUSE: 0.15,
-  COMRADE: 0.10,
+const ROLE_DISTRIBUTION: Record<RoleArchetype, number> = {
+  BREAKER: 0.25,
+  EVANGELIST: 0.30,
+  ANALYST: 0.20,
+  BINDER: 0.25,
 }
 
-function generateRandomSpiritAnimal(): SpiritAnimal | null {
+function generateRandomSpiritAnimal(): SpiritAnimalNew | null {
   if (Math.random() < 0.4) return null
   return randomPick(SPIRIT_ANIMALS)
 }
@@ -117,7 +115,7 @@ function getRandomIndustryData(): {
   }
 }
 
-function selectRelationRole(): RelationRole {
+function selectRoleArchetype(): RoleArchetype {
   const roles = Object.entries(ROLE_DISTRIBUTION)
   const random = Math.random()
   let cumulative = 0
@@ -125,11 +123,11 @@ function selectRelationRole(): RelationRole {
   for (const [role, weight] of roles) {
     cumulative += weight
     if (random <= cumulative) {
-      return role as RelationRole
+      return role as RoleArchetype
     }
   }
 
-  return 'COMRADE'
+  return 'BINDER'
 }
 
 function generateRandomTags(baseTags: string[], tagVariability: number): string[] {
@@ -174,8 +172,9 @@ function generateRandomEnergyScore(): number {
 
 export function generateRandomContact(tagVariability: number = 50): {
   name: string
-  relationRole: RelationRole
-  spiritAnimal: SpiritAnimal | null
+  roleArchetype: RoleArchetype
+  relationRole: string
+  spiritAnimal: SpiritAnimalNew | null
   tags: string[]
   energyScore: number
   temperature: Temperature | null
@@ -222,9 +221,12 @@ export function generateRandomContact(tagVariability: number = 50): {
   const companyTags = hasCompany ? generateRandomTags(industryData.tag, tagVariability) : []
   const ecosystemPool = Object.values(INDUSTRY_TAGS).flatMap((d) => d.companies)
 
+  const archetype = selectRoleArchetype()
+
   return {
     name,
-    relationRole: selectRelationRole(),
+    roleArchetype: archetype,
+    relationRole: mapArchetypeToRole(archetype) ?? 'COMRADE',
     spiritAnimal,
     tags: generateRandomTags(industryData.tag, tagVariability),
     energyScore: generateRandomEnergyScore(),

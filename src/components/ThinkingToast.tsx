@@ -52,37 +52,27 @@ function FloatingLoader({ visible }: { visible: boolean }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.98 }}
           transition={{ duration: reduceMotion ? 0.1 : 0.2 }}
-          className="fixed bottom-6 right-6 z-[9999] pointer-events-none"
+          className="pointer-events-none fixed bottom-6 right-6 z-[9999]"
         >
-          <div className="relative overflow-hidden flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-zinc-900/95 shadow-xl border border-zinc-700/60 backdrop-blur-sm">
+          <div className="relative flex items-center gap-2.5 overflow-hidden rounded-[14px] border border-line-standard bg-white/92 px-4 py-2.5 shadow-dialog backdrop-blur-md">
             <motion.div
-              className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0%,rgba(139,92,246,0.08)_50%,transparent_100%)]"
+              className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0%,rgba(113,112,255,0.08)_50%,transparent_100%)]"
               animate={reduceMotion ? undefined : { x: ['-120%', '120%'] }}
               transition={reduceMotion ? undefined : { duration: 2.2, repeat: Infinity, ease: 'linear' }}
             />
 
-            <div className="relative flex items-end gap-0.5 h-4">
+            <div className="relative flex h-4 items-end gap-0.5">
               {dots.map((i) => (
                 <motion.span
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                  animate={
-                    reduceMotion
-                      ? undefined
-                      : { y: [0, -5, 0], opacity: [0.5, 1, 0.5] }
-                  }
-                  transition={
-                    reduceMotion
-                      ? undefined
-                      : { duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }
-                  }
+                  className="h-1.5 w-1.5 rounded-full bg-brand"
+                  animate={reduceMotion ? undefined : { y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
+                  transition={reduceMotion ? undefined : { duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }}
                 />
               ))}
             </div>
 
-            <span className="relative text-sm text-zinc-100 font-medium tracking-wide whitespace-nowrap">
-              {msg}
-            </span>
+            <span className="relative whitespace-nowrap text-sm font-medium text-text-primary">{msg}</span>
           </div>
         </motion.div>
       ) : null}

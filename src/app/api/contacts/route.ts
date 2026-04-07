@@ -1,49 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthUserId } from '@/lib/session'
+import type { RoleArchetype } from '@/types'
+import { mapArchetypeToRole } from '@/types'
 
-function normalizeTagLibrary(input: unknown): string[] {
-  if (!Array.isArray(input)) return []
-  return Array.from(
-    new Set(
-      input
-        .map((v) => (typeof v === 'string' ? v.trim() : ''))
-        .filter(Boolean),
-    ),
-  )
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined
 }
-
-function parseManualTags(raw: unknown): string[] {
-  if (typeof raw !== 'string') return []
-  return Array.from(
-    new Set(
-      raw
-        .split(/[,\uff0c\u3001;\n]/)
-        .map((v) => v.trim())
-        .filter(Boolean),
-    ),
-  )
-}
-
-
-
 export async function GET(req: NextRequest) {
   try {
     const userId = await getAuthUserId()
     const { searchParams } = new URL(req.url)
     const role = searchParams.get('role')
+    const archetype = searchParams.get('archetype')
     const animal = searchParams.get('animal')
 
     const contacts = await db.contact.findMany({
       where: {
         userId,
-        ...(role ? { relationRole: role as never } : {}),
+        ...(role ? { roleArchetype: role as never } : {}),
+        ...(archetype ? { roleArchetype: archetype as never } : {}),
         ...(animal ? { spiritAnimal: animal as never } : {}),
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ contacts })
+    const responseContacts = contacts.map((contact) => ({
+      ...contact,
+      tier1: {
+        basic: {
+          fullName: contact.fullName ?? contact.name,
+          companyName: contact.companyName ?? contact.company ?? '',
+          industry: contact.industry ?? '',
+          jobTitle: contact.jobTitle ?? contact.title ?? '',
+          companyProfile: {
+            size: contact.tier1CompanySize,
+            stage: contact.tier1CompanyStage,
+            website: contact.tier1CompanyWebsite,
+            confidence: contact.tier1CompanyAiConfidence,
+            source: contact.tier1CompanyAiSource,
+          },
+        },
+        analysis: {
+          networkingNeeds: contact.networkingNeeds,
+          personalityType: contact.personalityType,
+          personalityLabel: contact.personalityLabel,
+          chemistryScore: contact.chemistryScore,
+          valueScore: contact.valueScore,
+          valueReason: contact.valueReason,
+        },
+        notes: {
+          summary: contact.noteSummary ?? contact.notes,
+          circles: contact.circles,
+          interests: contact.interests,
+          careTopics: contact.careTopics,
+          potentialProjects: contact.potentialProjects,
+        },
+      },
+    }))
+
+    return NextResponse.json({ contacts: responseContacts })
   } catch {
     return NextResponse.json({ contacts: [] })
   }
@@ -57,106 +73,88 @@ export async function POST(req: NextRequest) {
     const body = isJson
       ? await req.json()
       : await req.formData().then((fd) => ({
-          name: String(fd.get('name') ?? ''),
-          relationRole: String(fd.get('relationRole') ?? ''),
-          tags: fd.getAll('tags').map((v) => String(v)),
-          spiritAnimal: fd.get('spiritAnimal') ? String(fd.get('spiritAnimal')) : null,
-          company: fd.get('company') ? String(fd.get('company')) : null,
-          companyId: fd.get('companyId') ? String(fd.get('companyId')) : null,
-          title: fd.get('title') ? String(fd.get('title')) : null,
+          // 新字段
+          fullName: String(fd.get('fullName') ?? ''),
+          gender: fd.get('gender') ? String(fd.get('gender')) : null,
+          age: fd.get('age') ? Number(fd.get('age')) : null,
+          city: fd.get('city') ? String(fd.get('city')) : null,
+          firstMetYear: fd.get('firstMetYear') ? Number(fd.get('firstMetYear')) : null,
+          personalRelation: fd.get('personalRelation') ? String(fd.get('personalRelation')) : null,
+          reciprocityLevel: fd.get('reciprocityLevel') ? Number(fd.get('reciprocityLevel')) : null,
+          friendLinks: fd.getAll('friendLinks').map((v) => String(v)),
+          companyName: String(fd.get('companyName') ?? ''),
+          companyProfile: fd.get('companyProfile') ? String(fd.get('companyProfile')) : null,
+          companyScale: fd.get('companyScale') ? String(fd.get('companyScale')) : null,
+          industryL1: fd.get('industryL1') ? String(fd.get('industryL1')) : null,
+          industryL2: fd.get('industryL2') ? String(fd.get('industryL2')) : null,
           jobPosition: fd.get('jobPosition') ? String(fd.get('jobPosition')) : null,
+          jobFunction: fd.get('jobFunction') ? String(fd.get('jobFunction')) : null,
+          influence: fd.get('influence') ? String(fd.get('influence')) : null,
+          networkingNeed: fd.get('networkingNeed') ? String(fd.get('networkingNeed')) : null,
+          spiritAnimal: fd.get('spiritAnimal') ? String(fd.get('spiritAnimal')) : null,
+          roleArchetype: fd.get('roleArchetype') ? String(fd.get('roleArchetype')) : null,
+          chemistryScore: fd.get('chemistryScore') ? Number(fd.get('chemistryScore')) : null,
+          valueScore: fd.get('valueScore') ? String(fd.get('valueScore')) : null,
+          potentialProjects: fd.get('potentialProjects') ? String(fd.get('potentialProjects')) : null,
+          socialPosition: fd.get('socialPosition') ? String(fd.get('socialPosition')) : null,
+          hobbies: fd.get('hobbies') ? String(fd.get('hobbies')) : null,
+          personalNotes: fd.get('personalNotes') ? String(fd.get('personalNotes')) : null,
+          notes: fd.get('notes') ? String(fd.get('notes')) : null,
           phone: fd.get('phone') ? String(fd.get('phone')) : null,
           wechat: fd.get('wechat') ? String(fd.get('wechat')) : null,
           email: fd.get('email') ? String(fd.get('email')) : null,
-          notes: fd.get('notes') ? String(fd.get('notes')) : null,
-          trustLevel: fd.get('trustLevel') ? Number(fd.get('trustLevel')) : null,
-          temperature: fd.get('temperature') ? String(fd.get('temperature')) : null,
-          tagLibrary: (() => { try { const p = JSON.parse(String(fd.get('tagLibrary') ?? '[]')); return Array.isArray(p) ? p : [] } catch { return [] } })(),
-          manualTags: fd.get('manualTags') ? String(fd.get('manualTags')) : '',
-          companyIndustry: fd.get('companyIndustry') ? String(fd.get('companyIndustry')) : null,
-          companyScale: fd.get('companyScale') ? String(fd.get('companyScale')) : null,
-          companyMainBusiness: fd.get('companyMainBusiness') ? String(fd.get('companyMainBusiness')) : null,
+          companyAddress: fd.get('companyAddress') ? String(fd.get('companyAddress')) : null,
+          personalAddress: fd.get('personalAddress') ? String(fd.get('personalAddress')) : null,
         }))
 
-    console.log('[contacts POST] received body:', JSON.stringify(body))
-    console.log('[contacts POST] userId:', userId)
+    const fullName = asString(body.fullName)
+    const companyName = asString(body.companyName)
 
-    if (!body.name || !body.relationRole) {
-      return NextResponse.json({ error: '请填写姓名并选择关系角色' }, { status: 400 })
-    }
-
-    const manualTags = parseManualTags(body.manualTags)
-    const mergedTags = Array.from(
-      new Set([...(Array.isArray(body.tags) ? body.tags : []), ...manualTags]),
-    )
-
-    const selectedCompanyId = typeof body.companyId === 'string' ? body.companyId.trim() : ''
-    let linkedCompanyId: string | null = null
-    let companyNameForContact = (body.company as string | null) ?? null
-
-    if (selectedCompanyId) {
-      const selected = await db.company.findFirst({
-        where: { id: selectedCompanyId, userId },
-        select: { id: true, name: true },
-      })
-      if (selected) {
-        linkedCompanyId = selected.id
-        companyNameForContact = selected.name
-      }
+    if (!fullName || !companyName) {
+      return NextResponse.json({ error: '姓名和公司名称为必填项' }, { status: 400 })
     }
 
     const contact = await db.contact.create({
       data: {
         userId,
-        name: body.name,
-        relationRole: body.relationRole as never,
-        tags: mergedTags.length > 0 ? JSON.stringify(mergedTags) : null,
+        name: fullName,
+        fullName,
+        gender: (body.gender as never) ?? null,
+        age: body.age ? Number(body.age) : null,
+        city: body.city ?? null,
+        firstMetYear: body.firstMetYear ? Number(body.firstMetYear) : null,
+        personalRelation: (body.personalRelation as never) ?? null,
+        reciprocityLevel: body.reciprocityLevel ? Number(body.reciprocityLevel) : null,
+        friendLinks: Array.isArray(body.friendLinks) ? body.friendLinks : [],
+        companyName,
+        company: companyName,
+        companyProfile: body.companyProfile ?? null,
+        companyScale: (body.companyScale as never) ?? null,
+        industry: body.industryL2 || body.industryL1 || null,
+        industryL1: body.industryL1 ?? null,
+        industryL2: body.industryL2 ?? null,
+        jobPosition: (body.jobPosition as never) ?? null,
+        jobFunction: (body.jobFunction as never) ?? null,
+        influence: (body.influence as never) ?? null,
+        networkingNeeds: body.networkingNeed ? [body.networkingNeed as never] : [],
         spiritAnimal: (body.spiritAnimal as never) ?? null,
-        company: companyNameForContact,
-        companyId: linkedCompanyId,
-        title: body.title ?? null,
-        jobPosition: body.jobPosition ?? null,
+        roleArchetype: (body.roleArchetype as never) ?? null,
+        chemistryScore: body.chemistryScore ? Number(body.chemistryScore) : null,
+        valueScore: (body.valueScore as never) ?? null,
+        potentialProjects: body.potentialProjects ?? null,
+        socialPosition: body.socialPosition ?? null,
+        hobbies: body.hobbies ?? null,
+        personalNotes: body.personalNotes ?? null,
+        notes: body.notes ?? null,
         phone: body.phone ?? null,
         wechat: body.wechat ?? null,
         email: body.email ?? null,
-        temperature: (body.temperature as never) ?? null,
-        trustLevel: body.trustLevel ? Number(body.trustLevel) : null,
-        notes: body.notes ?? null,
+        companyAddress: body.companyAddress ?? null,
+        personalAddress: body.personalAddress ?? null,
         energyScore: 50,
+        relationRole: mapArchetypeToRole(body.roleArchetype as RoleArchetype) ?? 'COMRADE',
       },
     })
-
-    const tagLibrary = normalizeTagLibrary([...(Array.isArray(body.tagLibrary) ? body.tagLibrary : []), ...manualTags])
-    if (tagLibrary.length > 0) {
-      await db.user.update({
-        where: { id: userId },
-        data: { industry: JSON.stringify(tagLibrary) },
-      })
-    }
-
-    // Create / link company if company name was provided
-    const companyName = (body.company as string)?.trim()
-    if (!linkedCompanyId && companyName) {
-      try {
-        let company = await db.company.findFirst({ where: { userId, name: companyName } })
-        if (!company) {
-          company = await db.company.create({
-            data: {
-              userId,
-              name: companyName,
-              industry: (body.companyIndustry as string) || null,
-              scale: (body.companyScale as never) || null,
-              mainBusiness: (body.companyMainBusiness as string) || null,
-              tags: JSON.stringify([]),
-              energyScore: 50,
-            },
-          })
-        }
-        await db.contact.update({ where: { id: contact.id }, data: { companyId: company.id } })
-      } catch (err) {
-        console.error('[contacts POST] company link failed:', err)
-      }
-    }
 
     if (!isJson) {
       return NextResponse.redirect(new URL('/contacts', req.url), { status: 303 })

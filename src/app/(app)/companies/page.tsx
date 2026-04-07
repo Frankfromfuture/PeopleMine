@@ -48,11 +48,11 @@ export default async function CompaniesPage() {
   return (
     <div className="min-h-full">
       {dbError && (
-        <div className="bg-amber-50 border-b border-amber-200 px-8 py-4">
-          <p className="text-sm text-amber-800">
+        <div className="bg-gray-50 border-b border-gray-200 px-8 py-4">
+          <p className="text-sm text-gray-800">
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
-          <p className="text-xs text-amber-700 mt-1">
+          <p className="text-xs text-gray-700 mt-1">
             数据库连接失败，刷新页面即可恢复。
           </p>
         </div>
@@ -63,7 +63,7 @@ export default async function CompaniesPage() {
           <h1 className="text-2xl font-semibold text-gray-900">企业数据库</h1>
           <Link
             href="/companies/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

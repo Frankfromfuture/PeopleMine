@@ -17,32 +17,26 @@ export async function DELETE() {
       select: { id: true },
     })
 
-    if (contacts.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: '没有联系人要删除',
-        count: 0,
-      })
-    }
-
     const contactIds = contacts.map((c) => c.id)
 
     // 先删除所有关系（因为 ContactRelation 依赖 Contact）
-    await db.contactRelation.deleteMany({
-      where: {
-        OR: [
-          { contactIdA: { in: contactIds } },
-          { contactIdB: { in: contactIds } },
-        ],
-      },
-    })
+    if (contactIds.length > 0) {
+      await db.contactRelation.deleteMany({
+        where: {
+          OR: [
+            { contactIdA: { in: contactIds } },
+            { contactIdB: { in: contactIds } },
+          ],
+        },
+      })
 
-    // 再删除所有交互记录
-    await db.interaction.deleteMany({
-      where: { contactId: { in: contactIds } },
-    })
+      // 再删除所有交互记录
+      await db.interaction.deleteMany({
+        where: { contactId: { in: contactIds } },
+      })
+    }
 
-    // 最后删除联系人
+    // 删除联系人
     const result = await db.contact.deleteMany({
       where: { userId },
     })
@@ -69,9 +63,22 @@ export async function DELETE() {
       where: { userId },
     })
 
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        industry: null,
+        selfTags: null,
+        selfCompany: null,
+        selfTitle: null,
+        selfJobPosition: null,
+        selfSpiritAnimal: null,
+        selfBio: null,
+      },
+    })
+
     return NextResponse.json({
       success: true,
-      message: `成功删除 ${result.count} 个联系人，${deletedCompanies.count} 个企业`,
+      message: `成功重置：删除 ${result.count} 个联系人，${deletedCompanies.count} 个企业，并清空个人标签缓存`,
       count: result.count,
       companyCount: deletedCompanies.count,
     })

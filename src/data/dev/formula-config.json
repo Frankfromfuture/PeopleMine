@@ -24,44 +24,34 @@
   "accessibilityExpr": "Math.min(1, (energy / 100) * tempMult * trustMult * recencyDecay)",
   "roleAffinityMatrix": {
     "introduction": {
-      "BIG_INVESTOR": 0.4,
-      "GATEWAY": 1.0,
-      "ADVISOR": 0.3,
-      "THERMOMETER": 0.6,
-      "LIGHTHOUSE": 0.5,
-      "COMRADE": 0.4
+      "BREAKER": 0.4,
+      "EVANGELIST": 1.0,
+      "ANALYST": 0.3,
+      "BINDER": 0.5
     },
     "resource": {
-      "BIG_INVESTOR": 1.0,
-      "GATEWAY": 0.7,
-      "ADVISOR": 0.5,
-      "THERMOMETER": 0.3,
-      "LIGHTHOUSE": 0.6,
-      "COMRADE": 0.3
+      "BREAKER": 1.0,
+      "EVANGELIST": 0.7,
+      "ANALYST": 0.5,
+      "BINDER": 0.3
     },
     "advice": {
-      "BIG_INVESTOR": 0.3,
-      "GATEWAY": 0.4,
-      "ADVISOR": 1.0,
-      "THERMOMETER": 0.5,
-      "LIGHTHOUSE": 0.7,
-      "COMRADE": 0.4
+      "BREAKER": 0.3,
+      "EVANGELIST": 0.4,
+      "ANALYST": 1.0,
+      "BINDER": 0.5
     },
     "collaboration": {
-      "BIG_INVESTOR": 0.4,
-      "GATEWAY": 0.5,
-      "ADVISOR": 0.4,
-      "THERMOMETER": 0.6,
-      "LIGHTHOUSE": 0.3,
-      "COMRADE": 1.0
+      "BREAKER": 0.4,
+      "EVANGELIST": 0.5,
+      "ANALYST": 0.4,
+      "BINDER": 1.0
     },
     "information": {
-      "BIG_INVESTOR": 0.5,
-      "GATEWAY": 0.6,
-      "ADVISOR": 0.9,
-      "THERMOMETER": 0.4,
-      "LIGHTHOUSE": 0.8,
-      "COMRADE": 0.5
+      "BREAKER": 0.5,
+      "EVANGELIST": 0.6,
+      "ANALYST": 0.9,
+      "BINDER": 0.5
     }
   },
   "inferLinksWeights": {

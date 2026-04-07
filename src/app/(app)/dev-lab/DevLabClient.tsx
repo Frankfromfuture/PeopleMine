@@ -29,7 +29,7 @@ export default function DevLabClient({
             仅在 development 模式下可见 · 正式上线后自动隐藏
           </p>
         </div>
-        <span className="ml-auto px-2.5 py-1 text-xs rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-medium">
+        <span className="ml-auto px-2.5 py-1 text-xs rounded-full bg-gray-100 text-gray-700 border border-gray-200 font-medium">
           DEV ONLY
         </span>
       </div>
@@ -91,7 +91,7 @@ function TabBtn({
       onClick={onClick}
       className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
         active
-          ? 'border-violet-600 text-violet-600'
+          ? 'border-gray-600 text-gray-600'
           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
       }`}
     >

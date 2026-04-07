@@ -4,16 +4,14 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import { useLoading } from '@/components/ThinkingToast'
-import JourneyGraph, {
+import PeopleUniverseView from './PeopleUniverseView'
+import {
   NetworkContact,
   NetworkRelation,
   ROLE_COLOR,
   CHANNEL_ICON,
 } from './JourneyGraph'
-import CompanyUniverseView from './CompanyUniverseView'
 import { JourneyPathData, JourneyAnalysisResponse, PathStep, AlternativePath } from '@/lib/journey/types'
-
-type ViewMode = 'people' | 'company'
 
 // ─── 加载步骤 ──────────────────────────────────────────────────────────────────
 
@@ -52,8 +50,8 @@ function RouteCard({
       layout
       className={`rounded-xl border-2 p-4 cursor-pointer transition-all ${
         isActive
-          ? 'border-amber-400 bg-amber-50 shadow-md'
-          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+          ? 'border-gray-400 bg-gray-50 shadow-md'
+          : 'border-line-standard bg-app-strong hover:border-gray-300 hover:shadow-sm'
       }`}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.995 }}
@@ -62,10 +60,10 @@ function RouteCard({
       {/* 标题行 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-gray-900">{title}</span>
+          <span className="text-base font-bold text-text-primary">{title}</span>
           <span
             className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              isActive ? 'bg-amber-400 text-white' : 'bg-gray-100 text-gray-600'
+              isActive ? 'bg-gray-400 text-white' : 'bg-gray-100 text-gray-600'
             }`}
           >
             {badge}
@@ -74,7 +72,7 @@ function RouteCard({
         <div className="flex items-center gap-1.5">
           <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-violet-500 rounded-full"
+              className="h-full bg-gray-500 rounded-full"
               style={{ width: `${score * 100}%` }}
             />
           </div>
@@ -98,13 +96,13 @@ function RouteCard({
           const nodeColors = Object.values(ROLE_COLOR)[i % 6]
           return (
             <React.Fragment key={step.contactId}>
-              <svg width="16" height="10" className="text-amber-400 shrink-0">
-                <path d="M0 5 L12 5 M8 1 L14 5 L8 9" stroke="#f59e0b" strokeWidth="1.5" fill="none" />
+              <svg width="16" height="10" className="text-gray-400 shrink-0">
+                <path d="M0 5 L12 5 M8 1 L14 5 L8 9" stroke="#6b7280" strokeWidth="1.5" fill="none" />
               </svg>
               <button
                 className={`flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
                   expandedStep === i
-                    ? 'ring-2 ring-violet-400'
+                    ? 'ring-2 ring-gray-400'
                     : 'hover:opacity-90'
                 }`}
                 style={{
@@ -127,33 +125,33 @@ function RouteCard({
       {/* 展开的攻略 */}
       {expandedStep !== null && steps[expandedStep] && (
         <div
-          className="mt-3 rounded-lg bg-white border border-gray-200 p-3 text-xs space-y-2"
+          className="mt-3 rounded-lg bg-app-strong border border-line-standard p-3 text-xs space-y-2"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="font-semibold text-gray-800">
             {steps[expandedStep].contactName} 的攻略
-            <span className="ml-2 text-gray-400 font-normal">
+            <span className="ml-2 text-text-subtle font-normal">
               置信度 {(steps[expandedStep].confidenceAtThisStep * 100).toFixed(0)}%
             </span>
           </div>
           <div>
-            <span className="text-gray-500">开场白：</span>
+            <span className="text-text-secondary">开场白：</span>
             <span className="text-gray-700">「{steps[expandedStep].communicationAdvice.openingLine}」</span>
           </div>
           <div>
-            <span className="text-gray-500">核心诉求：</span>
+            <span className="text-text-secondary">核心诉求：</span>
             <span className="text-gray-700">{steps[expandedStep].communicationAdvice.keyMessage}</span>
           </div>
           <div>
-            <span className="text-gray-500">时机：</span>
+            <span className="text-text-secondary">时机：</span>
             <span className="text-gray-700">{steps[expandedStep].communicationAdvice.timing}</span>
           </div>
           {steps[expandedStep].communicationAdvice.caution && (
-            <div className="bg-amber-50 border border-amber-200 rounded p-2">
-              <span className="text-amber-700">⚠️ {steps[expandedStep].communicationAdvice.caution}</span>
+            <div className="bg-gray-50 border border-gray-200 rounded p-2">
+              <span className="text-gray-700">⚠️ {steps[expandedStep].communicationAdvice.caution}</span>
             </div>
           )}
-          <div className="flex items-center gap-1 text-gray-500">
+          <div className="flex items-center gap-1 text-text-secondary">
             <span>推荐渠道：</span>
             <span className="font-medium text-gray-700">
               {CHANNEL_ICON[steps[expandedStep].communicationAdvice.channelSuggestion]}{' '}
@@ -180,7 +178,6 @@ export default function JourneyPage() {
   const [loadingStep, setLoadingStep] = useState<LoadingStep>('idle')
   const [error, setError] = useState<string | null>(null)
   const [networkLoading, setNetworkLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('people')
 
   // 加载全量网络
   useEffect(() => {
@@ -261,107 +258,72 @@ export default function JourneyPage() {
     : []
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)] overflow-hidden">
+    <div className="flex flex-col h-screen overflow-hidden">
       {/* ── 顶部工具栏 ── */}
-      <div className="shrink-0 px-5 py-3 bg-white border-b border-gray-200 flex items-center gap-3">
-        <h1 className="text-lg font-bold text-gray-900 shrink-0">
-          {viewMode === 'people' ? '人脉航程' : '企业宇宙'}
-        </h1>
+      <div className="shrink-0 px-5 py-3 bg-app-strong border-b border-line-standard flex items-center gap-3">
+        <h1 className="text-lg font-bold text-text-primary shrink-0">人脉宇宙</h1>
 
-        {/* View toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0">
+        <div className="flex-1 flex items-center gap-2 max-w-2xl">
+          <input
+            className="flex-1 h-9 px-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+            placeholder="输入目标，例如：我想认识 A 轮投资人，推进融资…"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+            disabled={isLoading}
+          />
           <button
-            onClick={() => setViewMode('people')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              viewMode === 'people' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className="h-9 px-4 rounded-lg bg-gray-600 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
+            onClick={handleAnalyze}
+            disabled={isLoading || !goal.trim()}
           >
-            👥 人脉
+            {isLoading ? '分析中…' : '开始分析'}
           </button>
-          <button
-            onClick={() => setViewMode('company')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              viewMode === 'company' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            🏢 企业
-          </button>
+          {pathData && (
+            <button
+              className="h-9 px-3 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition shrink-0"
+              onClick={() => { setPathData(null); setGoal(''); setError(null) }}
+            >
+              清除
+            </button>
+          )}
         </div>
 
-        {viewMode === 'people' && (
-          <div className="flex-1 flex items-center gap-2 max-w-2xl">
-            <input
-              className="flex-1 h-9 px-3 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
-              placeholder="输入目标，例如：我想认识 A 轮投资人，推进融资…"
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
-              disabled={isLoading}
-            />
-            <button
-              className="h-9 px-4 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0"
-              onClick={handleAnalyze}
-              disabled={isLoading || !goal.trim()}
-            >
-              {isLoading ? '分析中…' : '开始分析'}
-            </button>
-            {pathData && (
-              <button
-                className="h-9 px-3 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition shrink-0"
-                onClick={() => { setPathData(null); setGoal(''); setError(null) }}
-              >
-                清除
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="ml-auto shrink-0 text-xs text-gray-400">
-          {viewMode === 'people' ? `${contacts.length} 位联系人` : '按行业聚类'}
+        <div className="ml-auto shrink-0 text-xs text-text-subtle">
+          {contacts.length} 位联系人
         </div>
       </div>
 
       {/* ── 主体 ── */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* 企业宇宙视图 */}
-        {viewMode === 'company' && (
-          <div className="flex-1 relative min-w-0 flex overflow-hidden">
-            <CompanyUniverseView />
-          </div>
-        )}
-
         {/* 人脉视图 */}
-        {viewMode === 'people' && <div className="flex-1 relative min-w-0">
+        <div className="flex-1 relative min-w-0">
           {networkLoading ? (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex items-center justify-center h-full text-text-subtle">
               <div className="text-center">
-                <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin mx-auto mb-3" />
+                <div className="w-8 h-8 rounded-full border-2 border-gray-500 border-t-transparent animate-spin mx-auto mb-3" />
                 <p className="text-sm">加载人脉网络…</p>
               </div>
             </div>
           ) : contacts.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex items-center justify-center h-full text-text-subtle">
               <div className="text-center">
                 <div className="text-4xl mb-3">👥</div>
                 <p className="text-sm font-medium text-gray-600">还没有联系人</p>
-                <p className="text-xs text-gray-400 mt-1">先去「人脉数据库」添加几位联系人吧</p>
+                <p className="text-xs text-text-subtle mt-1">先去「人脉数据库」添加几位联系人吧</p>
               </div>
             </div>
           ) : (
-            <JourneyGraph
+            <PeopleUniverseView
               contacts={contacts}
               relations={relations}
-              pathData={pathData}
-              activeRouteIndex={activeRouteIndex}
-              onNodeClick={setSelectedNodeId}
-              selectedNodeId={selectedNodeId}
             />
           )}
 
           {/* 加载遮罩 */}
           {isLoading && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 w-72">
+            <div className="absolute inset-0 bg-app-strong/80 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="bg-app-strong rounded-2xl shadow-xl border border-line-standard p-8 w-72">
                 <div className="space-y-4">
                   {LOADING_STEPS.map((step, i) => {
                     const stepIndex = ['idle', 'step1', 'step2', 'step3', 'step4'].indexOf(loadingStep)
@@ -373,18 +335,18 @@ export default function JourneyPage() {
                           className={`w-9 h-9 rounded-full flex items-center justify-center text-base font-bold transition-all ${
                             isActive
                               ? isCurrent
-                                ? 'bg-violet-600 text-white scale-110'
-                                : 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-400'
+                                ? 'bg-gray-600 text-white scale-110'
+                                : 'bg-gray-100 text-gray-700'
+                              : 'bg-gray-100 text-text-subtle'
                           }`}
                         >
                           {isActive && !isCurrent ? '✓' : step.emoji}
                         </div>
-                        <span className={`text-sm ${isActive ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                        <span className={`text-sm ${isActive ? 'text-text-primary font-medium' : 'text-text-subtle'}`}>
                           {step.label}
                         </span>
                         {isCurrent && (
-                          <div className="ml-auto w-4 h-4 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+                          <div className="ml-auto w-4 h-4 rounded-full border-2 border-gray-500 border-t-transparent animate-spin" />
                         )}
                       </div>
                     )
@@ -393,18 +355,18 @@ export default function JourneyPage() {
               </div>
             </div>
           )}
-        </div>}
+        </div>
 
-        {/* ── 右侧面板（仅人脉模式）── */}
-        {viewMode === 'people' && (pathData || error) && (
-          <div className="w-[360px] shrink-0 border-l border-gray-200 bg-white overflow-y-auto flex flex-col">
+        {/* ── 右侧面板 ── */}
+        {(pathData || error) && (
+          <div className="w-[360px] shrink-0 border-l border-line-standard bg-app-strong overflow-y-auto flex flex-col">
             {/* 错误 */}
             {error && (
-              <div className="m-4 p-3 rounded-lg bg-red-50 border border-red-200">
-                <p className="text-sm text-red-700 font-medium">分析失败</p>
-                <p className="text-xs text-red-600 mt-1">{error}</p>
+              <div className="m-4 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                <p className="text-sm text-gray-700 font-medium">分析失败</p>
+                <p className="text-xs text-gray-600 mt-1">{error}</p>
                 <button
-                  className="mt-2 text-xs text-red-500 hover:text-red-700"
+                  className="mt-2 text-xs text-gray-500 hover:text-gray-700"
                   onClick={() => setError(null)}
                 >
                   关闭
@@ -415,9 +377,42 @@ export default function JourneyPage() {
             {/* 航路卡片 */}
             {pathData && (
               <div className="p-4 space-y-3">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <h3 className="text-xs font-semibold text-gray-800 mb-2">ARC 分析摘要</h3>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="rounded-lg border border-gray-200 bg-app-strong p-2">
+                      <p className="text-gray-500">平均 ARC</p>
+                      <p className="text-gray-800 font-bold mt-0.5">
+                        {(((pathData.meta.averageArcScore ?? 0) * 100).toFixed(0))}%
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-app-strong p-2">
+                      <p className="text-gray-500">ARC 覆盖率</p>
+                      <p className="text-gray-800 font-bold mt-0.5">
+                        {(((pathData.meta.arcCoverage ?? 0) * 100).toFixed(0))}%
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-app-strong p-2">
+                      <p className="text-gray-500">已分析节点</p>
+                      <p className="text-gray-800 font-bold mt-0.5">
+                        {pathData.meta.analyzedContacts}
+                      </p>
+                    </div>
+                  </div>
+                  {pathData.meta.topArcArchetypes && pathData.meta.topArcArchetypes.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {pathData.meta.topArcArchetypes.map((item) => (
+                        <span key={item.name} className="px-2 py-0.5 rounded-full text-[11px] border border-gray-200 bg-app-strong text-gray-700">
+                          {item.name} · {item.count}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
-                  <h2 className="font-bold text-gray-900 text-sm">🧭 航路方案</h2>
-                  <span className="text-xs text-gray-400">{allRoutes.length} 条</span>
+                  <h2 className="font-bold text-text-primary text-sm">🧭 航路方案</h2>
+                  <span className="text-xs text-text-subtle">{allRoutes.length} 条</span>
                 </div>
 
                 {allRoutes.map((route, i) => (
@@ -435,8 +430,8 @@ export default function JourneyPage() {
 
                 {/* 缺失节点 */}
                 {pathData.missingNodes.length > 0 && (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mt-2">
-                    <h3 className="font-semibold text-amber-900 text-sm mb-2">⚠️ 缺少关键人脉</h3>
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 mt-2">
+                    <h3 className="font-semibold text-gray-900 text-sm mb-2">⚠️ 缺少关键人脉</h3>
                     <div className="space-y-3">
                       {pathData.missingNodes.map((m) => (
                         <div key={m.missingRole}>
@@ -452,8 +447,8 @@ export default function JourneyPage() {
                               {m.roleName}
                             </span>
                           </div>
-                          <p className="text-xs text-amber-800">{m.whyNeeded}</p>
-                          <p className="text-xs text-amber-700 mt-1">💡 {m.howToFind}</p>
+                          <p className="text-xs text-gray-800">{m.whyNeeded}</p>
+                          <p className="text-xs text-gray-700 mt-1">💡 {m.howToFind}</p>
                         </div>
                       ))}
                     </div>

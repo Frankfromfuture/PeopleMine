@@ -1,4 +1,4 @@
-import { RelationRole, Temperature } from '@/types'
+import { QuickContext, RelationVector, RoleArchetype, Temperature } from '@/types'
 
 /**
  * 完整的航程路径数据结构 - 存储在 Journey.pathData Json 字段
@@ -19,6 +19,11 @@ export interface JourneyPathData {
     analyzedContacts: number
     computedAt: string // ISO timestamp
     modelUsed: string
+
+    // ARC 可解释性指标（由 API 在分析后补充）
+    averageArcScore?: number // 0-1
+    arcCoverage?: number // 0-1: 有 relationVector 的联系人占比
+    topArcArchetypes?: Array<{ name: string; count: number }>
   }
 
   // 所有评分节点（Top-15）
@@ -48,14 +53,17 @@ export interface ScoredNode {
   name: string
   company: string | null
   title: string | null
-  relationRole: RelationRole
+  roleArchetype: RoleArchetype
   tags: string[]
   temperature: Temperature | null
   energyScore: number
   trustLevel: number | null
+  archetype: string | null
+  relationVector: RelationVector | null
 
   // 多维评分结果（0-1）
   journeyScore: number // 加权综合分
+  arcScore: number // ARC 核心关系向量分
   relevanceScore: number // 相关性
   accessibilityScore: number // 可达性
   centralityScore: number // 网络中心度
@@ -106,7 +114,7 @@ export interface AlternativePath {
  * 缺失的关键角色节点
  */
 export interface MissingNode {
-  missingRole: RelationRole
+  missingRole: RoleArchetype
   roleName: string // 中文角色名
   whyNeeded: string // 为什么这个角色对目标很重要
   howToFind: string // 建议在哪儿/怎么找这类人脉
@@ -120,15 +128,18 @@ export interface ScoredContact {
   name: string
   company: string | null
   title: string | null
-  relationRole: RelationRole
+  roleArchetype: RoleArchetype
   tags: string[]
   temperature: Temperature | null
   energyScore: number
   trustLevel: number | null
   lastContactedAt: Date | null
   notes: string | null
+  archetype: string | null
+  relationVector: RelationVector | null
 
   // 计算结果
+  arcScore: number
   relevanceScore: number
   accessibilityScore: number
   centralityScore: number

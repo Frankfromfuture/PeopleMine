@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   const company = await db.company.findFirst({
     where: { id, userId },
     include: {
-      contacts: { select: { id: true, name: true, relationRole: true } },
+      contacts: { select: { id: true, name: true, roleArchetype: true } },
       relationsA: { include: { companyB: { select: { id: true, name: true, industry: true } } } },
       relationsB: { include: { companyA: { select: { id: true, name: true, industry: true } } } },
     },

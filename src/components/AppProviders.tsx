@@ -25,10 +25,10 @@ export default function AppProviders({ children }: { children: React.ReactNode }
       {children}
       <Toaster
         position="top-right"
-        richColors
         closeButton
         toastOptions={{
-          className: 'font-sans',
+          className:
+            'border border-line-standard bg-white text-text-primary shadow-dialog font-sans [font-feature-settings:"cv01"_1,"ss03"_1]',
           duration: 2800,
         }}
       />

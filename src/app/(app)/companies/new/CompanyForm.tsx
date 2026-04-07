@@ -6,12 +6,12 @@ import { COMPANY_SCALE_LABELS } from '@/types'
 import type { CompanyScale, Temperature } from '@/types'
 
 const TEMP_LABELS: Record<Temperature, { label: string; color: string }> = {
-  COLD: { label: '冷', color: 'bg-sky-100 text-sky-700 border-sky-200 hover:bg-sky-200' },
-  WARM: { label: '温', color: 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200' },
-  HOT:  { label: '热', color: 'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200' },
+  COLD: { label: '冷', color: 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200' },
+  WARM: { label: '温', color: 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200' },
+  HOT:  { label: '热', color: 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200' },
 }
 
-const DEFAULT_TAGS = ['AI', '互联网', '金融', '医疗', '教育', '消费', '制造', '能源', '地产', '物流', '传媒', '文旅']
+const DEFAULT_TAGS: string[] = []
 
 type InitialCompany = {
   id?: string
@@ -29,6 +29,7 @@ type InitialCompany = {
   familiarityLevel?: number | null
   temperature?: string | null
   energyScore?: number | null
+  tagV2?: unknown
   notes?: string | null
 }
 
@@ -67,6 +68,7 @@ export default function CompanyForm({
   const [temperature, setTemperature] = useState<Temperature | ''>(initialCompany?.temperature as Temperature ?? '')
   const [energyScore, setEnergyScore] = useState<number>(initialCompany?.energyScore ?? 50)
   const [notes, setNotes] = useState(initialCompany?.notes ?? '')
+  const [tagV2Text, setTagV2Text] = useState(initialCompany?.tagV2 ? JSON.stringify(initialCompany.tagV2, null, 2) : '')
 
   // AI extract
   const [extractText, setExtractText] = useState('')
@@ -125,6 +127,16 @@ export default function CompanyForm({
     if (!name.trim()) { setError('公司名称不能为空'); return }
     setError('')
 
+    let parsedTagV2: unknown = null
+    if (tagV2Text.trim()) {
+      try {
+        parsedTagV2 = JSON.parse(tagV2Text)
+      } catch {
+        setError('标签 V2 JSON 格式不正确')
+        return
+      }
+    }
+
     const payload = {
       name: name.trim(),
       mainBusiness: mainBusiness.trim() || null,
@@ -179,7 +191,7 @@ export default function CompanyForm({
           {/* AI Extract button */}
           <button
             onClick={() => setShowExtract(!showExtract)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-violet-50 text-violet-700 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <span>✨</span>
             AI 智能提取
@@ -188,21 +200,21 @@ export default function CompanyForm({
 
         {/* AI Extract panel */}
         {showExtract && (
-          <div className="mb-6 p-4 bg-violet-50 border border-violet-200 rounded-xl">
-            <p className="text-sm font-medium text-violet-800 mb-2">粘贴公司介绍、新闻报道、官网内容等，AI 自动识别填写表单</p>
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+            <p className="text-sm font-medium text-gray-800 mb-2">粘贴公司介绍、新闻报道、官网内容等，AI 自动识别填写表单</p>
             <textarea
               value={extractText}
               onChange={(e) => setExtractText(e.target.value)}
               placeholder="粘贴公司资料文本..."
               rows={4}
-              className="w-full px-3 py-2 text-sm border border-violet-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
             />
-            {extractError && <p className="text-xs text-red-500 mt-1">{extractError}</p>}
+            {extractError && <p className="text-xs text-gray-500 mt-1">{extractError}</p>}
             <div className="flex gap-2 mt-2">
               <button
                 onClick={handleExtract}
                 disabled={extracting || !extractText.trim()}
-                className="px-4 py-1.5 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+                className="px-4 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
               >
                 {extracting ? '提取中…' : '开始提取'}
               </button>
@@ -242,12 +254,12 @@ export default function CompanyForm({
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">基本信息</p>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-700 mb-1">公司名称 <span className="text-red-500">*</span></label>
+                <label className="block text-sm text-gray-700 mb-1">公司名称 <span className="text-gray-500">*</span></label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="例：字节跳动"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                 />
               </div>
               <div>
@@ -256,7 +268,7 @@ export default function CompanyForm({
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}
                   placeholder="例：互联网 / 医疗健康"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                 />
               </div>
             </div>
@@ -295,7 +307,7 @@ export default function CompanyForm({
                   onClick={() => toggleTag(t)}
                   className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
                     tags.includes(t)
-                      ? 'bg-violet-100 text-violet-700 border-violet-300 font-medium'
+                      ? 'bg-gray-100 text-gray-700 border-gray-300 font-medium'
                       : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
                   }`}
                 >
@@ -307,7 +319,7 @@ export default function CompanyForm({
                   key={t}
                   type="button"
                   onClick={() => toggleTag(t)}
-                  className="px-2.5 py-1 text-xs rounded-full border bg-violet-100 text-violet-700 border-violet-300 font-medium"
+                  className="px-2.5 py-1 text-xs rounded-full border bg-gray-100 text-gray-700 border-gray-300 font-medium"
                 >
                   ✓ {t}
                 </button>
@@ -319,7 +331,7 @@ export default function CompanyForm({
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag() } }}
                 placeholder="自定义标签，回车添加"
-                className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-violet-400"
+                className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400"
               />
               <button
                 type="button"
@@ -344,7 +356,7 @@ export default function CompanyForm({
                       onChange={(e) => setMainBusiness(e.target.value)}
                       placeholder="简述公司核心业务..."
                       rows={2}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
                     />
                   </div>
                   <div>
@@ -354,7 +366,7 @@ export default function CompanyForm({
                       onChange={(e) => setWebsite(e.target.value)}
                       placeholder="https://..."
                       type="url"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                   </div>
                 </div>
@@ -369,7 +381,7 @@ export default function CompanyForm({
                       value={founderName}
                       onChange={(e) => setFounderName(e.target.value)}
                       placeholder="例：张一鸣"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                   </div>
                   {contacts.length > 0 && (
@@ -378,7 +390,7 @@ export default function CompanyForm({
                       <select
                         value={founderContactId}
                         onChange={(e) => setFounderContactId(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 bg-white"
                       >
                         <option value="">不关联</option>
                         {contacts.map((c) => (
@@ -399,7 +411,7 @@ export default function CompanyForm({
                       value={investors}
                       onChange={(e) => setInvestors(e.target.value)}
                       placeholder="红杉、IDG、高瓴（多个用顿号分隔）"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                   </div>
                   <div>
@@ -408,7 +420,7 @@ export default function CompanyForm({
                       value={upstreams}
                       onChange={(e) => setUpstreams(e.target.value)}
                       placeholder="供应商、原材料、技术提供方..."
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                   </div>
                   <div>
@@ -417,7 +429,7 @@ export default function CompanyForm({
                       value={downstreams}
                       onChange={(e) => setDownstreams(e.target.value)}
                       placeholder="主要客户、渠道、分销方..."
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                     />
                   </div>
                 </div>
@@ -436,7 +448,7 @@ export default function CompanyForm({
                       max={5}
                       value={familiarityLevel}
                       onChange={(e) => setFamiliarityLevel(parseInt(e.target.value))}
-                      className="w-full accent-violet-600"
+                      className="w-full accent-gray-600"
                     />
                     <div className="flex justify-between text-xs text-gray-400 mt-1">
                       <span>陌生</span><span>了解</span><span>熟悉</span><span>深度合作</span><span>战略伙伴</span>
@@ -469,7 +481,7 @@ export default function CompanyForm({
                       max={100}
                       value={energyScore}
                       onChange={(e) => setEnergyScore(parseInt(e.target.value))}
-                      className="w-full accent-violet-600"
+                      className="w-full accent-gray-600"
                     />
                   </div>
                 </div>
@@ -482,20 +494,20 @@ export default function CompanyForm({
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="关于这家公司的额外信息..."
                   rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none"
                 />
               </div>
             </>
           )}
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-gray-500">{error}</p>}
 
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
             {tab === 'simple' && (
               <button
                 type="button"
                 onClick={() => setTab('full')}
-                className="text-sm text-violet-600 hover:text-violet-700 transition-colors"
+                className="text-sm text-gray-600 hover:text-gray-700 transition-colors"
               >
                 进入完整模式 →
               </button>
@@ -513,7 +525,7 @@ export default function CompanyForm({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isPending}
-                className="px-6 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors font-medium"
+                className="px-6 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors font-medium"
               >
                 {isPending ? '保存中…' : isEdit ? '保存更改' : '保存企业'}
               </button>

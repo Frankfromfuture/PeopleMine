@@ -10,7 +10,7 @@ function genId() {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ScoreBar({ value }: { value: number }) {
   const pct = Math.round(value * 100)
-  const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500'
+  const color = pct >= 70 ? 'bg-gray-500' : pct >= 40 ? 'bg-gray-500' : 'bg-gray-500'
   return (
     <div className="flex items-center gap-2 min-w-0">
       <div className="flex-1 bg-zinc-200 rounded-full h-1.5">
@@ -153,7 +153,7 @@ export default function TagEditor({ initialConfig }: TagEditorProps) {
           <button
             onClick={save}
             disabled={saving}
-            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition ${saved ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-violet-600 hover:bg-violet-700 text-white'}`}
+            className={`px-3 py-1.5 text-xs rounded-lg font-medium transition ${saved ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-gray-600 hover:bg-gray-700 text-white'}`}
           >
             {saved ? '✓ 已同步到人物标签页' : saving ? '保存中…' : '保存并同步'}
           </button>
@@ -218,11 +218,11 @@ function CategoryNode({
             defaultValue={cat.name}
             onBlur={(e) => { onRenameCat(cat.id, e.target.value); onEditCat(null) }}
             onKeyDown={(e) => { if (e.key === 'Enter') { onRenameCat(cat.id, e.currentTarget.value); onEditCat(null) } }}
-            className="flex-1 text-sm font-semibold text-zinc-800 bg-white border border-violet-300 rounded px-2 py-0.5 outline-none"
+            className="flex-1 text-sm font-semibold text-zinc-800 bg-white border border-gray-300 rounded px-2 py-0.5 outline-none"
           />
         ) : (
           <span
-            className="flex-1 text-sm font-semibold text-zinc-800 cursor-pointer hover:text-violet-600"
+            className="flex-1 text-sm font-semibold text-zinc-800 cursor-pointer hover:text-gray-600"
             onDoubleClick={() => onEditCat(cat.id)}
           >
             {cat.name}
@@ -238,7 +238,7 @@ function CategoryNode({
         <button onClick={() => onEditCat(cat.id)} className="text-xs text-zinc-400 hover:text-zinc-600 px-1">编辑</button>
         <button
           onClick={() => onDeleteCat(cat.id)}
-          className="text-xs text-rose-400 hover:text-rose-600 px-1"
+          className="text-xs text-gray-400 hover:text-gray-600 px-1"
         >
           删除
         </button>
@@ -298,11 +298,11 @@ function SubcategoryNode({
             defaultValue={sub.name}
             onBlur={(e) => { onRenameSub(catId, sub.id, e.target.value); onEditSub(null) }}
             onKeyDown={(e) => { if (e.key === 'Enter') { onRenameSub(catId, sub.id, e.currentTarget.value); onEditSub(null) } }}
-            className="text-sm font-medium text-zinc-700 bg-white border border-violet-300 rounded px-2 py-0.5 outline-none"
+            className="text-sm font-medium text-zinc-700 bg-white border border-gray-300 rounded px-2 py-0.5 outline-none"
           />
         ) : (
           <span
-            className="text-sm font-medium text-zinc-700 cursor-pointer hover:text-violet-600"
+            className="text-sm font-medium text-zinc-700 cursor-pointer hover:text-gray-600"
             onDoubleClick={() => onEditSub(sub.id)}
           >
             {sub.name}
@@ -311,7 +311,7 @@ function SubcategoryNode({
         <button onClick={() => onEditSub(sub.id)} className="text-xs text-zinc-400 hover:text-zinc-600">编辑</button>
         <button
           onClick={() => onDeleteSub(catId, sub.id)}
-          className="text-xs text-rose-400 hover:text-rose-600 ml-auto"
+          className="text-xs text-gray-400 hover:text-gray-600 ml-auto"
         >
           删除子目录
         </button>
@@ -322,10 +322,10 @@ function SubcategoryNode({
         {sub.tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-violet-50 text-violet-700 border border-violet-200"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-50 text-gray-700 border border-gray-200"
           >
             {tag}
-            <button onClick={() => onDeleteTag(catId, sub.id, tag)} className="text-violet-400 hover:text-rose-500 leading-none">×</button>
+            <button onClick={() => onDeleteTag(catId, sub.id, tag)} className="text-gray-400 hover:text-gray-500 leading-none">×</button>
           </span>
         ))}
         {sub.tags.length === 0 && <span className="text-xs text-zinc-400">暂无标签</span>}
@@ -338,11 +338,11 @@ function SubcategoryNode({
           onChange={(e) => setTagInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag() }}
           placeholder="添加标签（多个用逗号分隔）"
-          className="flex-1 h-7 px-2.5 rounded-lg text-xs border border-zinc-200 outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-100"
+          className="flex-1 h-7 px-2.5 rounded-lg text-xs border border-zinc-200 outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-100"
         />
         <button
           onClick={handleAddTag}
-          className="text-xs px-2.5 py-1 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700"
+          className="text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700"
         >
           添加
         </button>

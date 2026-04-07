@@ -55,35 +55,83 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name   String
-  wechat String?
-  phone  String?
-  email  String?
+  // 人脉信息
+  name            String
+  fullName        String?
+  gender          Gender?
+  age             Int?
+  city            String?
+  firstMetYear    Int?
+  personalRelation PersonalRelation?
+  reciprocityLevel Int?  // -2 to +2
+  friendLinks     String[] @default([])  // Contact IDs
 
-  spiritAnimal SpiritAnimal?
-  relationRole RelationRole
+  // 企业信息
+  company         String?
+  companyName     String?
+  companyProfile  String?
+  companyScale    CompanyScaleNew?
+  industry        String?
+  industryL1      String?
+  industryL2      String?
+  title           String?
+  jobTitle        String?
+  jobPosition     JobPosition?
+  jobFunction     JobFunction?
+  influence       InfluenceLevel?
 
-  tags     String?  // JSON array stored as string
-  industry String?
-  company  String?
-  title       String?
-  jobPosition String?   // 岗位，如：总经理、销售、财务…
+  // XMINER 分析
+  networkingNeeds NetworkingNeed[] @default([])
+  spiritAnimal    SpiritAnimalNew?
+  roleArchetype   RoleArchetype?
+  chemistryScore  Int?  // 1-5
+  valueScore      ValueLevel?
 
-  trustLevel  Int?
-  temperature Temperature?
-  energyScore Int          @default(50)
+  // 备注
+  potentialProjects String?
+  socialPosition    String?
+  hobbies           String?
+  personalNotes     String?  // 毕业学校、家庭情况等
+  notes             String?
 
-  notes String?
-  lastContactedAt DateTime?
+  // 其他信息
+  wechat          String?
+  phone           String?
+  email           String?
+  companyAddress  String?
+  personalAddress String?
 
-  // 关联所在企业（可选）
-  companyId String?
+  // 旧字段（兼容）
+  relationRole         RelationRole?
+  tags                 String?
+  tagV2                Json?
+  tier1CompanySize     Tier1CompanySize?
+  tier1CompanyStage    Tier1CompanyStage?
+  tier1CompanyWebsite  String?
+  tier1CompanyAiConfidence Float?
+  tier1CompanyAiSource String?
+  personalityType      PersonalityType?
+  personalityLabel     String?
+  valueReason          String?
+  noteSummary          String?
+  circles              String[] @default([])
+  interests            String[] @default([])
+  careTopics           String[] @default([])
+  potentialProjectsArray String[] @default([])
+  trustLevel           Int?
+  temperature          Temperature?
+  energyScore          Int @default(50)
+  quickContext         Json?
+  relationVector       Json?
+  archetype            String?
+  lastContactedAt      DateTime?
+  companyId            String?
 
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   linkedCompany Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
   interactions  Interaction[]
-  relationsA   ContactRelation[] @relation("ContactA")
-  relationsB   ContactRelation[] @relation("ContactB")
+  relationsA    ContactRelation[] @relation("ContactA")
+  relationsB    ContactRelation[] @relation("ContactB")
 
   @@index([userId])
   @@index([userId, relationRole])
@@ -134,6 +182,7 @@ model Company {
   scale        CompanyScale? // 规模枚举
   industry     String?       // 行业（字符串）
   tags         String?       // JSON string[] 行业标签
+  tagV2        Json?         // V2 自定义标签结构
 
   // 资本与生态
   founderName      String?  // 创始人姓名（手动）
@@ -214,6 +263,51 @@ enum Temperature {
   HOT
 }
 
+enum NetworkingNeed {
+  BUSINESS_EXPANSION
+  INTRODUCTIONS
+  FRIENDSHIP
+  SOCIAL
+  CASUAL_CHAT
+}
+
+enum PersonalityType {
+  INTJ
+  INTP
+  ENTJ
+  ENTP
+  INFJ
+  INFP
+  ENFJ
+  ENFP
+  ISTJ
+  ISFJ
+  ESTJ
+  ESFJ
+  ISTP
+  ISFP
+  ESTP
+  ESFP
+  OTHER
+}
+
+enum Tier1CompanySize {
+  SOLO
+  MICRO
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum Tier1CompanyStage {
+  IDEA
+  EARLY
+  GROWTH
+  MATURE
+  PUBLIC
+}
+
 enum InteractionType {
   MEETING
   CALL
@@ -229,4 +323,73 @@ enum CompanyScale {
   MID       // 中型（300-1000人）
   LARGE     // 大型（1000+）
   LISTED    // 上市公司
+}
+
+// 新字段枚举
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum PersonalRelation {
+  INTIMATE      // 亲密
+  FAMILIAR      // 熟悉
+  NORMAL        // 普通
+  ACQUAINTANCE  // 一面之缘
+}
+
+enum CompanyScaleNew {
+  MILLION       // 百万级
+  TEN_MILLION   // 千万级
+  HUNDRED_MILLION // 亿级
+  BILLION       // 十亿级
+  TEN_BILLION   // 百亿级
+}
+
+enum JobPosition {
+  FOUNDER
+  PARTNER
+  GENERAL_MANAGER
+  VP
+  DIRECTOR
+  MANAGER
+  OTHER
+}
+
+enum JobFunction {
+  MANAGEMENT
+  INVESTMENT
+  SALES
+  ENGINEER
+  MARKETING
+  BUSINESS_DEV
+  ADMIN
+  OTHER
+}
+
+enum InfluenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum SpiritAnimalNew {
+  TIGER     // 老虎
+  PEACOCK   // 孔雀
+  OWL       // 猫头鹰
+  KOALA     // 考拉
+}
+
+enum RoleArchetype {
+  BREAKER    // 破局者
+  EVANGELIST // 布道者
+  ANALYST    // 分析师
+  BINDER     // 粘合剂
+}
+
+enum ValueLevel {
+  LOW
+  MEDIUM
+  HIGH
+  EXTREME
 }

@@ -3,17 +3,17 @@
  * 基于人物属性自动推断联系人之间的连接强度
  *
  * 权重设计原则（AI 视角）：
- *  1. 角色互补性 — 某些角色天然协同（传送门×灯塔、智囊×大金主…）
+ *  1. 角色互补性 — 某些角色原型天然协同（布道者×破局者、分析师×破局者…）
  *  2. 标签重叠度 — 共同行业/技能标签越多，关系越近
  *  3. 能量衰减   — 低能量联系人的边强度整体下调
  *  4. 温度加成   — 热/温联系人的边略微加权
  */
 
-import { RelationRole } from '@/types'
+import { RoleArchetype } from '@/types'
 
 export interface ContactForLink {
   id: string
-  relationRole: string
+  roleArchetype: string
   tags: string[]           // 已解析好的数组
   energyScore: number
   temperature: string | null
@@ -28,69 +28,43 @@ export interface InferredLink {
   strong: boolean          // strength >= 0.5
 }
 
-// ─── 角色互补矩阵 ─────────────────────────────────────────────────────────────
+// ─── 角色原型互补矩阵 ─────────────────────────────────────────────────────────
 // 设计原则：
-//  GATEWAY 是「桥接者」，与所有人都有一定连接
-//  BIG_INVESTOR 是目标节点，与 GATEWAY/ADVISOR 关系最密
-//  LIGHTHOUSE 是远端大佬，通过 GATEWAY 触达
-//  COMRADE 是协作者，与 ADVISOR/THERMOMETER 紧密
-//  THERMOMETER 是社交润滑剂，与所有人都有弱连接
-//  ADVISOR 是智囊，与 BIG_INVESTOR/LIGHTHOUSE 强连接
+//  EVANGELIST 是「桥接者」，与所有人都有一定连接
+//  BREAKER 是目标节点，与 EVANGELIST/ANALYST 关系最密
+//  BINDER 是协作/维护者，与 ANALYST/EVANGELIST 紧密
+//  ANALYST 是智囊，与 BREAKER/EVANGELIST 强连接
 
-const ROLE_COMPLEMENT: Partial<Record<RelationRole, Partial<Record<RelationRole, number>>>> = {
-  GATEWAY: {
-    BIG_INVESTOR: 0.85,
-    LIGHTHOUSE:   0.80,
-    ADVISOR:      0.70,
-    COMRADE:      0.60,
-    THERMOMETER:  0.55,
-    GATEWAY:      0.50,
+const ARCHETYPE_COMPLEMENT: Record<RoleArchetype, Record<RoleArchetype, number>> = {
+  EVANGELIST: {
+    BREAKER:    0.85,
+    ANALYST:    0.70,
+    BINDER:     0.58,
+    EVANGELIST: 0.50,
   },
-  BIG_INVESTOR: {
-    GATEWAY:      0.85,
-    ADVISOR:      0.75,
-    LIGHTHOUSE:   0.65,
-    THERMOMETER:  0.45,
-    COMRADE:      0.40,
-    BIG_INVESTOR: 0.35,
+  BREAKER: {
+    EVANGELIST: 0.85,
+    ANALYST:    0.75,
+    BINDER:     0.42,
+    BREAKER:    0.33,
   },
-  ADVISOR: {
-    BIG_INVESTOR: 0.75,
-    GATEWAY:      0.70,
-    LIGHTHOUSE:   0.65,
-    COMRADE:      0.55,
-    THERMOMETER:  0.50,
-    ADVISOR:      0.40,
+  ANALYST: {
+    BREAKER:    0.75,
+    EVANGELIST: 0.70,
+    BINDER:     0.53,
+    ANALYST:    0.40,
   },
-  LIGHTHOUSE: {
-    GATEWAY:      0.80,
-    ADVISOR:      0.65,
-    BIG_INVESTOR: 0.65,
-    THERMOMETER:  0.40,
-    COMRADE:      0.35,
-    LIGHTHOUSE:   0.30,
-  },
-  COMRADE: {
-    COMRADE:      0.70,
-    ADVISOR:      0.55,
-    THERMOMETER:  0.55,
-    GATEWAY:      0.60,
-    BIG_INVESTOR: 0.40,
-    LIGHTHOUSE:   0.35,
-  },
-  THERMOMETER: {
-    COMRADE:      0.55,
-    ADVISOR:      0.50,
-    GATEWAY:      0.55,
-    BIG_INVESTOR: 0.45,
-    LIGHTHOUSE:   0.40,
-    THERMOMETER:  0.60,
+  BINDER: {
+    BINDER:     0.63,
+    EVANGELIST: 0.58,
+    ANALYST:    0.53,
+    BREAKER:    0.42,
   },
 }
 
-function getRoleComplement(roleA: string, roleB: string): number {
-  const matrix = ROLE_COMPLEMENT[roleA as RelationRole]
-  return matrix?.[roleB as RelationRole] ?? 0.3
+function getArchetypeComplement(roleA: string, roleB: string): number {
+  const matrix = ARCHETYPE_COMPLEMENT[roleA as RoleArchetype]
+  return matrix?.[roleB as RoleArchetype] ?? 0.3
 }
 
 // ─── 标签重叠度 ───────────────────────────────────────────────────────────────
@@ -134,7 +108,7 @@ export function inferAllLinks(contacts: ContactForLink[]): InferredLink[] {
       const a = contacts[i]
       const b = contacts[j]
 
-      const roleSim = getRoleComplement(a.relationRole, b.relationRole)
+      const roleSim = getArchetypeComplement(a.roleArchetype, b.roleArchetype)
       const tagSim  = tagOverlapScore(a.tags, b.tags)
       const eF      = energyFactor(a.energyScore, b.energyScore)
       const tB      = temperatureBonus(a.temperature, b.temperature)

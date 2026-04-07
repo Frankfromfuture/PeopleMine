@@ -40,7 +40,7 @@ export default function JourneyHistory({
     <div className="mt-6 border-t border-gray-200 pt-4">
       <button
         onClick={onToggleExpand}
-        className="flex items-center gap-2 font-medium text-gray-900 hover:text-violet-600 transition"
+        className="flex items-center gap-2 font-medium text-gray-900 hover:text-gray-600 transition"
       >
         <span>{isExpanded ? '▼' : '▶'}</span>
         <span>历史航程</span>

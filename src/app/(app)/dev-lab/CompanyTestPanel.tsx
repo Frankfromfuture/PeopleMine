@@ -53,7 +53,7 @@ const TEST_COMPANIES = [
     tags: ['AI', 'SaaS', 'B2B', '大模型'],
     founderName: '李明',
     investors: ['源码资本', 'IDG'],
-    upstreams: ['OpenAI', 'Anthropic'],
+    upstreams: ['OpenAI', 'Qwen'],
     downstreams: ['企业客户'],
     familiarityLevel: 5,
     temperature: 'HOT',
@@ -191,9 +191,9 @@ export default function CompanyTestPanel() {
   }
 
   const TEMP_COLOR: Record<string, string> = {
-    COLD: 'text-sky-600 bg-sky-50',
-    WARM: 'text-amber-600 bg-amber-50',
-    HOT: 'text-rose-600 bg-rose-50',
+    COLD: 'text-gray-600 bg-gray-50',
+    WARM: 'text-gray-600 bg-gray-50',
+    HOT: 'text-gray-600 bg-gray-50',
   }
   const TEMP_LABEL: Record<string, string> = { COLD: '冷', WARM: '温', HOT: '热' }
   const SCALE_LABEL: Record<string, string> = {
@@ -209,7 +209,7 @@ export default function CompanyTestPanel() {
           <button
             onClick={generateTestCompanies}
             disabled={generating}
-            className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors font-medium"
+            className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors font-medium"
           >
             {generating ? '生成中…' : `一键生成 ${TEST_COMPANIES.length} 家测试企业`}
           </button>
@@ -224,7 +224,7 @@ export default function CompanyTestPanel() {
             <button
               onClick={clearAll}
               disabled={clearing}
-              className="px-4 py-2 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors ml-auto"
+              className="px-4 py-2 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors ml-auto"
             >
               {clearing ? '清空中…' : `清空全部 (${companies.length})`}
             </button>
@@ -249,7 +249,7 @@ export default function CompanyTestPanel() {
                 {companies.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 py-2 font-medium text-gray-900">
-                      <a href={`/companies/${c.id}`} className="hover:text-violet-600 transition-colors">{c.name}</a>
+                      <a href={`/companies/${c.id}`} className="hover:text-gray-600 transition-colors">{c.name}</a>
                     </td>
                     <td className="px-3 py-2 text-gray-500">{c.industry ?? '—'}</td>
                     <td className="px-3 py-2">
@@ -265,7 +265,7 @@ export default function CompanyTestPanel() {
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-1.5">
                         <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-violet-400 rounded-full" style={{ width: `${c.energyScore}%` }} />
+                          <div className="h-full bg-gray-400 rounded-full" style={{ width: `${c.energyScore}%` }} />
                         </div>
                         <span className="text-[10px] text-gray-400">{c.energyScore}</span>
                       </div>
@@ -273,7 +273,7 @@ export default function CompanyTestPanel() {
                     <td className="px-3 py-2 text-right">
                       <button
                         onClick={() => deleteCompany(c.id, c.name)}
-                        className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                        className="text-xs text-gray-300 hover:text-gray-400 transition-colors"
                       >
                         删除
                       </button>
@@ -293,33 +293,33 @@ export default function CompanyTestPanel() {
       {/* ── 2. AI Extract Test ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-semibold text-gray-700 mb-1">AI 智能提取测试</h2>
-        <p className="text-xs text-gray-400 mb-4">需配置 ANTHROPIC_API_KEY</p>
+        <p className="text-xs text-gray-400 mb-4">需配置 QWEN_API_KEY</p>
 
         <textarea
           value={extractText}
           onChange={(e) => setExtractText(e.target.value)}
           rows={5}
-          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none mb-3 font-mono"
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 resize-none mb-3 font-mono"
         />
 
         <button
           onClick={testExtract}
           disabled={extracting || !extractText.trim()}
-          className="px-4 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors"
+          className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
           {extracting ? 'AI 提取中…' : '测试 AI 提取'}
         </button>
 
         {extractError && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
             {extractError}
           </div>
         )}
 
         {extractResult && (
-          <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-            <p className="text-xs font-semibold text-emerald-700 mb-2">提取结果：</p>
-            <pre className="text-xs text-emerald-800 overflow-auto max-h-48 whitespace-pre-wrap">
+          <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <p className="text-xs font-semibold text-gray-700 mb-2">提取结果：</p>
+            <pre className="text-xs text-gray-800 overflow-auto max-h-48 whitespace-pre-wrap">
               {JSON.stringify(extractResult, null, 2)}
             </pre>
           </div>
@@ -335,7 +335,7 @@ export default function CompanyTestPanel() {
           </div>
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {log.map((entry, i) => (
-              <p key={i} className={`text-xs font-mono ${entry.includes('✓') ? 'text-emerald-400' : entry.includes('✗') ? 'text-red-400' : 'text-zinc-300'}`}>
+              <p key={i} className={`text-xs font-mono ${entry.includes('✓') ? 'text-gray-400' : entry.includes('✗') ? 'text-gray-400' : 'text-zinc-300'}`}>
                 {entry}
               </p>
             ))}
@@ -356,7 +356,7 @@ export default function CompanyTestPanel() {
             <a
               key={link.href}
               href={link.href}
-              className="px-3 py-1.5 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-violet-300 hover:text-violet-700 transition-colors"
+              className="px-3 py-1.5 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 transition-colors"
             >
               {link.label}
             </a>

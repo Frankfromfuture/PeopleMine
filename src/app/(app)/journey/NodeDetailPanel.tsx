@@ -10,12 +10,10 @@ interface NodeDetailPanelProps {
 }
 
 const ROLE_EMOJIS: Record<string, string> = {
-  BIG_INVESTOR: '💰',
-  GATEWAY: '🚪',
-  ADVISOR: '🧠',
-  THERMOMETER: '🌡️',
-  LIGHTHOUSE: '🏮',
-  COMRADE: '⚔️',
+  BREAKER: '🚀',
+  EVANGELIST: '📢',
+  ANALYST: '🔍',
+  BINDER: '🔗',
 }
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -41,14 +39,14 @@ export default function NodeDetailPanel({
 
   if (!selectedNode) {
     return (
-      <div className="w-full md:w-[350px] bg-white border-l border-gray-200 p-6 flex flex-col items-center justify-center text-gray-400 md:border-l md:border-t-0 border-t">
+      <div className="w-full md:w-[350px] bg-app-elevated border-l border-line-standard p-6 flex flex-col items-center justify-center text-gray-400 md:border-l md:border-t-0 border-t">
         <p className="text-sm">点击图谱中的节点查看详情</p>
       </div>
     )
   }
 
   return (
-    <div className="w-full md:w-[350px] bg-white border-l border-gray-200 p-6 overflow-y-auto md:border-l md:border-t-0 border-t max-h-[520px]">
+    <div className="w-full md:w-[350px] bg-app-elevated border-l border-line-standard p-6 overflow-y-auto md:border-l md:border-t-0 border-t max-h-[520px]">
       {/* 关闭按钮 */}
       <button
         onClick={onClose}
@@ -61,7 +59,7 @@ export default function NodeDetailPanel({
       <div className="mb-6">
         <div className="flex items-start gap-3 mb-3">
           <div className="text-3xl">
-            {ROLE_EMOJIS[selectedNode.relationRole] || '👤'}
+            {ROLE_EMOJIS[selectedNode.roleArchetype] || '👤'}
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-lg">{selectedNode.name}</h3>
@@ -78,17 +76,17 @@ export default function NodeDetailPanel({
 
         {/* 角色和评分 */}
         <div className="flex flex-wrap gap-2">
-          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">
+          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
             {selectedNode.journeyRoleLabel}
           </span>
           {selectedNode.temperature && (
             <span
               className={`px-2 py-1 rounded-full text-xs font-semibold ${
                 selectedNode.temperature === 'HOT'
-                  ? 'bg-red-100 text-red-700'
+                  ? 'bg-gray-100 text-gray-700'
                   : selectedNode.temperature === 'WARM'
                     ? 'bg-orange-100 text-orange-700'
-                    : 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-700'
               }`}
             >
               {selectedNode.temperature === 'HOT'
@@ -101,19 +99,19 @@ export default function NodeDetailPanel({
         </div>
       </div>
 
-      <div className="border-t border-gray-200 pt-4 mb-4">
+      <div className="border-t border-line-standard pt-4 mb-4">
         {/* 评分指标 */}
         <div className="space-y-3 mb-4">
           <div>
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm font-medium text-gray-700">航程综合分</span>
-              <span className="text-sm font-semibold text-violet-600">
+              <span className="text-sm font-semibold text-gray-600">
                 {(selectedNode.journeyScore * 100).toFixed(0)}
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-violet-600 h-2 rounded-full"
+                className="bg-gray-600 h-2 rounded-full"
                 style={{ width: `${selectedNode.journeyScore * 100}%` }}
               />
             </div>
@@ -128,7 +126,7 @@ export default function NodeDetailPanel({
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-amber-400 h-2 rounded-full"
+                className="bg-gray-400 h-2 rounded-full"
                 style={{ width: `${selectedNode.energyScore}%` }}
               />
             </div>
@@ -148,7 +146,7 @@ export default function NodeDetailPanel({
                     key={i}
                     className={`flex-1 h-2 rounded-full ${
                       (selectedNode.trustLevel || 0) > i
-                        ? 'bg-rose-400'
+                        ? 'bg-gray-400'
                         : 'bg-gray-200'
                     }`}
                   />
@@ -180,7 +178,7 @@ export default function NodeDetailPanel({
 
       {/* 沟通建议 */}
       {pathStep && (
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-line-standard pt-4">
           <h4 className="font-semibold text-sm mb-3 text-gray-900">
             📞 沟通建议
           </h4>
@@ -210,7 +208,7 @@ export default function NodeDetailPanel({
             {pathStep.communicationAdvice.caution && (
               <div>
                 <p className="font-medium text-gray-700 mb-1">⚠️ 注意事项</p>
-                <p className="text-gray-600 bg-yellow-50 p-2 rounded">
+                <p className="text-gray-600 bg-gray-50 p-2 rounded">
                   {pathStep.communicationAdvice.caution}
                 </p>
               </div>
@@ -218,7 +216,7 @@ export default function NodeDetailPanel({
 
             <div>
               <p className="font-medium text-gray-700 mb-1">推荐渠道</p>
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
                 {CHANNEL_LABELS[pathStep.communicationAdvice.channelSuggestion]}
               </span>
             </div>
@@ -228,7 +226,7 @@ export default function NodeDetailPanel({
 
       {/* 路径信息 */}
       {pathStep && pathStep.hopIndex > 0 && pathStep.introductionViaName && (
-        <div className="border-t border-gray-200 mt-4 pt-4">
+        <div className="border-t border-line-standard mt-4 pt-4">
           <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
             推介人
           </p>

@@ -3,6 +3,12 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { JourneyPathData } from '@/lib/journey/types'
 import { inferAllLinks } from '@/lib/journey/inferLinks'
+import {
+  DEFAULT_RELATION_STRENGTH_CONFIG,
+  computePairStrength,
+  type RelationStrengthConfig,
+  type ContactForStrength,
+} from '@/lib/dev/relation-strength-store'
 
 // ─── 导出类型 ──────────────────────────────────────────────────────────────────
 
@@ -12,19 +18,41 @@ export interface NetworkContact {
   company: string | null
   title: string | null
   jobPosition: string | null
-  relationRole: string
+  jobFunction?: string | null
+  roleArchetype: string
   spiritAnimal: string | null
+  industryL1?: string | null
+  industryL2?: string | null
   tags: string | null
   energyScore: number
   trustLevel: number | null
+  chemistryScore?: number | null
   temperature: string | null
+  lastContactedAt?: string | Date | null
   notes: string | null
+  archetype: string | null
+  quickContext: {
+    scene: string
+    frequency: string
+    temperature: string
+  } | null
+  relationVector: {
+    trust: number
+    powerDelta: number
+    goalAlignment: number
+    emotionalVolatility: number
+    reciprocity: number
+    boundaryStability: number
+    confidence: number
+    updatedAt: string
+  } | null
 }
 
 export interface NetworkRelation {
   contactIdA: string
   contactIdB: string
   relationDesc: string | null
+  strength?: 'STRONG' | 'MEDIUM' | 'WEAK'
 }
 
 interface JourneyGraphProps {
@@ -39,19 +67,16 @@ interface JourneyGraphProps {
 // ─── 常量 ──────────────────────────────────────────────────────────────────────
 
 export const ROLE_LABEL: Record<string, string> = {
-  BIG_INVESTOR: '大金主', GATEWAY: '传送门', ADVISOR: '智囊',
-  THERMOMETER: '温度计', LIGHTHOUSE: '灯塔', COMRADE: '战友',
+  BREAKER: '破局者', EVANGELIST: '布道者', ANALYST: '分析师', BINDER: '粘合剂',
 }
 
 export const ROLE_COLOR: Record<string, {
   bg: string; border: string; text: string; hex: string; glow: string
 }> = {
-  BIG_INVESTOR: { bg: '#fffbeb', border: '#f59e0b', text: '#92400e', hex: '#f59e0b', glow: 'rgba(245,158,11,0.3)' },
-  GATEWAY:      { bg: '#eff6ff', border: '#3b82f6', text: '#1e40af', hex: '#3b82f6', glow: 'rgba(59,130,246,0.3)' },
-  ADVISOR:      { bg: '#faf5ff', border: '#7c3aed', text: '#4c1d95', hex: '#7c3aed', glow: 'rgba(124,58,237,0.3)' },
-  THERMOMETER:  { bg: '#fdf2f8', border: '#ec4899', text: '#831843', hex: '#ec4899', glow: 'rgba(236,72,153,0.3)' },
-  LIGHTHOUSE:   { bg: '#fff7ed', border: '#f97316', text: '#7c2d12', hex: '#f97316', glow: 'rgba(249,115,22,0.3)' },
-  COMRADE:      { bg: '#f0fdf4', border: '#22c55e', text: '#14532d', hex: '#22c55e', glow: 'rgba(34,197,94,0.3)' },
+  BREAKER:    { bg: '#f5f5f5', border: '#6b7280', text: '#1f2937', hex: '#6b7280', glow: 'rgba(107,114,128,0.3)' },
+  EVANGELIST: { bg: '#f3f4f6', border: '#4b5563', text: '#111827', hex: '#4b5563', glow: 'rgba(75,85,99,0.3)'   },
+  ANALYST:    { bg: '#f9fafb', border: '#374151', text: '#111827', hex: '#374151', glow: 'rgba(55,65,81,0.3)'   },
+  BINDER:     { bg: '#f0f0f0', border: '#9ca3af', text: '#374151', hex: '#9ca3af', glow: 'rgba(156,163,175,0.3)'},
 }
 
 export const CHANNEL_ICON: Record<string, string> = {
@@ -59,8 +84,7 @@ export const CHANNEL_ICON: Record<string, string> = {
 }
 
 const ANIMAL_LABEL: Record<string, string> = {
-  LION: '🦁 狮子', FOX: '🦊 狐狸', BEAR: '🐻 熊', CHAMELEON: '🦎 变色龙',
-  EAGLE: '🦅 鹰', DOLPHIN: '🐬 海豚', OWL: '🦉 猫头鹰', SKUNK: '🦨 臭鼬',
+  TIGER: '🐯 老虎', PEACOCK: '🦚 孔雀', OWL: '🦉 猫头鹰', KOALA: '🐨 考拉',
 }
 
 // 轨道：1/20 of original speeds
@@ -82,7 +106,7 @@ const LAYOUT_OPTIONS: Array<{
   grouper?: (c: NetworkContact) => string
 }> = [
   { id: 'orbit',    icon: '🌌', label: '星系轨道' },
-  { id: 'role',     icon: '🏷️', label: '按角色',   grouper: c => ROLE_LABEL[c.relationRole] || c.relationRole },
+  { id: 'role',     icon: '🏷️', label: '按角色',   grouper: c => ROLE_LABEL[c.roleArchetype] || c.roleArchetype },
   { id: 'animal',   icon: '🦁', label: '按气场动物', grouper: c => ANIMAL_LABEL[c.spiritAnimal || ''] || '未设置' },
   { id: 'industry', icon: '🏭', label: '按行业标签', grouper: c => parseTags(c.tags)[0] || '未标注' },
   { id: 'job',      icon: '💼', label: '按岗位',    grouper: c => c.jobPosition || '未设置' },
@@ -159,12 +183,40 @@ function floatSeed(id: string, salt: number): number {
   return ((h >>> 0) * 1.6180339887 + salt) % (Math.PI * 2)
 }
 
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v))
+}
+
+function getTrustScore(c: NetworkContact): number {
+  if (c.relationVector?.trust != null) return clamp01(c.relationVector.trust / 100)
+  if (c.trustLevel != null) return clamp01(c.trustLevel / 5)
+  return 0.45
+}
+
+function getAlignScore(c: NetworkContact): number {
+  if (c.relationVector?.goalAlignment != null) return clamp01(c.relationVector.goalAlignment / 100)
+  return 0.5
+}
+
+function getTrustBorderStyle(c: NetworkContact): { width: number; color: string } {
+  const trust = getTrustScore(c)
+  const width = 1 + trust * 2.4
+  const color = `rgba(79, 70, 229, ${0.22 + trust * 0.6})`
+  return { width, color }
+}
+
+function getAlignmentGlow(c: NetworkContact): string {
+  const align = getAlignScore(c)
+  return `rgba(16, 185, 129, ${0.12 + align * 0.45})`
+}
+
 // ─── Tooltip ───────────────────────────────────────────────────────────────────
 
 function Tooltip({ c, x, y }: { c: NetworkContact; x: number; y: number }) {
-  const col = ROLE_COLOR[c.relationRole] ?? ROLE_COLOR.COMRADE
+  const col = ROLE_COLOR[c.roleArchetype] ?? ROLE_COLOR.BINDER
   const tags = parseTags(c.tags)
   const isAutoGenerated = c.notes?.includes('自动生成的测试数据') ?? false
+
   return (
     <div className="fixed z-50 w-56 rounded-xl shadow-xl pointer-events-none"
       style={{
@@ -175,19 +227,24 @@ function Tooltip({ c, x, y }: { c: NetworkContact; x: number; y: number }) {
         boxShadow: `0 4px 20px ${col.glow}, 0 1px 4px rgba(0,0,0,0.08)`,
       }}>
       <div className="p-3 space-y-1.5">
-        <div className="font-bold text-sm text-gray-900">
+        <div className="font-bold text-sm text-text-primary">
           {c.name}
-          {isAutoGenerated && <span className="text-red-500 ml-1">*</span>}
+          {isAutoGenerated && <span className="text-gray-500 ml-1">*</span>}
         </div>
         <span className="inline-block px-1.5 py-0.5 rounded text-xs font-medium border"
           style={{ background: col.bg, color: col.hex, borderColor: col.border }}>
-          {ROLE_LABEL[c.relationRole] ?? c.relationRole}
+          {ROLE_LABEL[c.roleArchetype] ?? c.roleArchetype}
         </span>
         {c.spiritAnimal && (
-          <div className="text-xs text-gray-500">{ANIMAL_LABEL[c.spiritAnimal] ?? c.spiritAnimal}</div>
+          <div className="text-xs text-text-subtle">{ANIMAL_LABEL[c.spiritAnimal] ?? c.spiritAnimal}</div>
+        )}
+        {c.relationVector && (
+          <div className="text-[11px] text-text-subtle">
+            ARC T{c.relationVector.trust} · A{c.relationVector.goalAlignment} · R{c.relationVector.reciprocity}
+          </div>
         )}
         {(c.title || c.company || c.jobPosition) && (
-          <div className="text-xs text-gray-600">
+          <div className="text-xs text-text-secondary">
             {[c.jobPosition, c.title, c.company].filter(Boolean).join(' · ')}
           </div>
         )}
@@ -201,7 +258,7 @@ function Tooltip({ c, x, y }: { c: NetworkContact; x: number; y: number }) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {tags.slice(0, 3).map(t => (
-              <span key={t} className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 text-xs">{t}</span>
+              <span key={t} className="px-1.5 py-0.5 rounded bg-gray-100 text-text-subtle text-xs">{t}</span>
             ))}
           </div>
         )}
@@ -229,11 +286,45 @@ export default function JourneyGraph({
   const allEdgesRef = useRef<Array<{ id: string; srcId: string; tgtId: string }>>([])
 
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>('orbit')
-  const [scale, setScale]   = useState(0.88)
+  const [userScale, setUserScale] = useState(1)
+  const [fitScale, setFitScale] = useState(1)
+  const scale = Math.min(userScale, fitScale)
   const [hovered, setHovered] = useState<NetworkContact | null>(null)
   const [tipPos, setTipPos]   = useState({ x: 0, y: 0 })
   const [groupLabels, setGroupLabels] = useState<Array<{ label: string; x: number; y: number }>>([])
   const [containerSize, setContainerSize] = useState({ w: 900, h: 600 })
+  const [rsConfig, setRsConfig] = useState<RelationStrengthConfig>(DEFAULT_RELATION_STRENGTH_CONFIG)
+
+  // 加载关系强度配置
+  useEffect(() => {
+    fetch('/api/dev/relation-strength')
+      .then(r => r.json())
+      .then(d => { if (d.config) setRsConfig(d.config) })
+      .catch(() => {})
+  }, [])
+
+  // 预计算所有联系人两两之间的关系强度分
+  const pairStrengthMap = useMemo<Record<string, number>>(() => {
+    if (contacts.length < 2) return {}
+    const map: Record<string, number> = {}
+    const boost = rsConfig.universeConfig.intraCompanyBoost
+    for (let i = 0; i < contacts.length; i++) {
+      for (let j = i + 1; j < contacts.length; j++) {
+        const a = contacts[i] as unknown as ContactForStrength
+        const b = contacts[j] as unknown as ContactForStrength
+        const { score } = computePairStrength(a, b, rsConfig)
+        // 同公司额外加成
+        const compA = (a.companyName ?? a.company ?? '').trim()
+        const compB = (b.companyName ?? b.company ?? '').trim()
+        const sameCompany = compA && compB && compA === compB
+        const finalScore = Math.min(1, score + (sameCompany ? boost : 0))
+        const key = `${a.id}|${b.id}`, keyR = `${b.id}|${a.id}`
+        map[key] = finalScore
+        map[keyR] = finalScore
+      }
+    }
+    return map
+  }, [contacts, rsConfig])
 
   const setLayoutMode = useCallback((m: LayoutMode) => {
     layoutRef.current = m
@@ -277,15 +368,57 @@ export default function JourneyGraph({
     setGroupLabels(groupCenters)
   }, [layoutMode, contacts, containerSize])
 
-  // ── 推断边 ──
+  // ── 自动缩放：确保星球尽量在可视范围内 ──
+  useEffect(() => {
+    const { w, h } = sizeRef.current
+    if (!w || !h || contacts.length === 0) {
+      setFitScale(1)
+      return
+    }
+
+    const padding = 56
+    let requiredHalfW = 120
+    let requiredHalfH = 120
+
+    if (layoutMode === 'orbit') {
+      contacts.forEach((c) => {
+        const p = orbitRef.current[c.id]
+        if (!p) return
+        const half = p.size / 2
+        requiredHalfW = Math.max(requiredHalfW, p.r + half + padding)
+        requiredHalfH = Math.max(requiredHalfH, p.r + half + padding)
+      })
+      requiredHalfW = Math.max(requiredHalfW, 26 + padding)
+      requiredHalfH = Math.max(requiredHalfH, 26 + padding)
+    } else {
+      contacts.forEach((c) => {
+        const p = orbitRef.current[c.id]
+        const t = tgtPosRef.current[c.id]
+        if (!p || !t) return
+        const half = p.size / 2
+        const dx = Math.abs(t.x - w / 2) + half + 6 + padding
+        const dy = Math.abs(t.y - h / 2) + half + 6 + padding
+        requiredHalfW = Math.max(requiredHalfW, dx)
+        requiredHalfH = Math.max(requiredHalfH, dy)
+      })
+      requiredHalfW = Math.max(requiredHalfW, 26 + padding)
+      requiredHalfH = Math.max(requiredHalfH, 26 + padding)
+    }
+
+    const nextFit = Math.min(1, w / (requiredHalfW * 2), h / (requiredHalfH * 2))
+    setFitScale(Math.max(0.3, nextFit))
+  }, [contacts, layoutMode, containerSize])
+
   const inferredLinks = useMemo(() =>
     inferAllLinks(contacts.map(c => ({
-      id: c.id, relationRole: c.relationRole, tags: parseTags(c.tags),
+      id: c.id, roleArchetype: c.roleArchetype, tags: parseTags(c.tags),
       energyScore: c.energyScore, temperature: c.temperature, trustLevel: c.trustLevel,
     }))),
   [contacts])
 
   const bgEdges = useMemo(() => {
+    const threshold = rsConfig.universeConfig.edgeThreshold
+    const enabled   = rsConfig.universeConfig.enableDynamicEdges
     const known = new Set<string>()
     const edges: Array<{ id: string; srcId: string; tgtId: string; strong: boolean; isKnown: boolean }> = []
     relations.forEach(r => {
@@ -294,10 +427,15 @@ export default function JourneyGraph({
     })
     inferredLinks.forEach(l => {
       if (known.has(`${l.sourceId}|${l.targetId}`)) return
+      // 如果启用强度过滤，推断边低于阈值则隐藏
+      if (enabled) {
+        const s = pairStrengthMap[`${l.sourceId}|${l.targetId}`] ?? 0
+        if (s < threshold) return
+      }
       edges.push({ id: `i-${l.sourceId}-${l.targetId}`, srcId: l.sourceId, tgtId: l.targetId, strong: l.strong, isKnown: false })
     })
     return edges
-  }, [relations, inferredLinks])
+  }, [relations, inferredLinks, pairStrengthMap, rsConfig.universeConfig])
 
   const activePath = useMemo(() => {
     if (!pathData) return null
@@ -392,7 +530,7 @@ export default function JourneyGraph({
   // ── 事件 ──
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
-    setScale(s => Math.min(2.5, Math.max(0.3, s - e.deltaY * 0.001)))
+    setUserScale(s => Math.min(2.5, Math.max(0.3, s - e.deltaY * 0.001)))
   }, [])
 
   const contactMap = useMemo(() => {
@@ -405,7 +543,14 @@ export default function JourneyGraph({
   const cx = w / 2, cy = h / 2
 
   return (
-    <div ref={wrapRef} className="relative w-full h-full overflow-hidden bg-white" onWheel={onWheel}>
+    <div ref={wrapRef} className="relative w-full h-full overflow-hidden bg-app-bg" onWheel={onWheel}>
+
+      <style>{`
+        @keyframes pmPlanetPulse {
+          0%, 100% { transform: scale(0.96); opacity: 0.32; }
+          50% { transform: scale(1.06); opacity: 0.55; }
+        }
+      `}</style>
 
       {/* 淡灰网点背景 */}
       <div className="absolute inset-0 pointer-events-none opacity-30" style={{
@@ -414,38 +559,99 @@ export default function JourneyGraph({
       }} />
 
       {/* ── 可缩放内容 ── */}
-      <div className="absolute inset-0" style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: 'transform 200ms ease-out',
+        }}
+      >
 
         {/* SVG 连接线 */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <defs>
+            <filter id="pmTrailGlow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
           {/* 轨道圆（仅 orbit 模式） */}
           {layoutMode === 'orbit' && RINGS.map((ring, i) => (
             <circle key={i} cx="50%" cy="50%" r={ring.r}
               fill="none" stroke="rgba(148,163,184,0.12)" strokeWidth="1" strokeDasharray="4 10" />
           ))}
-          {/* 背景边 */}
+          {/* 背景边 — 颜色/粗细由关系强度驱动 */}
           {bgEdges.map(e => {
             const dimmed = !!activePath
+            const strength = pairStrengthMap[`${e.srcId}|${e.tgtId}`] ?? 0
+            const isStrong   = strength >= 0.65
+            const isMedium   = strength >= 0.38 && strength < 0.65
+            // 已知关系：强度驱动实线；推断关系：虚线+动效
+            const strokeColor = e.isKnown
+              ? isStrong  ? `rgba(31,41,55,${0.55 + strength * 0.25})`
+              : isMedium  ? `rgba(71,85,105,${0.35 + strength * 0.25})`
+              :              `rgba(100,116,139,${0.20 + strength * 0.20})`
+              : isStrong  ? `rgba(79,70,229,${0.50 + strength * 0.25})`
+              : isMedium  ? `rgba(124,58,237,${0.28 + strength * 0.20})`
+              :              `rgba(167,139,250,${0.12 + strength * 0.15})`
+            const strokeW = e.isKnown
+              ? 0.8 + strength * 2.2
+              : 0.6 + strength * 1.8
+            const dashArr = e.isKnown
+              ? undefined
+              : isStrong ? '10 5' : isMedium ? '7 5' : '4 6'
             return (
               <line key={e.id}
                 ref={el => { if (el) lineElRef.current.set(e.id, el) }}
                 x1={cx} y1={cy} x2={cx} y2={cy}
-                stroke={e.isKnown ? 'rgba(100,116,139,0.55)' : e.strong ? 'rgba(124,58,237,0.35)' : 'rgba(124,58,237,0.15)'}
-                strokeWidth={e.isKnown ? 1.5 : e.strong ? 1.5 : 1}
-                strokeDasharray={(!e.isKnown && !e.strong) ? '5 5' : undefined}
-                opacity={dimmed ? 0.4 : 1}
-              />
+                stroke={strokeColor}
+                strokeWidth={strokeW}
+                strokeDasharray={dashArr}
+                opacity={dimmed ? 0.35 : 1}
+              >
+                {!e.isKnown && isStrong && (
+                  <>
+                    <animate attributeName="stroke-dashoffset" values="0;-28" dur="1.6s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.45;0.95;0.45" dur="1.8s" repeatCount="indefinite" />
+                  </>
+                )}
+              </line>
             )
           })}
           {/* 路径高亮边 */}
-          {pathEdges.map(e => (
-            <line key={e.id}
-              ref={el => { if (el) lineElRef.current.set(e.id, el) }}
-              x1={cx} y1={cy} x2={cx} y2={cy}
-              stroke="#f59e0b" strokeWidth="2.5" opacity="0.9"
-            >
-              <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite" />
-            </line>
+          {pathEdges.map((e, idx) => (
+            <g key={e.id}>
+              <line
+                id={e.id}
+                ref={el => { if (el) lineElRef.current.set(e.id, el) }}
+                x1={cx} y1={cy} x2={cx} y2={cy}
+                stroke="#4b5563"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeDasharray="10 8"
+                opacity="0.85"
+              >
+                <animate attributeName="stroke-dashoffset" values="0;-36" dur="1.05s" repeatCount="indefinite" />
+                <animate attributeName="stroke-opacity" values="0.55;1;0.55" dur="1.7s" repeatCount="indefinite" />
+              </line>
+
+              {/* 航路端点流光（微型光点拖尾） */}
+              <circle r="2.4" fill="#9ca3af" opacity="0.95" filter="url(#pmTrailGlow)">
+                <animateMotion dur="1.05s" repeatCount="indefinite" rotate="auto" begin={`${idx * 0.08}s`}>
+                  <mpath href={`#${e.id}`} />
+                </animateMotion>
+                <animate attributeName="opacity" values="0.3;1;0.35" dur="1.05s" repeatCount="indefinite" />
+              </circle>
+              <circle r="4.8" fill="rgba(156,163,175,0.28)">
+                <animateMotion dur="1.05s" repeatCount="indefinite" rotate="auto" begin={`${idx * 0.08}s`}>
+                  <mpath href={`#${e.id}`} />
+                </animateMotion>
+              </circle>
+            </g>
           ))}
         </svg>
 
@@ -453,7 +659,7 @@ export default function JourneyGraph({
         {groupLabels.map(({ label, x, y }) => (
           <div key={label} className="absolute pointer-events-none"
             style={{ left: x, top: y - 52, transform: 'translateX(-50%)' }}>
-            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-gray-500 bg-white/80 border border-gray-200 whitespace-nowrap shadow-sm">
+            <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-text-subtle bg-app-bg/80 border border-gray-200 whitespace-nowrap shadow-sm">
               {label}
             </span>
           </div>
@@ -463,8 +669,8 @@ export default function JourneyGraph({
         <div className="absolute flex items-center justify-center rounded-full font-bold text-white z-10"
           style={{
             width: 52, height: 52, left: cx - 26, top: cy - 26,
-            background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-            boxShadow: '0 0 0 3px rgba(124,58,237,0.2), 0 4px 16px rgba(124,58,237,0.4)',
+            background: 'linear-gradient(135deg, #1f2937, #374151)',
+            boxShadow: '0 0 0 3px rgba(55,65,81,0.2), 0 4px 16px rgba(31,41,55,0.4)',
             fontSize: 15,
           }}>你</div>
 
@@ -475,27 +681,34 @@ export default function JourneyGraph({
           const size = p?.size ?? 44
           const initX = cx + (p?.r ?? 200) * Math.cos(a) - size / 2
           const initY = cy + (p?.r ?? 200) * Math.sin(a) - size / 2
-          const col = ROLE_COLOR[c.relationRole] ?? ROLE_COLOR.COMRADE
+          const col = ROLE_COLOR[c.roleArchetype] ?? ROLE_COLOR.BINDER
           const onPath = activeIds.has(c.id)
           const dimmed = !!activePath && !onPath
+          const trustBorder = getTrustBorderStyle(c)
+          const alignGlow = getAlignmentGlow(c)
           const isSel = selectedNodeId === c.id
           const isAutoGenerated = c.notes?.includes('自动生成的测试数据') ?? false
+          const isHover = hovered?.id === c.id
 
           return (
             <div key={c.id}
               ref={el => { nodeElRef.current[c.id] = el }}
-              className={`journey-node${isSel ? ' selected' : ''} absolute flex items-center justify-center rounded-full font-semibold cursor-pointer`}
+              className={`journey-node${isSel ? ' selected' : ''} absolute flex items-center justify-center rounded-full font-semibold cursor-pointer overflow-hidden`}
               style={{
                 width: size, height: size, left: initX, top: initY,
-                background: col.bg,
+                background: `radial-gradient(circle at 28% 26%, rgba(255,255,255,0.82), rgba(255,255,255,0.25) 36%, transparent 64%), linear-gradient(145deg, ${col.bg}, rgba(255,255,255,0.55))`,
+                border: `${trustBorder.width}px solid ${trustBorder.color}`,
                 color: col.hex,
                 fontSize: size > 50 ? 12 : 10,
                 opacity: dimmed ? 0.25 : 1,
                 zIndex: onPath ? 5 : 2,
+                transform: isHover ? 'scale(1.06)' : 'scale(1)',
                 boxShadow: isSel
-                  ? `0 0 0 1.5px rgba(255,255,255,0.9), 0 0 22px rgba(255,255,255,0.5), 0 4px 12px ${col.glow}`
-                  : `0 2px 8px ${col.glow}`,
-                transition: 'opacity 0.4s, box-shadow 0.2s',
+                  ? `0 0 0 1.5px rgba(255,255,255,0.9), 0 0 22px rgba(255,255,255,0.5), 0 4px 12px ${col.glow}, 0 0 22px ${alignGlow}`
+                  : isHover
+                  ? `0 0 0 1px rgba(255,255,255,0.85), 0 0 26px ${alignGlow}, 0 0 18px ${col.glow}, inset 0 1px 2px rgba(255,255,255,0.7)`
+                  : `0 2px 8px ${col.glow}, 0 0 16px ${alignGlow}, inset 0 1px 1px rgba(255,255,255,0.6)`,
+                transition: 'opacity 0.4s, box-shadow 0.2s, border-color 0.2s, transform 0.2s',
               }}
               onClick={() => onNodeClick?.(c.id)}
               onMouseEnter={e => {
@@ -508,9 +721,26 @@ export default function JourneyGraph({
                 setHovered(null)
               }}
             >
+              <span className="absolute inset-[8%] rounded-full pointer-events-none"
+                style={{
+                  border: `1px solid rgba(255,255,255,0.45)`,
+                  opacity: 0.85,
+                }}
+              />
+              {isHover && (
+                <span
+                  className="absolute -inset-2 rounded-full pointer-events-none"
+                  style={{
+                    border: `1px solid ${col.border}`,
+                    boxShadow: `0 0 20px ${col.glow}, 0 0 26px ${alignGlow}`,
+                    opacity: 0.45,
+                    animation: 'pmPlanetPulse 1.6s ease-in-out infinite',
+                  }}
+                />
+              )}
               <span className="truncate px-1 leading-tight text-center relative">
                 {c.name.length > 3 ? c.name.slice(0, 3) : c.name}
-                {isAutoGenerated && <span className="text-red-500 text-xs absolute -top-2 -right-1">*</span>}
+                {isAutoGenerated && <span className="text-gray-500 text-xs absolute -top-2 -right-1">*</span>}
               </span>
             </div>
           )
@@ -527,9 +757,9 @@ export default function JourneyGraph({
           <button key={opt.id}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-left transition-all whitespace-nowrap"
             style={{
-              background: layoutMode === opt.id ? '#ede9fe' : 'rgba(255,255,255,0.9)',
-              color: layoutMode === opt.id ? '#5b21b6' : '#64748b',
-              border: layoutMode === opt.id ? '1px solid #a78bfa' : '1px solid #e2e8f0',
+              background: layoutMode === opt.id ? '#1f2937' : 'rgba(255,255,255,0.9)',
+              color: layoutMode === opt.id ? '#ffffff' : '#64748b',
+              border: layoutMode === opt.id ? '1px solid #374151' : '1px solid #e2e8f0',
               boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
             }}
             onClick={() => setLayoutMode(opt.id)}
@@ -544,30 +774,37 @@ export default function JourneyGraph({
       <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1">
         {(['+', '−'] as const).map((s, i) => (
           <button key={s}
-            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-gray-500 transition hover:bg-gray-100"
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-text-subtle transition hover:bg-gray-100"
             style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid #e2e8f0', fontSize: 18 }}
-            onClick={() => setScale(v => i === 0 ? Math.min(2.5, v + 0.15) : Math.max(0.3, v - 0.15))}
+            onClick={() => setUserScale(v => i === 0 ? Math.min(2.5, v + 0.15) : Math.max(0.3, v - 0.15))}
           >{s}</button>
         ))}
+        <button
+          className="px-2 py-1 rounded-lg text-[10px] font-medium text-text-subtle border border-gray-200 bg-app-bg/90 hover:bg-gray-50"
+          onClick={() => setUserScale(1)}
+        >
+          适配全部
+        </button>
+        <div className="text-[10px] text-gray-400 text-center">缩放 {Math.round(scale * 100)}%</div>
       </div>
 
       {/* ── 图例 ── */}
-      <div className="absolute bottom-3 left-3 rounded-xl p-2.5 z-20 bg-white/90 border border-gray-200 shadow-sm text-xs">
+      <div className="absolute bottom-3 left-3 rounded-xl p-2.5 z-20 bg-app-bg/90 border border-gray-200 shadow-sm text-xs">
         <div className="text-gray-400 font-medium mb-1.5">角色图例</div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
           {Object.entries(ROLE_COLOR).map(([role, c]) => (
             <div key={role} className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full border" style={{ background: c.bg, borderColor: c.border }} />
-              <span className="text-gray-500">{ROLE_LABEL[role]}</span>
+              <span className="text-text-subtle">{ROLE_LABEL[role]}</span>
             </div>
           ))}
         </div>
         <div className="pt-2 space-y-1 border-t border-gray-100">
           {[
             { color: 'rgba(100,116,139,0.6)',  dash: false, label: '已知关系' },
-            { color: 'rgba(124,58,237,0.45)',  dash: false, label: 'AI推断强连接' },
-            { color: 'rgba(124,58,237,0.2)',   dash: true,  label: 'AI推断弱连接' },
-            { color: '#f59e0b',                dash: false, label: '当前航路' },
+            { color: 'rgba(55,65,81,0.55)',    dash: false, label: 'AI推断强连接（流光）' },
+            { color: 'rgba(55,65,81,0.2)',     dash: true,  label: 'AI推断弱连接' },
+            { color: '#4b5563',                dash: false, label: '当前航路' },
           ].map(({ color, dash, label }) => (
             <div key={label} className="flex items-center gap-1.5">
               <svg width="20" height="8">
@@ -577,6 +814,16 @@ export default function JourneyGraph({
               <span className="text-gray-400">{label}</span>
             </div>
           ))}
+        </div>
+        <div className="pt-2 mt-2 border-t border-gray-100 space-y-1 text-[11px] text-gray-400">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-gray-500/70 bg-transparent" />
+            <span>描边粗细 = 信任强度（Trust）</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded-full bg-gray-200/60" style={{ boxShadow: '0 0 10px rgba(16,185,129,0.5)' }} />
+            <span>外圈光晕 = 目标一致（Alignment）</span>
+          </div>
         </div>
       </div>
     </div>

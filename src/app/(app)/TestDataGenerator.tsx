@@ -29,7 +29,7 @@ export default function TestDataGenerator() {
       if (response.ok) {
         setMessage({
           type: 'success',
-          text: `✓ 成功生成 ${data.count} 个随机联系人（${data.mode === 'ai' ? 'AI 真随机' : '本地随机'}）`,
+          text: `✓ 成功生成 ${data.count} 个随机联系人（AI 真随机）`,
         })
         // 刷新页面以显示新数据
         setTimeout(() => window.location.reload(), 1500)
@@ -89,7 +89,7 @@ export default function TestDataGenerator() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-violet-50 to-blue-50 border border-violet-200 rounded-xl p-6">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-50 border border-gray-200 rounded-xl p-6">
       <div className="flex items-center gap-3 mb-4">
         <span className="text-2xl">🧪</span>
         <div>
@@ -114,7 +114,7 @@ export default function TestDataGenerator() {
                 value={count}
                 onChange={(e) => setCount(Math.max(1, Math.min(500, parseInt(e.target.value) || 1)))}
                 disabled={isGenerating}
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-500 disabled:opacity-50"
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-500 disabled:opacity-50"
               />
               <span className="text-sm text-gray-600">个</span>
             </div>
@@ -133,7 +133,7 @@ export default function TestDataGenerator() {
                 value={tagVariability}
                 onChange={(e) => setTagVariability(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
                 disabled={isGenerating}
-                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-500 disabled:opacity-50"
+                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-500 disabled:opacity-50"
               />
               <span className="text-sm text-gray-600">%</span>
             </div>
@@ -144,7 +144,7 @@ export default function TestDataGenerator() {
         <div>
           <div className="flex items-center justify-between text-xs mb-2">
             <span className="text-gray-600">标签规律性</span>
-            <span className="text-violet-600 font-semibold">
+            <span className="text-gray-600 font-semibold">
               {100 - tagVariability}% 规律 / {tagVariability}% 随机
             </span>
           </div>
@@ -155,7 +155,7 @@ export default function TestDataGenerator() {
             value={tagVariability}
             onChange={(e) => setTagVariability(parseInt(e.target.value))}
             disabled={isGenerating}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600 disabled:opacity-50"
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-600 disabled:opacity-50"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>完全规律</span>
@@ -167,10 +167,11 @@ export default function TestDataGenerator() {
         <div className="text-xs text-gray-600 bg-white bg-opacity-60 rounded p-3 border border-gray-200">
           💡 <strong>说明：</strong>
           <ul className="mt-2 space-y-1 ml-5 list-disc">
-            <li>生成的数据包括：姓名、行业、公司、职位、标签、能量值、温度、信任度等</li>
-            <li>标签波动性越高，生成的标签越随机；越低，标签越与行业相关</li>
-            <li>数据完整度随机（某些字段可能为空）</li>
-            <li>关系角色分布符合现实比例：GATEWAY(25%) &gt; ADVISOR(20%) &gt; ...</li>
+            <li>必填随机项：姓名、男女、首次认识时间、企业、行业（一级+二级）、职位</li>
+            <li>其余字段由 AI 按 50%-100% 完整度随机填写，模拟真实登记掌握程度</li>
+            <li>波动性越高，生成的行业越多元；越低，行业越集中聚焦</li>
+            <li>每条写入新标签体系：角色定位（破局者/布道者…）+ 气场动物（老虎/孔雀…）</li>
+            <li>生成数量严格校验，请求多少条就必须成功写入多少条</li>
           </ul>
         </div>
 
@@ -179,8 +180,8 @@ export default function TestDataGenerator() {
           <div
             className={`p-3 rounded-lg text-sm ${
               message.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
+                ? 'bg-gray-50 text-gray-800 border border-gray-200'
+                : 'bg-gray-50 text-gray-800 border border-gray-200'
             }`}
           >
             {message.text}
@@ -192,7 +193,7 @@ export default function TestDataGenerator() {
           <button
             onClick={handleGenerate}
             disabled={isGenerating || isClearing}
-            className="px-4 py-2 rounded-lg bg-violet-600 text-white font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+            className="px-4 py-2 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
           >
             {isGenerating ? (
               <>
@@ -210,7 +211,7 @@ export default function TestDataGenerator() {
           <button
             onClick={handleClear}
             disabled={isGenerating || isClearing}
-            className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+            className="px-4 py-2 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
           >
             {isClearing ? (
               <>

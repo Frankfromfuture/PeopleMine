@@ -2,72 +2,63 @@ import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 import { getAuthUserId } from '@/lib/session'
 import NewContactForm from '../../new/NewContactForm'
-import { loadTagConfig, flattenTags } from '@/lib/dev/tag-store'
-
-const DEFAULT_TAG_OPTIONS = ['AI', '互联网', '投资', '产品', '设计', '运营', '教育', '医疗']
-
-function parseSavedTagOptions(raw: string | null) {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed.filter((v) => typeof v === 'string')
-    return []
-  } catch {
-    return []
-  }
-}
 
 export default async function EditContactPage({ params }: { params: { id: string } }) {
   const userId = await getAuthUserId()
 
-  const [contact, user, companies] = await Promise.all([
+  const [contact, allContacts] = await Promise.all([
     db.contact.findFirst({
       where: { id: params.id, userId },
-      include: {
-        linkedCompany: {
-          select: { id: true, name: true },
-        },
-      },
     }),
-    db.user.findUnique({
-      where: { id: userId },
-      select: { industry: true },
-    }),
-    db.company.findMany({
+    db.contact.findMany({
       where: { userId },
       select: { id: true, name: true },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { name: 'asc' },
     }),
   ])
   if (!contact) notFound()
 
-  const saved = parseSavedTagOptions(user?.industry ?? null)
-  const contactTags = parseSavedTagOptions(contact.tags)
-  const devTags = process.env.NODE_ENV === 'development' ? flattenTags(loadTagConfig()) : []
-  const initialTagOptions = Array.from(new Set([...DEFAULT_TAG_OPTIONS, ...devTags, ...saved, ...contactTags]))
-
   return (
     <NewContactForm
       mode="edit"
-      initialTagOptions={initialTagOptions}
-      initialCompanies={companies}
-      tagConfig={process.env.NODE_ENV === 'development' ? loadTagConfig() : null}
+      allContacts={allContacts}
       initialContact={{
         id: contact.id,
         name: contact.name,
+        fullName: contact.fullName,
+        gender: contact.gender as never,
+        age: contact.age,
+        firstMetYear: contact.firstMetYear,
+        personalRelation: contact.personalRelation as never,
+        reciprocityLevel: contact.reciprocityLevel,
+        friendLinks: contact.friendLinks,
+        companyName: contact.companyName,
         company: contact.company,
-        companyId: contact.linkedCompany?.id ?? contact.companyId ?? null,
+        companyProfile: contact.companyProfile,
+        companyScale: contact.companyScale as never,
+        industry: contact.industry,
+        industryL1: contact.industryL1,
+        industryL2: contact.industryL2,
         title: contact.title,
-        jobPosition: contact.jobPosition,
-        trustLevel: contact.trustLevel,
-        tags: contactTags,
-        spiritAnimal: contact.spiritAnimal,
-        relationRole: contact.relationRole,
-        temperature: contact.temperature,
+        jobTitle: contact.jobTitle,
+        jobPosition: contact.jobPosition as never,
+        jobFunction: contact.jobFunction as never,
+        influence: contact.influence as never,
+        networkingNeeds: contact.networkingNeeds as never,
+        spiritAnimal: contact.spiritAnimal as never,
+        roleArchetype: contact.roleArchetype as never,
+        chemistryScore: contact.chemistryScore,
+        valueScore: contact.valueScore as never,
+        potentialProjects: contact.potentialProjects,
+        socialPosition: contact.socialPosition,
+        hobbies: contact.hobbies,
+        personalNotes: contact.personalNotes,
+        notes: contact.notes,
         wechat: contact.wechat,
         phone: contact.phone,
         email: contact.email,
-        notes: contact.notes,
+        companyAddress: contact.companyAddress,
+        personalAddress: contact.personalAddress,
       }}
     />
   )

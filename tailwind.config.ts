@@ -9,14 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          "-apple-system",
-          "BlinkMacSystemFont",
-          '"Segoe UI"',
-          '"Microsoft JhengHei"',
-          '"Microsoft YaHei"',
-          "sans-serif",
-        ],
+        sans: ["Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei New", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       colors: {
         background: "var(--background)",
@@ -31,14 +25,49 @@ const config: Config = {
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
+        app: {
+          bg: "var(--bg-app)",
+          panel: "var(--bg-panel)",
+          surface: "var(--bg-surface)",
+          strong: "var(--bg-surface-strong)",
+          elevated: "var(--bg-elevated)",
+        },
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+          subtle: "var(--text-subtle)",
+        },
+        line: {
+          subtle: "var(--border-subtle)",
+          standard: "var(--border-standard)",
+          strong: "var(--border-strong)",
+        },
+        brand: {
+          DEFAULT: "var(--accent)",
+          bright: "var(--accent-bright)",
+          hover: "var(--accent-hover)",
+        },
+        success: "var(--success)",
+        danger: "var(--danger)",
+      },
+      boxShadow: {
+        surface: "var(--shadow-surface)",
+        elevated: "var(--shadow-elevated)",
+        dialog: "var(--shadow-dialog)",
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "var(--radius-sm)",
+        sm: "6px",
+        panel: "var(--radius-lg)",
+      },
+      backdropBlur: {
+        xs: "2px",
       },
     },
   },
   plugins: [],
 };
+
 export default config;

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       return {
         id: c.id,
         name: c.name,
-        relationRole: c.relationRole,
+        roleArchetype: c.roleArchetype ?? c.relationRole ?? 'BINDER',
         energyScore: c.energyScore,
         trustLevel: c.trustLevel,
         temperature: c.temperature,

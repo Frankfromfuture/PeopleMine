@@ -11,12 +11,22 @@ export default async function ContactsPage() {
   let contacts: Array<{
     id: string
     name: string
-    relationRole: 'BIG_INVESTOR' | 'GATEWAY' | 'ADVISOR' | 'THERMOMETER' | 'LIGHTHOUSE' | 'COMRADE'
-    tags: string | null
+    fullName: string | null
+    roleArchetype: 'BREAKER' | 'EVANGELIST' | 'ANALYST' | 'BINDER' | null
+    spiritAnimal: 'TIGER' | 'PEACOCK' | 'OWL' | 'KOALA' | null
+    industry: string | null
+    industryL1: string | null
+    industryL2: string | null
     temperature: 'COLD' | 'WARM' | 'HOT' | null
     trustLevel: number | null
+    chemistryScore: number | null
     company: string | null
+    companyName: string | null
     title: string | null
+    jobTitle: string | null
+    jobPosition: string | null
+    jobFunction: string | null
+    noteSummary: string | null
     notes: string | null
     createdAt: Date
     updatedAt: Date
@@ -31,12 +41,22 @@ export default async function ContactsPage() {
       select: {
         id: true,
         name: true,
-        relationRole: true,
-        tags: true,
+        fullName: true,
+        roleArchetype: true,
+        spiritAnimal: true,
+        industry: true,
+        industryL1: true,
+        industryL2: true,
         temperature: true,
         trustLevel: true,
+        chemistryScore: true,
         company: true,
+        companyName: true,
         title: true,
+        jobTitle: true,
+        jobPosition: true,
+        jobFunction: true,
+        noteSummary: true,
         notes: true,
         createdAt: true,
         updatedAt: true,
@@ -53,11 +73,11 @@ export default async function ContactsPage() {
     <div className="min-h-full">
       {/* ── Database error warning ── */}
       {dbError && (
-        <div className="bg-amber-50 border-b border-amber-200 px-8 py-4">
-          <p className="text-sm text-amber-800">
+        <div className="bg-gray-50 border-b border-gray-200 px-8 py-4">
+          <p className="text-sm text-gray-800">
             <span className="font-semibold">⚠️ 数据库暂时不可用：</span> {dbError}
           </p>
-          <p className="text-xs text-amber-700 mt-1">
+          <p className="text-xs text-gray-700 mt-1">
             数据库连接失败，刷新页面即可恢复。
           </p>
         </div>
@@ -68,7 +88,7 @@ export default async function ContactsPage() {
           <h1 className="text-2xl font-semibold text-gray-900">人脉数据库</h1>
         <Link
           href="/contacts/new"
-          className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
