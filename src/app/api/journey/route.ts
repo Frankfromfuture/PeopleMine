@@ -188,16 +188,29 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const relations = await db.contactRelation.findMany({
-      where: {
-        OR: [
-          { contactIdA: { in: contacts.map((c) => c.id) } },
-          { contactIdB: { in: contacts.map((c) => c.id) } },
-        ],
-      },
-    })
+    const nintyDaysAgo = new Date(Date.now() - 90 * 86_400_000)
+    const [relations, recentInteractions] = await Promise.all([
+      db.contactRelation.findMany({
+        where: {
+          OR: [
+            { contactIdA: { in: contacts.map((c) => c.id) } },
+            { contactIdB: { in: contacts.map((c) => c.id) } },
+          ],
+        },
+      }),
+      db.interaction.groupBy({
+        by: ['contactId'],
+        where: {
+          contactId: { in: contacts.map((c) => c.id) },
+          date: { gte: nintyDaysAgo },
+        },
+        _count: { id: true },
+      }),
+    ])
 
-    const scoredContacts = scoreAllContacts(contacts as never, relations, goal)
+    const interactionMap = new Map(recentInteractions.map(r => [r.contactId, r._count.id]))
+
+    const scoredContacts = scoreAllContacts(contacts as never, relations, goal, interactionMap)
     const averageArcScore = scoredContacts.length > 0
       ? scoredContacts.reduce((sum, item) => sum + item.arcScore, 0) / scoredContacts.length
       : 0

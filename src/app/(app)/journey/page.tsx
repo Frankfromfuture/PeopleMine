@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useLoading } from '@/components/ThinkingToast'
 import PeopleUniverseView from './PeopleUniverseView'
@@ -11,7 +11,15 @@ import {
   ROLE_COLOR,
   CHANNEL_ICON,
 } from './JourneyGraph'
-import { JourneyPathData, JourneyAnalysisResponse, PathStep, AlternativePath } from '@/lib/journey/types'
+import {
+  JourneyPathData,
+  JourneyAnalysisResponse,
+  PathStep,
+  AlternativePath,
+  StepStatus,
+  StepExecutionStatus,
+} from '@/lib/journey/types'
+import { InteractionType, INTERACTION_TYPE_LABELS } from '@/types'
 
 // ─── 加载步骤 ──────────────────────────────────────────────────────────────────
 
@@ -24,6 +32,163 @@ const LOADING_STEPS = [
 
 type LoadingStep = 'idle' | 'step1' | 'step2' | 'step3' | 'step4'
 
+// ─── 步骤状态 UI ───────────────────────────────────────────────────────────────
+
+const STATUS_LABEL: Record<StepExecutionStatus, string> = {
+  pending: '待联系',
+  in_progress: '联系中',
+  done: '✓ 完成',
+  skipped: '已跳过',
+  failed: '未回应',
+}
+
+const STATUS_STYLE: Record<StepExecutionStatus, string> = {
+  pending: 'bg-gray-100 text-gray-500 border-gray-200',
+  in_progress: 'bg-blue-50 text-blue-600 border-blue-200',
+  done: 'bg-green-50 text-green-700 border-green-200',
+  skipped: 'bg-gray-50 text-gray-400 border-gray-100',
+  failed: 'bg-red-50 text-red-500 border-red-200',
+}
+
+function StepStatusBadge({
+  contactId,
+  stepStatus,
+  journeyId,
+  onUpdate,
+}: {
+  contactId: string
+  stepStatus: StepStatus | undefined
+  journeyId: string | null
+  onUpdate: (s: StepStatus) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [note, setNote] = useState('')
+  const [interactionType, setInteractionType] = useState<InteractionType>('MEETING')
+  const current = stepStatus?.status ?? 'pending'
+
+  const handleQuick = async (status: StepExecutionStatus) => {
+    if (!journeyId) return
+    if (status === 'done') { setOpen(true); return }
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/journey/${journeyId}/steps`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId, status }),
+      })
+      if (!res.ok) throw new Error('更新失败')
+      const data = await res.json()
+      const updated = (data.stepStatuses as StepStatus[]).find(s => s.contactId === contactId)
+      if (updated) onUpdate(updated)
+    } catch { toast.error('状态更新失败') }
+    setSubmitting(false)
+  }
+
+  const handleDone = async () => {
+    if (!journeyId) return
+    setSubmitting(true)
+    try {
+      const res = await fetch(`/api/journey/${journeyId}/steps`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId, status: 'done', note: note || null, interactionType }),
+      })
+      if (!res.ok) throw new Error('更新失败')
+      const data = await res.json()
+      const updated = (data.stepStatuses as StepStatus[]).find(s => s.contactId === contactId)
+      if (updated) onUpdate(updated)
+      setOpen(false)
+      setNote('')
+      toast.success('步骤已完成并记录互动')
+    } catch { toast.error('状态更新失败') }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1 mt-1.5">
+        <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${STATUS_STYLE[current]}`}>
+          {STATUS_LABEL[current]}
+        </span>
+        {journeyId && current !== 'done' && (
+          <div className="flex items-center gap-0.5">
+            {current !== 'in_progress' && (
+              <button
+                disabled={submitting}
+                onClick={() => handleQuick('in_progress')}
+                className="text-[9px] px-1 py-0.5 rounded border border-blue-200 text-blue-500 hover:bg-blue-50 disabled:opacity-50"
+              >
+                联系中
+              </button>
+            )}
+            <button
+              disabled={submitting}
+              onClick={() => handleQuick('done')}
+              className="text-[9px] px-1 py-0.5 rounded border border-green-200 text-green-600 hover:bg-green-50 disabled:opacity-50"
+            >
+              完成
+            </button>
+            {current !== 'skipped' && (
+              <button
+                disabled={submitting}
+                onClick={() => handleQuick('skipped')}
+                className="text-[9px] px-1 py-0.5 rounded border border-gray-200 text-gray-400 hover:bg-gray-50 disabled:opacity-50"
+              >
+                跳过
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 完成表单 */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-56 space-y-2"
+          >
+            <p className="text-xs font-semibold text-gray-800">记录互动</p>
+            <select
+              value={interactionType}
+              onChange={(e) => setInteractionType(e.target.value as InteractionType)}
+              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none"
+            >
+              {(Object.keys(INTERACTION_TYPE_LABELS) as InteractionType[]).map(k => (
+                <option key={k} value={k}>{INTERACTION_TYPE_LABELS[k]}</option>
+              ))}
+            </select>
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="备注（可选）"
+              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none"
+            />
+            <div className="flex gap-1.5">
+              <button
+                disabled={submitting}
+                onClick={handleDone}
+                className="flex-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg py-1.5 font-medium disabled:opacity-50"
+              >
+                {submitting ? '保存…' : '确认完成'}
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="px-2 text-xs border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── 航路卡片 ──────────────────────────────────────────────────────────────────
 
 function RouteCard({
@@ -34,6 +199,9 @@ function RouteCard({
   rationale,
   isActive,
   onClick,
+  journeyId,
+  stepStatuses,
+  onStepUpdate,
 }: {
   title: string
   badge: string
@@ -42,6 +210,9 @@ function RouteCard({
   rationale?: string
   isActive: boolean
   onClick: () => void
+  journeyId: string | null
+  stepStatuses: StepStatus[]
+  onStepUpdate: (s: StepStatus) => void
 }) {
   const [expandedStep, setExpandedStep] = useState<number | null>(null)
 
@@ -94,29 +265,41 @@ function RouteCard({
         </div>
         {steps.map((step, i) => {
           const nodeColors = Object.values(ROLE_COLOR)[i % 6]
+          const stepStatus = stepStatuses.find(s => s.contactId === step.contactId)
+          const isDone = stepStatus?.status === 'done'
           return (
             <React.Fragment key={step.contactId}>
               <svg width="16" height="10" className="text-gray-400 shrink-0">
                 <path d="M0 5 L12 5 M8 1 L14 5 L8 9" stroke="#6b7280" strokeWidth="1.5" fill="none" />
               </svg>
-              <button
-                className={`flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold border transition-all shrink-0 ${
-                  expandedStep === i
-                    ? 'ring-2 ring-gray-400'
-                    : 'hover:opacity-90'
-                }`}
-                style={{
-                  backgroundColor: nodeColors.bg,
-                  borderColor: nodeColors.border,
-                  color: nodeColors.text,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setExpandedStep(expandedStep === i ? null : i)
-                }}
-              >
-                {step.contactName}
-              </button>
+              <div className="shrink-0">
+                <button
+                  className={`flex items-center justify-center px-2 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                    expandedStep === i ? 'ring-2 ring-gray-400' : 'hover:opacity-90'
+                  } ${isDone ? 'opacity-60' : ''}`}
+                  style={{
+                    backgroundColor: nodeColors.bg,
+                    borderColor: nodeColors.border,
+                    color: nodeColors.text,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setExpandedStep(expandedStep === i ? null : i)
+                  }}
+                >
+                  {isDone ? '✓ ' : ''}{step.contactName}
+                </button>
+                {/* 低置信度警告 */}
+                {step.confidenceAtThisStep < 0.5 && (
+                  <div className="text-[9px] text-amber-500 font-medium mt-0.5">⚠️ 需要预热</div>
+                )}
+                <StepStatusBadge
+                  contactId={step.contactId}
+                  stepStatus={stepStatus}
+                  journeyId={journeyId}
+                  onUpdate={onStepUpdate}
+                />
+              </div>
             </React.Fragment>
           )
         })}
@@ -147,8 +330,8 @@ function RouteCard({
             <span className="text-gray-700">{steps[expandedStep].communicationAdvice.timing}</span>
           </div>
           {steps[expandedStep].communicationAdvice.caution && (
-            <div className="bg-gray-50 border border-gray-200 rounded p-2">
-              <span className="text-gray-700">⚠️ {steps[expandedStep].communicationAdvice.caution}</span>
+            <div className="bg-amber-50 border border-amber-200 rounded p-2">
+              <span className="text-amber-700">⚠️ {steps[expandedStep].communicationAdvice.caution}</span>
             </div>
           )}
           <div className="flex items-center gap-1 text-text-secondary">
@@ -171,6 +354,8 @@ export default function JourneyPage() {
   const [contacts, setContacts] = useState<NetworkContact[]>([])
   const [relations, setRelations] = useState<NetworkRelation[]>([])
   const [pathData, setPathData] = useState<JourneyPathData | null>(null)
+  const [journeyId, setJourneyId] = useState<string | null>(null)
+  const [stepStatuses, setStepStatuses] = useState<StepStatus[]>([])
   const [activeRouteIndex, setActiveRouteIndex] = useState(0)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [goal, setGoal] = useState('')
@@ -209,6 +394,8 @@ export default function JourneyPage() {
     setIsLoading(true)
     setError(null)
     setPathData(null)
+    setJourneyId(null)
+    setStepStatuses([])
     setActiveRouteIndex(0)
     setSelectedNodeId(null)
     showLoading()
@@ -223,8 +410,10 @@ export default function JourneyPage() {
         const err = await res.json()
         throw new Error(err.error || `服务器错误 ${res.status}`)
       }
-      const data = (await res.json()) as JourneyAnalysisResponse
+      const data = (await res.json()) as JourneyAnalysisResponse & { journey: { id: string } }
       setPathData(data.journey.pathData)
+      setJourneyId(data.journey.id)
+      setStepStatuses(data.journey.pathData.stepStatuses ?? [])
       toast.success('航程分析已完成')
     } catch (err) {
       const message = err instanceof Error ? err.message : '未知错误'
@@ -236,6 +425,15 @@ export default function JourneyPage() {
       hideLoading()
     }
   }, [goal, isLoading, showLoading, hideLoading])
+
+  const handleStepUpdate = useCallback((updated: StepStatus) => {
+    setStepStatuses(prev => {
+      const idx = prev.findIndex(s => s.contactId === updated.contactId)
+      return idx >= 0
+        ? prev.map((s, i) => i === idx ? updated : s)
+        : [...prev, updated]
+    })
+  }, [])
 
   // 所有航路（主 + 备选，最多3条）
   const allRoutes = pathData
@@ -256,6 +454,14 @@ export default function JourneyPage() {
         })),
       ]
     : []
+
+  // 进度摘要
+  const primaryDone = pathData
+    ? stepStatuses.filter(s =>
+        s.status === 'done' && pathData.primaryPath.some(p => p.contactId === s.contactId)
+      ).length
+    : 0
+  const primaryTotal = pathData?.primaryPath.length ?? 0
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -282,7 +488,7 @@ export default function JourneyPage() {
           {pathData && (
             <button
               className="h-9 px-3 rounded-lg border border-gray-300 text-gray-600 text-sm hover:bg-gray-50 transition shrink-0"
-              onClick={() => { setPathData(null); setGoal(''); setError(null) }}
+              onClick={() => { setPathData(null); setJourneyId(null); setStepStatuses([]); setGoal(''); setError(null) }}
             >
               清除
             </button>
@@ -377,6 +583,7 @@ export default function JourneyPage() {
             {/* 航路卡片 */}
             {pathData && (
               <div className="p-4 space-y-3">
+                {/* ARC 摘要 */}
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                   <h3 className="text-xs font-semibold text-gray-800 mb-2">ARC 分析摘要</h3>
                   <div className="grid grid-cols-3 gap-2 text-xs">
@@ -410,6 +617,24 @@ export default function JourneyPage() {
                   )}
                 </div>
 
+                {/* 进度条 */}
+                {primaryTotal > 0 && (
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold text-gray-700">主路径进度</span>
+                      <span className="text-xs text-gray-500">{primaryDone} / {primaryTotal} 步</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-green-500 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(primaryDone / primaryTotal) * 100}%` }}
+                        transition={{ duration: 0.4 }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <h2 className="font-bold text-text-primary text-sm">🧭 航路方案</h2>
                   <span className="text-xs text-text-subtle">{allRoutes.length} 条</span>
@@ -425,6 +650,9 @@ export default function JourneyPage() {
                     rationale={route.rationale}
                     isActive={activeRouteIndex === i}
                     onClick={() => setActiveRouteIndex(i)}
+                    journeyId={journeyId}
+                    stepStatuses={stepStatuses}
+                    onStepUpdate={handleStepUpdate}
                   />
                 ))}
 

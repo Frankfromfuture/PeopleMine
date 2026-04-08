@@ -1,4 +1,24 @@
-import { QuickContext, RelationVector, RoleArchetype, Temperature } from '@/types'
+import { InteractionType, QuickContext, RelationVector, RoleArchetype, Temperature } from '@/types'
+
+// ── 步骤执行状态（存入 Journey.pathData，无需迁移） ────────────────────────────
+export type StepExecutionStatus = 'pending' | 'in_progress' | 'done' | 'skipped' | 'failed'
+
+export interface StepStatus {
+  contactId: string
+  status: StepExecutionStatus
+  note: string | null
+  updatedAt: string // ISO
+  interactionType: InteractionType | null
+}
+
+// ── 目标结构化元数据（GoalInput 向导写入，存入 Journey.pathData） ──────────────
+export interface GoalMeta {
+  type: 'introduction' | 'resource' | 'advice' | 'collaboration' | 'other'
+  target: string | null     // 目标人物描述，如"B轮投资人"
+  count: number | null      // 目标数量
+  deadline: string | null   // ISO date string
+  context: string | null    // 背景说明
+}
 
 /**
  * 完整的航程路径数据结构 - 存储在 Journey.pathData Json 字段
@@ -43,6 +63,12 @@ export interface JourneyPathData {
 
   // 整体置信度 0-1
   overallConfidence: number
+
+  // 步骤执行状态（用户追踪进度时写入，初始不存在）
+  stepStatuses?: StepStatus[]
+
+  // 目标结构化元数据（GoalInput 向导写入，初始可能不存在）
+  goalMeta?: GoalMeta
 }
 
 /**

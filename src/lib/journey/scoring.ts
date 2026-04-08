@@ -59,8 +59,9 @@ export function computeRelevanceScore(goal: string, contact: Contact): number {
 
 /**
  * 计算可达性分数（0-1）
+ * @param recentInteractions 近 90 天互动次数（来自 Interaction 表，用于反馈加成）
  */
-export function computeAccessibilityScore(contact: Contact): number {
+export function computeAccessibilityScore(contact: Contact, recentInteractions = 0): number {
   const baseEnergy = contact.energyScore / 100
 
   const tempMultiplier =
@@ -84,7 +85,10 @@ export function computeAccessibilityScore(contact: Contact): number {
     recencyDecay = daysSinceContact >= 180 ? 0.5 : 1 - 0.5 * ((daysSinceContact - 30) / 150)
   }
 
-  return Math.min(1, baseEnergy * tempMultiplier * trustMultiplier * recencyDecay)
+  // 互动反馈加成：每次近期互动 +5%，上限 +20%（闭环：标记步骤完成 → 评分提升）
+  const interactionBoost = Math.min(0.2, recentInteractions * 0.05)
+
+  return Math.min(1, baseEnergy * tempMultiplier * trustMultiplier * recencyDecay + interactionBoost)
 }
 
 /**
@@ -124,6 +128,7 @@ export function scoreAllContacts(
   contacts: Contact[],
   relations: ContactRelation[],
   goal: string,
+  interactionMap?: Map<string, number>,
 ): ScoredContact[] {
   const goalType = detectJourneyGoalType(goal)
 
@@ -132,7 +137,8 @@ export function scoreAllContacts(
       const relationVector = parseRelationVector(contact.relationVector)
       const arcScore = relationVector ? scoreArcVector(relationVector, goalType) : 0.45
       const relevanceScore = computeRelevanceScore(goal, contact)
-      const accessibilityScore = computeAccessibilityScore(contact)
+      const recentInteractions = interactionMap?.get(contact.id) ?? 0
+      const accessibilityScore = computeAccessibilityScore(contact, recentInteractions)
       const centralityScore = computeNetworkCentrality(contact.id, relations)
       const journeyScore = computeJourneyScore(arcScore, relevanceScore, accessibilityScore, centralityScore)
 
