@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run prisma:generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "npm run prisma:generate",
+    "prisma:generate": "prisma generate",
     "test": "npm run lint && npm run build",
     "backfill:industry": "node scripts/backfill-contact-industry.mjs",
     "backfill:industry:apply": "node scripts/backfill-contact-industry.mjs --apply"
