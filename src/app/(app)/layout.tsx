@@ -4,6 +4,8 @@ import { LoadingProvider } from "@/components/ThinkingToast"
 import AppProviders from "@/components/AppProviders"
 import { redirect } from "next/navigation"
 
+export const dynamic = "force-dynamic"
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   try {
     await requireAuth()
