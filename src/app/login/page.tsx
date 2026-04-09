@@ -11,53 +11,53 @@ const FONT_SANS =
 const IS_DEV = process.env.NODE_ENV !== 'production'
 
 const COPY = {
-  backHome: '\u8fd4\u56de\u9996\u9875',
+  backHome: '返回首页',
   signIn: 'Sign In',
-  loginTitle: '\u767b\u5f55 PeopleMine',
+  loginTitle: '登录 PeopleMine',
   loginBody:
-    '\u7528\u624b\u673a\u53f7\u9a8c\u8bc1\u7801\u8fdb\u5165\u4f60\u7684\u5173\u7cfb\u5de5\u4f5c\u53f0\uff0c\u7ee7\u7eed\u6574\u7406\u8054\u7cfb\u4eba\uff0c\u7ecf\u8425\u5173\u952e\u5173\u7cfb\uff0c\u5e76\u56f4\u7ed5\u76ee\u6807\u63a8\u8fdb\u4e0b\u4e00\u6b65\u3002',
-  phone: '\u624b\u673a\u53f7',
-  phonePlaceholder: '\u8f93\u5165\u4e2d\u56fd\u5927\u9646\u624b\u673a\u53f7',
-  code: '\u9a8c\u8bc1\u7801',
-  codePlaceholder: '\u8f93\u5165 6 \u4f4d\u9a8c\u8bc1\u7801',
-  resend: '\u91cd\u65b0\u53d1\u9001',
-  editPhone: '\u8fd4\u56de\u4fee\u6539\u624b\u673a\u53f7',
-  sendCode: '\u53d1\u9001\u9a8c\u8bc1\u7801',
-  verifyLogin: '\u9a8c\u8bc1\u5e76\u8fdb\u5165',
+    '用手机号验证码进入你的关系工作台，继续整理联系人，经营关键关系，并围绕目标推进下一步。',
+  phone: '手机号',
+  phonePlaceholder: '输入中国大陆手机号',
+  code: '验证码',
+  codePlaceholder: '输入 6 位验证码',
+  resend: '重新发送',
+  editPhone: '返回修改手机号',
+  sendCode: '发送验证码',
+  verifyLogin: '验证并进入',
   devOtpHint:
-    '\u5f00\u53d1\u73af\u5883\u4e0b\u9a8c\u8bc1\u7801\u56fa\u5b9a\u4e3a 000000\uff0c\u53ef\u76f4\u63a5\u4f53\u9a8c\u4e3b\u6d41\u7a0b\u3002',
+    '开发环境下验证码固定为 000000，可直接体验主流程。',
   prodOtpHint:
-    '\u9a8c\u8bc1\u7801\u6709\u6548\u671f 5 \u5206\u949f\uff0c\u53d1\u9001\u540e\u8bf7\u5c3d\u5feb\u5b8c\u6210\u9a8c\u8bc1\u3002',
+    '验证码有效期 5 分钟，发送后请尽快完成验证。',
   workspaceLabel: 'Relationship Workspace',
-  workspaceTitle: 'Xminer_AI \u4eba\u8109\u8d44\u4ea7\u7ba1\u7406\u4e0e\u5206\u6790\u7cfb\u7edf',
+  workspaceTitle: 'Xminer_AI 人脉资产管理与分析系统',
   workspaceBody:
-    '\u767b\u5f55\u540e\u4f60\u4f1a\u56de\u5230\u540c\u4e00\u5957\u5de5\u4f5c\u53f0\uff1adashboard \u770b\u72b6\u6001\uff0ccontacts \u7ba1\u7406\u5173\u7cfb\uff0cjourney \u56f4\u7ed5\u76ee\u6807\u627e\u8def\u5f84\u3002',
-  badgeAuthTitle: '\u9a8c\u8bc1\u7801\u767b\u5f55',
+    '登录后你会回到同一套工作台：dashboard 看状态，contacts 管理关系，journey 围绕目标找路径。',
+  badgeAuthTitle: '验证码登录',
   badgeAuthBody:
-    '\u7528\u624b\u673a\u53f7\u8fdb\u5165\uff0c\u4e0d\u9700\u8981\u8bb0\u5fc6\u989d\u5916\u5bc6\u7801\uff0c\u9002\u5408\u5feb\u901f\u56de\u5230\u4f60\u7684\u5173\u7cfb\u5de5\u4f5c\u6d41\u3002',
-  badgeFlowTitle: '\u7ee7\u7eed\u4f60\u7684\u7ecf\u8425\u8282\u594f',
+    '用手机号进入，不需要记忆额外密码，适合快速回到你的关系工作流。',
+  badgeFlowTitle: '继续你的经营节奏',
   badgeFlowBody:
-    '\u8fdb\u5165\u540e\u53ef\u4ee5\u76f4\u63a5\u67e5\u770b\u70ed\u5ea6\u53d8\u5316\uff0c\u8865\u9f50\u8054\u7cfb\u4eba\u4fe1\u606f\uff0c\u6216\u7ee7\u7eed\u63a8\u8fdb\u5f53\u524d\u76ee\u6807\u3002',
-  badgeDevTitle: '\u5f00\u53d1\u8005\u6a21\u5f0f',
+    '进入后可以直接查看热度变化，补齐联系人信息，或继续推进当前目标。',
+  badgeDevTitle: '开发者模式',
   badgeDevBodyDev:
-    '\u5f53\u524d\u662f\u5f00\u53d1\u73af\u5883\uff0c\u4e0b\u9762\u4fdd\u7559\u4e86\u4e00\u4e2a\u4e34\u65f6\u76f4\u8fbe\u5165\u53e3\uff0c\u4fbf\u4e8e\u8c03\u8bd5\u754c\u9762\u4e0e\u4e3b\u6d41\u7a0b\u3002',
+    '当前是开发环境，下面保留了一个临时直达入口，便于调试界面与主流程。',
   badgeDevBodyProd:
-    '\u751f\u4ea7\u73af\u5883\u4e0d\u4f1a\u663e\u793a\u5f00\u53d1\u8005\u4e34\u65f6\u5165\u53e3\uff0c\u9ed8\u8ba4\u8d70\u6b63\u5f0f\u9a8c\u8bc1\u7801\u767b\u5f55\u6d41\u7a0b\u3002',
+    '生产环境不会显示开发者临时入口，默认走正式验证码登录流程。',
   devMode: 'Developer Mode',
   devEntryBody:
-    '\u4e34\u65f6\u5165\u53e3\u53ea\u5728\u5f00\u53d1\u73af\u5883\u53ef\u89c1\u3002\u4f60\u53ef\u4ee5\u8df3\u8fc7\u767b\u5f55\uff0c\u76f4\u63a5\u8fdb\u5165\u4e3b\u5de5\u4f5c\u53f0\u6216\u5f00\u53d1\u8005\u5b9e\u9a8c\u5ba4\u3002',
-  devDashboard: '\u4e34\u65f6\u8fdb\u5165 Dashboard',
-  devLab: '\u6253\u5f00\u5f00\u53d1\u8005\u5b9e\u9a8c\u5ba4',
-  phoneInvalid: '\u8bf7\u8f93\u5165\u6b63\u786e\u7684 11 \u4f4d\u624b\u673a\u53f7\u3002',
-  sendFallback: '\u9a8c\u8bc1\u7801\u53d1\u9001\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002',
-  sendNetwork: '\u9a8c\u8bc1\u7801\u53d1\u9001\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u540e\u91cd\u8bd5\u3002',
-  sendDevSuccess: '\u5f00\u53d1\u73af\u5883\u9a8c\u8bc1\u7801\u56fa\u5b9a\u4e3a 000000\u3002',
-  sendProdSuccess: '\u9a8c\u8bc1\u7801\u5df2\u53d1\u9001\uff0c\u8bf7\u7559\u610f\u77ed\u4fe1\u3002',
-  codeInvalid: '\u8bf7\u8f93\u5165 6 \u4f4d\u9a8c\u8bc1\u7801\u3002',
-  phoneStepInvalid: '\u624b\u673a\u53f7\u683c\u5f0f\u4e0d\u6b63\u786e\uff0c\u8bf7\u8fd4\u56de\u4e0a\u4e00\u6b65\u68c0\u67e5\u3002',
-  verifyFallback: '\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u91cd\u65b0\u9a8c\u8bc1\u3002',
-  verifyNetwork: '\u767b\u5f55\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002',
-  verifySuccess: '\u767b\u5f55\u6210\u529f\uff0c\u6b63\u5728\u8fdb\u5165\u5de5\u4f5c\u53f0\u3002',
+    '临时入口只在开发环境可见。你可以跳过登录，直接进入主工作台或开发者实验室。',
+  devDashboard: '临时进入 Dashboard',
+  devLab: '打开开发者实验室',
+  phoneInvalid: '请输入正确的 11 位手机号。',
+  sendFallback: '验证码发送失败，请稍后再试。',
+  sendNetwork: '验证码发送失败，请检查网络后重试。',
+  sendDevSuccess: '开发环境验证码固定为 000000。',
+  sendProdSuccess: '验证码已发送，请留意短信。',
+  codeInvalid: '请输入 6 位验证码。',
+  phoneStepInvalid: '手机号格式不正确，请返回上一步检查。',
+  verifyFallback: '登录失败，请重新验证。',
+  verifyNetwork: '登录失败，请稍后再试。',
+  verifySuccess: '登录成功，正在进入工作台。',
 } as const
 
 type Feedback = {
@@ -324,7 +324,7 @@ export default function LoginPage() {
                         disabled={countdown > 0 || isPending}
                         className="text-[12px] text-[#A04F47] transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-35"
                       >
-                        {countdown > 0 ? `${countdown}s \u540e\u53ef\u91cd\u53d1` : COPY.resend}
+                        {countdown > 0 ? `${countdown}s 后可重发` : COPY.resend}
                       </button>
                     ) : null}
                   </div>

@@ -14,9 +14,10 @@ import {
 } from "./DashboardWidgets"
 
 const COLS = 12
-const ROW_H = 55
+const ROW_H = 56
 const GAP = 16
-const LAYOUT_STORAGE_KEY = "dashboard-layout-v3"
+const LAYOUT_STORAGE_KEY = "dashboard-layout-v8"
+const LAYOUT_TEMPLATE_KEY = "dashboard-layout-template-v4"
 const INTERACTIVE_SELECTOR =
   'button, input, textarea, select, a, [role="button"], [role="link"], [contenteditable="true"], [data-no-drag="true"]'
 
@@ -58,23 +59,34 @@ type ActiveInteraction =
     }
 
 const MIN_SIZE: Record<WidgetId, { w: number; h: number }> = {
-  ai: { w: 6, h: 3 },
+  ai: { w: 8, h: 4 },
   today: { w: 4, h: 4 },
-  st1: { w: 3, h: 2 },
-  st3: { w: 4, h: 4 },
-  contrib: { w: 4, h: 3 },
-  traits: { w: 4, h: 4 },
-  trend: { w: 4, h: 3 },
+  st1: { w: 4, h: 4 },
+  st3: { w: 6, h: 4 },
+  contrib: { w: 6, h: 4 },
+  traits: { w: 6, h: 8 },
+  trend: { w: 6, h: 4 },
 }
 
 const DEFAULT_LAYOUT: WidgetPlacement[] = [
-  { id: "ai", x: 0, y: 0, w: 12, h: 3.9 },
-  { id: "today", x: 0, y: 3.9, w: 4, h: 4 },
-  { id: "st1", x: 0, y: 7.9, w: 4, h: 2 },
-  { id: "st3", x: 4, y: 3.9, w: 8, h: 6 },
-  { id: "contrib", x: 0, y: 9.9, w: 6, h: 3.4 },
-  { id: "traits", x: 6, y: 9.9, w: 6, h: 6.8 },
-  { id: "trend", x: 0, y: 13.3, w: 6, h: 3.4 },
+  { id: "ai", x: 0, y: 0, w: 8, h: 4 },
+  { id: "st1", x: 8, y: 0, w: 4, h: 4 },
+  { id: "today", x: 0, y: 4, w: 4, h: 4 },
+  { id: "st3", x: 4, y: 4, w: 8, h: 4 },
+  { id: "contrib", x: 0, y: 8, w: 6, h: 4 },
+  { id: "traits", x: 6, y: 8, w: 6, h: 8 },
+  { id: "trend", x: 0, y: 12, w: 6, h: 4 },
+]
+
+const RESIZE_HANDLES: Array<{ handle: ResizeHandle; className: string }> = [
+  { handle: "n", className: "left-4 right-4 top-[-6px] h-3 cursor-ns-resize" },
+  { handle: "s", className: "bottom-[-6px] left-4 right-4 h-3 cursor-ns-resize" },
+  { handle: "w", className: "bottom-4 left-[-6px] top-4 w-3 cursor-ew-resize" },
+  { handle: "e", className: "bottom-4 right-[-6px] top-4 w-3 cursor-ew-resize" },
+  { handle: "nw", className: "left-[-6px] top-[-6px] h-3 w-3 cursor-nwse-resize" },
+  { handle: "ne", className: "right-[-6px] top-[-6px] h-3 w-3 cursor-nesw-resize" },
+  { handle: "sw", className: "bottom-[-6px] left-[-6px] h-3 w-3 cursor-nesw-resize" },
+  { handle: "se", className: "bottom-[-6px] right-[-6px] h-3 w-3 cursor-nwse-resize" },
 ]
 
 function cloneLayout(layout: WidgetPlacement[]) {
@@ -99,19 +111,29 @@ function isValidLayout(value: unknown): value is WidgetPlacement[] {
   })
 }
 
-const RESIZE_HANDLES: Array<{ handle: ResizeHandle; className: string }> = [
-  { handle: "n", className: "left-4 right-4 top-[-6px] h-3 cursor-ns-resize" },
-  { handle: "s", className: "bottom-[-6px] left-4 right-4 h-3 cursor-ns-resize" },
-  { handle: "w", className: "bottom-4 left-[-6px] top-4 w-3 cursor-ew-resize" },
-  { handle: "e", className: "bottom-4 right-[-6px] top-4 w-3 cursor-ew-resize" },
-  { handle: "nw", className: "left-[-6px] top-[-6px] h-3 w-3 cursor-nwse-resize" },
-  { handle: "ne", className: "right-[-6px] top-[-6px] h-3 w-3 cursor-nesw-resize" },
-  { handle: "sw", className: "bottom-[-6px] left-[-6px] h-3 w-3 cursor-nesw-resize" },
-  { handle: "se", className: "bottom-[-6px] right-[-6px] h-3 w-3 cursor-nwse-resize" },
-]
-
 function overlaps(a: WidgetPlacement, b: WidgetPlacement) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+}
+
+function clampPlacement(item: WidgetPlacement): WidgetPlacement {
+  const min = MIN_SIZE[item.id]
+  const w = Math.max(min.w, Math.min(COLS, Math.round(item.w)))
+  const h = Math.max(min.h, Math.round(item.h))
+  const x = Math.max(0, Math.min(COLS - w, Math.round(item.x)))
+  const y = Math.max(0, Math.round(item.y))
+  return { ...item, x, y, w, h }
+}
+
+function sanitizeLayout(layout: WidgetPlacement[]): WidgetPlacement[] {
+  return layout.map(clampPlacement)
+}
+
+function canPlaceWithoutOverlap(
+  layout: WidgetPlacement[],
+  itemId: WidgetId,
+  candidate: WidgetPlacement,
+) {
+  return !layout.some((item) => item.id !== itemId && overlaps(item, candidate))
 }
 
 function itemRect(item: WidgetPlacement, colWidth: number): DraftRect {
@@ -123,7 +145,11 @@ function itemRect(item: WidgetPlacement, colWidth: number): DraftRect {
   }
 }
 
-function rectToGrid(rect: DraftRect, original: WidgetPlacement, colWidth: number): WidgetPlacement {
+function rectToGrid(
+  rect: DraftRect,
+  original: WidgetPlacement,
+  colWidth: number,
+): WidgetPlacement {
   const min = MIN_SIZE[original.id]
   const unitWidth = colWidth + GAP
   const unitHeight = ROW_H + GAP
@@ -141,68 +167,6 @@ function rectToGrid(rect: DraftRect, original: WidgetPlacement, colWidth: number
     w: clampedW,
     h: snappedH,
   }
-}
-
-function gravityCompact(layout: WidgetPlacement[]): WidgetPlacement[] {
-  const sorted = [...layout].sort((a, b) => a.y - b.y || a.x - b.x)
-  const placed: WidgetPlacement[] = []
-
-  for (const original of sorted) {
-    let candidate = { ...original }
-
-    while (placed.some((other) => overlaps(candidate, other))) {
-      candidate = { ...candidate, y: candidate.y + 1 }
-    }
-
-    let changed = true
-    while (changed) {
-      changed = false
-
-      while (candidate.y > 0) {
-        const step = candidate.y >= 1 ? 1 : candidate.y
-        const next = { ...candidate, y: Number((candidate.y - step).toFixed(2)) }
-        if (placed.some((other) => overlaps(next, other))) break
-        candidate = next
-        changed = true
-      }
-
-      while (candidate.x > 0) {
-        const next = { ...candidate, x: candidate.x - 1 }
-        if (placed.some((other) => overlaps(next, other))) break
-        candidate = next
-        changed = true
-      }
-    }
-
-    placed.push(candidate)
-  }
-
-  return layout.map((item) => placed.find((placedItem) => placedItem.id === item.id) ?? item)
-}
-
-function pushDown(layout: WidgetPlacement[], movedId: WidgetId): WidgetPlacement[] {
-  const items = layout.map((item) => ({ ...item }))
-  const queue: WidgetId[] = [movedId]
-  const visited = new Set<WidgetId>()
-
-  while (queue.length) {
-    const currentId = queue.shift()
-    if (!currentId || visited.has(currentId)) continue
-    visited.add(currentId)
-
-    const current = items.find((item) => item.id === currentId)
-    if (!current) continue
-
-    for (const other of items) {
-      if (other.id === current.id) continue
-      if (overlaps(current, other)) {
-        other.y = current.y + current.h
-        queue.push(other.id)
-      }
-    }
-  }
-
-  return items
 }
 
 function trendPct(current: number, prev: number): number {
@@ -226,9 +190,11 @@ function WidgetContent({ id, stats }: { id: WidgetId; stats: DashboardStats | nu
           value={stats ? `${stats.highEnergy}/${stats.total}` : "--/--"}
           headerEnd={
             stats && stats.prevWeekTotal > 0 ? (
-              <span className="rounded-full bg-[#A04F47]/10 px-2.5 py-[5px] text-[10px] text-[#A04F47]">
-                较上周{trendDir(stats.total, stats.prevWeekTotal) === "up" ? "增加" : "减少"}了{" "}
-                {trendPct(stats.total, stats.prevWeekTotal)}%
+              <span className="rounded-full bg-gray-100 px-2.5 py-[5px] text-[10px] text-gray-600">
+                {`较上周${trendDir(stats.total, stats.prevWeekTotal) === "up" ? "增加" : "减少"} ${trendPct(
+                  stats.total,
+                  stats.prevWeekTotal,
+                )}%`}
               </span>
             ) : null
           }
@@ -250,8 +216,10 @@ function WidgetContent({ id, stats }: { id: WidgetId; stats: DashboardStats | nu
   }
 }
 
-export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
-  const [layout, setLayout] = useState<WidgetPlacement[]>(() => cloneLayout(DEFAULT_LAYOUT))
+export function DraggableCanvas() {
+  const [layout, setLayout] = useState<WidgetPlacement[]>(() =>
+    cloneLayout(DEFAULT_LAYOUT),
+  )
   const [colWidth, setColWidth] = useState(0)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [interaction, setInteraction] = useState<ActiveInteraction | null>(null)
@@ -261,14 +229,11 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const layoutRef = useRef(layout)
   const colWidthRef = useRef(colWidth)
-  const autoAlignRef = useRef(autoAlign)
   const interactionRef = useRef<ActiveInteraction | null>(null)
   const ghostRef = useRef<WidgetPlacement | null>(null)
-  const prevAutoAlignRef = useRef(autoAlign)
 
   layoutRef.current = layout
   colWidthRef.current = colWidth
-  autoAlignRef.current = autoAlign
   interactionRef.current = interaction
   ghostRef.current = ghostItem
 
@@ -290,7 +255,8 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
   useEffect(() => {
     const measure = () => {
       if (!containerRef.current) return
-      const nextWidth = (containerRef.current.clientWidth - (COLS - 1) * GAP) / COLS
+      const nextWidth =
+        (containerRef.current.clientWidth - (COLS - 1) * GAP) / COLS
       setColWidth(nextWidth)
     }
 
@@ -304,37 +270,48 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(LAYOUT_STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw) as unknown
-      if (isValidLayout(parsed)) {
-        setLayout(cloneLayout(parsed))
+      const templateRaw = window.localStorage.getItem(LAYOUT_TEMPLATE_KEY)
+      const fallbackLayout = (() => {
+        if (!templateRaw) return sanitizeLayout(cloneLayout(DEFAULT_LAYOUT))
+        const templateParsed = JSON.parse(templateRaw) as unknown
+        return isValidLayout(templateParsed)
+          ? sanitizeLayout(cloneLayout(templateParsed))
+          : sanitizeLayout(cloneLayout(DEFAULT_LAYOUT))
+      })()
+
+      if (!raw) {
+        setLayout(fallbackLayout)
+        return
       }
+
+      const parsed = JSON.parse(raw) as unknown
+      setLayout(
+        isValidLayout(parsed)
+          ? sanitizeLayout(cloneLayout(parsed))
+          : fallbackLayout,
+      )
     } catch {
-      // ignore bad persisted layout
+      setLayout(sanitizeLayout(cloneLayout(DEFAULT_LAYOUT)))
     }
   }, [])
 
   useEffect(() => {
     try {
       window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout))
+      // Persist latest arrangement as the template default for subsequent sessions/resets.
+      window.localStorage.setItem(LAYOUT_TEMPLATE_KEY, JSON.stringify(layout))
     } catch {
       // ignore persistence errors
     }
   }, [layout])
 
   useEffect(() => {
-    if (prevAutoAlignRef.current === autoAlign) return
-    prevAutoAlignRef.current = autoAlign
-    if (autoAlign) {
-      setLayout((current) => gravityCompact(current))
-    }
-  }, [autoAlign])
-
-  useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       const currentInteraction = interactionRef.current
       const currentColWidth = colWidthRef.current
-      if (!currentInteraction || !containerRef.current || currentColWidth <= 0) return
+      if (!currentInteraction || !containerRef.current || currentColWidth <= 0) {
+        return
+      }
 
       const containerBounds = containerRef.current.getBoundingClientRect()
       const pointerX = event.clientX - containerBounds.left
@@ -345,50 +322,77 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
         const nextRect: DraftRect = {
           left: Math.max(
             0,
-            Math.min(maxWidth - currentInteraction.originRect.width, pointerX - currentInteraction.offsetX),
+            Math.min(
+              maxWidth - currentInteraction.originRect.width,
+              pointerX - currentInteraction.offsetX,
+            ),
           ),
           top: Math.max(0, pointerY - currentInteraction.offsetY),
           width: currentInteraction.originRect.width,
           height: currentInteraction.originRect.height,
         }
-        const nextGhost = rectToGrid(nextRect, currentInteraction.original, currentColWidth)
-        setDraftRect(nextRect)
+        const nextGhost = rectToGrid(
+          nextRect,
+          currentInteraction.original,
+          currentColWidth,
+        )
+        setDraftRect(itemRect(nextGhost, currentColWidth))
         setGhostItem(nextGhost)
         return
       }
 
       const deltaX = event.clientX - currentInteraction.startMouseX
       const deltaY = event.clientY - currentInteraction.startMouseY
-      const minRect = itemRect({ ...currentInteraction.original, ...MIN_SIZE[currentInteraction.id] }, currentColWidth)
+      const minRect = itemRect(
+        { ...currentInteraction.original, ...MIN_SIZE[currentInteraction.id] },
+        currentColWidth,
+      )
       const nextRect = { ...currentInteraction.originRect }
 
       if (currentInteraction.handle.includes("e")) {
-        nextRect.width = Math.max(minRect.width, currentInteraction.originRect.width + deltaX)
+        nextRect.width = Math.max(
+          minRect.width,
+          currentInteraction.originRect.width + deltaX,
+        )
       }
       if (currentInteraction.handle.includes("s")) {
-        nextRect.height = Math.max(minRect.height, currentInteraction.originRect.height + deltaY)
+        nextRect.height = Math.max(
+          minRect.height,
+          currentInteraction.originRect.height + deltaY,
+        )
       }
       if (currentInteraction.handle.includes("w")) {
         const nextLeft = Math.min(
-          currentInteraction.originRect.left + currentInteraction.originRect.width - minRect.width,
+          currentInteraction.originRect.left +
+            currentInteraction.originRect.width -
+            minRect.width,
           Math.max(0, currentInteraction.originRect.left + deltaX),
         )
-        nextRect.width = currentInteraction.originRect.width + (currentInteraction.originRect.left - nextLeft)
+        nextRect.width =
+          currentInteraction.originRect.width +
+          (currentInteraction.originRect.left - nextLeft)
         nextRect.left = nextLeft
       }
       if (currentInteraction.handle.includes("n")) {
         const nextTop = Math.min(
-          currentInteraction.originRect.top + currentInteraction.originRect.height - minRect.height,
+          currentInteraction.originRect.top +
+            currentInteraction.originRect.height -
+            minRect.height,
           Math.max(0, currentInteraction.originRect.top + deltaY),
         )
-        nextRect.height = currentInteraction.originRect.height + (currentInteraction.originRect.top - nextTop)
+        nextRect.height =
+          currentInteraction.originRect.height +
+          (currentInteraction.originRect.top - nextTop)
         nextRect.top = nextTop
       }
 
       nextRect.width = Math.min(nextRect.width, maxWidth - nextRect.left)
-
-      const nextGhost = rectToGrid(nextRect, currentInteraction.original, currentColWidth)
-      setDraftRect(nextRect)
+      const nextGhost = rectToGrid(
+        nextRect,
+        currentInteraction.original,
+        currentColWidth,
+      )
+      setDraftRect(itemRect(nextGhost, currentColWidth))
       setGhostItem(nextGhost)
     }
 
@@ -398,13 +402,15 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
       if (!currentInteraction) return
 
       if (nextGhost) {
-        let nextLayout = layoutRef.current.map((item) =>
-          item.id === currentInteraction.id ? { ...item, ...nextGhost } : item,
+        const sanitizedGhost = sanitizeLayout([nextGhost])[0]
+        const currentLayout = layoutRef.current
+        const nextLayout = currentLayout.map((item) =>
+          item.id === currentInteraction.id ? { ...item, ...sanitizedGhost } : item,
         )
-        nextLayout = autoAlignRef.current
-          ? gravityCompact(nextLayout)
-          : pushDown(nextLayout, currentInteraction.id)
-        setLayout(nextLayout)
+
+        if (canPlaceWithoutOverlap(currentLayout, currentInteraction.id, sanitizedGhost)) {
+          setLayout(nextLayout)
+        }
       }
 
       document.body.style.cursor = ""
@@ -448,13 +454,16 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
     setGhostItem(item)
   }
 
-  const beginResize = (event: React.MouseEvent, item: WidgetPlacement, handle: ResizeHandle) => {
+  const beginResize = (
+    event: React.MouseEvent,
+    item: WidgetPlacement,
+    handle: ResizeHandle,
+  ) => {
     const currentColWidth = colWidthRef.current
     if (!containerRef.current || currentColWidth <= 0) return
 
     event.preventDefault()
     event.stopPropagation()
-
     document.body.style.cursor = "grabbing"
     document.body.style.userSelect = "none"
     const rect = itemRect(item, currentColWidth)
@@ -479,14 +488,18 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
   const canvasHeight = totalRows * ROW_H + (totalRows - 1) * GAP + GAP * 2
 
   return (
-    <div ref={containerRef} className="relative min-w-0" style={{ height: canvasHeight }}>
+    <div
+      ref={containerRef}
+      className="relative min-w-0 overflow-hidden"
+      style={{ height: canvasHeight }}
+    >
       {ghostItem && colWidth > 0 ? (
         <div
           className="pointer-events-none absolute rounded-[24px] border-2 border-dashed border-gray-300 bg-gray-100/70"
           style={{
             ...itemRect(ghostItem, colWidth),
             zIndex: 30,
-            transition: "left 90ms ease, top 90ms ease, width 90ms ease, height 90ms ease",
+            transition: "none",
           }}
         />
       ) : null}
@@ -506,13 +519,10 @@ export function DraggableCanvas({ autoAlign }: { autoAlign: boolean }) {
                 width: frame.width,
                 height: frame.height,
                 zIndex: active ? 60 : 1,
-                transition: active
-                  ? "none"
-                  : "left 320ms cubic-bezier(0.22, 1, 0.36, 1), top 320ms cubic-bezier(0.22, 1, 0.36, 1), width 320ms cubic-bezier(0.22, 1, 0.36, 1), height 320ms cubic-bezier(0.22, 1, 0.36, 1), transform 220ms ease, filter 220ms ease",
-                transform: active ? "scale(1.012)" : "scale(1)",
+                transition: "none",
                 filter: active
-                  ? "drop-shadow(0 18px 48px rgba(15,23,42,0.16))"
-                  : "drop-shadow(0 8px 24px rgba(15,23,42,0.06))",
+                  ? "drop-shadow(0 8px 16px rgba(15,23,42,0.10))"
+                  : "drop-shadow(0 4px 12px rgba(15,23,42,0.06))",
               }}
             >
               <div

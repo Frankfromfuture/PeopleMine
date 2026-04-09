@@ -1,5 +1,4 @@
-﻿import Link from "next/link"
-import { db } from "@/lib/db"
+﻿import { db } from "@/lib/db"
 import PageHeader from "@/components/PageHeader"
 import { getAuthUserId } from "@/lib/session"
 import ContactsTable from "./ContactsTable"
@@ -79,7 +78,7 @@ export default async function ContactsPage() {
         </div>
       )}
 
-      <div className="px-8 py-7">
+      <div className="px-6 py-4 lg:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -89,23 +88,12 @@ export default async function ContactsPage() {
           summary="集中查看、筛选和维护你的联系人资产，支持继续扩充和回访。"
           hints={[
             '表格按最近更新时间排序，适合连续整理和批量浏览。',
-            '这里是进入联系人详情、编辑和继续补录的主入口。',
-            '右侧按钮可直接跳去“+人脉”继续新增联系人。',
+            '点击姓名会直接进入联系人编辑页，其余字段仍可在表格内快速调整。',
+            '筛选、分组、批量处理与列管理能力继续保留。',
           ]}
-          actions={
-            <Link
-              href="/contacts/new"
-              className="flex items-center gap-1.5 rounded-2xl bg-[#A04F47] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#A04F47]/90"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              +人脉
-            </Link>
-          }
         />
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="rounded-[28px] border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <ContactsTable contacts={contacts} />
         </div>
       </div>

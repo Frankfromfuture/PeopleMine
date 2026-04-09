@@ -290,8 +290,19 @@ ${industryConstraint}
     baseURL: process.env.QWEN_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
   })
 
-  const res = await client.chat.completions.create({
+  const createCompletion = client.chat.completions.create as unknown as (params: {
+    model: string
+    stream?: boolean
+    temperature?: number
+    top_p?: number
+    max_tokens?: number
+    extra_body?: Record<string, unknown>
+    messages: Array<{ role: 'system' | 'user'; content: string }>
+  }) => Promise<{ choices?: Array<{ message?: { content?: string | null } }> }>
+
+  const res = await createCompletion({
     model: 'qwen3.5-flash',
+    stream: false,
     temperature: 1.1,
     top_p: 0.95,
     max_tokens: 8192,
@@ -301,9 +312,9 @@ ${industryConstraint}
       { role: 'system', content: '你是一个数据生成器，只输出严格 JSON，不输出任何其他内容。' },
       { role: 'user', content: prompt },
     ],
-  } as Parameters<typeof client.chat.completions.create>[0])
+  })
 
-  const text = String(res.choices[0]?.message?.content || '')
+  const text = String(res.choices?.[0]?.message?.content || '')
   const parsed = parseJSON(text) as { contacts?: AIContact[] }
   const rows = Array.isArray(parsed.contacts) ? parsed.contacts : []
   if (rows.length === 0) throw new Error('AI_EMPTY')

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Command, HelpCircle, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 
 interface AppTopBarProps {
   phone?: string
@@ -75,12 +75,10 @@ export default function AppTopBar({ phone, name }: AppTopBarProps) {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild size="sm" variant="default">
-            <Link href="/contacts/new">
-              <Plus className="h-4 w-4" strokeWidth={2} />
-              新增
-            </Link>
-          </Button>
+          <Link href="/contacts/new" className={buttonVariants({ size: "sm", variant: "default" })}>
+            <Plus className="h-4 w-4" strokeWidth={2} />
+            新增
+          </Link>
 
           <button
             type="button"

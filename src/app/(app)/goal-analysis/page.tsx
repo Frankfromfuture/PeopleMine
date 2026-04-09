@@ -711,7 +711,7 @@ export default function GoalAnalysisPage() {
 
   return (
     <div className="min-h-full bg-[#f6f6f4]" style={{ fontFamily: `'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif` }}>
-      <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-8 py-4">
+      <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-6 py-4 lg:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -726,7 +726,7 @@ export default function GoalAnalysisPage() {
           ]}
         />
 
-        <div className="flex min-h-0 flex-1 overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="mt-1 flex min-h-0 flex-1 overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
             <aside className="w-full shrink-0 border-b border-gray-200 bg-[#fcfcfb] xl:w-[300px] xl:border-b-0 xl:border-r">
               <div className="border-b border-gray-200 px-5 py-5">

@@ -5,20 +5,19 @@ export default function MePage() {
   return (
     <PageShell
       items={[
-        { label: 'Home', href: '/dashboard' },
-        { label: 'Me' },
+        { label: '首页', href: '/dashboard' },
+        { label: '我' },
       ]}
-      title="My Profile"
-      summary="Keep your profile up to date so planning and recommendation tools start from a cleaner picture of you."
+      title="我"
+      titleNote={<span className="text-sm italic text-gray-500">把你自己也当作一位需要经营的人脉资产来整理。</span>}
       hints={[
-        'Store the tags, role, and background context that best describe your current position.',
-        'Goal analysis and path planning will use this profile as a starting point.',
-        'A clearer profile usually leads to more grounded suggestions from the system.',
+        '页面结构、卡片层级与“+人脉”保持一致，方便在同一套节奏里录入和维护。',
+        '先补全最核心的身份、目标和资源，后续系统建议会更贴合你的真实方向。',
+        '当前保存为本地草稿，适合快速迭代你的个人画像。',
       ]}
+      contentClassName="flex-1"
     >
-      <div className="flex-1 rounded-[32px] border border-gray-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <MeForm />
-      </div>
+      <MeForm />
     </PageShell>
   )
 }

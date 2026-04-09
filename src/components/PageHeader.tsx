@@ -57,7 +57,7 @@ export default function PageHeader({
   const resolvedSummary = undefined
 
   return (
-    <div className={`flex items-start justify-between gap-4 ${className}`.trim()}>
+    <div className={`flex items-start justify-between gap-4 pb-4 lg:pb-5 ${className}`.trim()}>
       <div className="min-w-0">
         <div className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">
           {items.map((item, index) => (

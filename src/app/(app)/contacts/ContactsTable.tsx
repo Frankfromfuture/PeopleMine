@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { toast } from 'sonner'
 import {
@@ -60,11 +61,12 @@ type SavedView = { id: string; name: string; config: Record<string, unknown>; up
 type UndoEntry = { id: string; rows: Array<Pick<ContactRow, 'id' | 'temperature' | 'roleArchetype' | 'trustLevel'>> }
 type DeletedContactEntry = { id: string; row: ContactRow }
 type EditingCell = { rowId: string; field: ColumnKey } | null
+type SortState = { key: ColumnKey; direction: 'desc' | 'asc' } | null
 
-const STORAGE_KEY = 'pm-contacts-table-v3'
+const STORAGE_KEY = 'pm-contacts-table-v4'
 
 const COLUMNS: ColumnConfig[] = [
-  { key: 'name',           label: '姓名',   defaultOn: true,  defaultWidth: 140, editable: true,  editType: 'text' },
+  { key: 'name',           label: '姓名',   defaultOn: true,  defaultWidth: 168, editable: false, editType: 'text' },
   { key: 'spiritAnimal',   label: '气场',   defaultOn: true,  defaultWidth: 100, editable: true,  editType: 'select' },
   { key: 'roleArchetype',  label: '角色',   defaultOn: true,  defaultWidth: 100, editable: true,  editType: 'select' },
   { key: 'temperature',    label: '温度',   defaultOn: true,  defaultWidth: 70,  editable: true,  editType: 'select' },
@@ -172,13 +174,43 @@ function isAiGeneratedContact(row: ContactRow) {
   return (row.notes ?? '').includes('自动生成的测试数据')
 }
 
+function getComparableValue(col: ColumnKey, row: ContactRow): number | string {
+  if (col === 'name') return (row.fullName ?? row.name ?? '').toLowerCase()
+  if (col === 'spiritAnimal') return SPIRIT_ANIMAL_NEW_LABELS[row.spiritAnimal as SpiritAnimalNew]?.name ?? ''
+  if (col === 'roleArchetype') return ROLE_ARCHETYPE_LABELS[row.roleArchetype as RoleArchetype]?.name ?? ''
+  if (col === 'temperature') return row.temperature === 'HOT' ? 3 : row.temperature === 'WARM' ? 2 : row.temperature === 'COLD' ? 1 : 0
+  if (col === 'trustLevel') return row.chemistryScore ?? row.trustLevel ?? 0
+  if (col === 'industryL1') return row.industryL1 ?? ''
+  if (col === 'industryL2') return row.industryL2 ?? ''
+  if (col === 'jobPosition') return JOB_POSITION_LABELS[row.jobPosition as JobPosition] ?? row.jobPosition ?? ''
+  if (col === 'jobFunction') return JOB_FUNCTION_LABELS[row.jobFunction as JobFunction] ?? row.jobFunction ?? ''
+  if (col === 'company') return row.companyName ?? row.company ?? ''
+  if (col === 'title') return row.jobTitle ?? row.title ?? ''
+  if (col === 'createdAt') return row.createdAt ? new Date(row.createdAt).getTime() : 0
+  if (col === 'lastContactedAt') return row.lastContactedAt ? new Date(row.lastContactedAt).getTime() : 0
+  return ''
+}
+
+function SortIcon({ state }: { state: SortState }) {
+  if (!state) return <ChevronsUpDown className="h-3.5 w-3.5 text-gray-300" />
+  return state.direction === 'desc' ? (
+    <ChevronDown className="h-3.5 w-3.5 text-gray-700" />
+  ) : (
+    <ChevronUp className="h-3.5 w-3.5 text-gray-700" />
+  )
+}
+
 // ── Cell display ──────────────────────────────────────────────────────────
 
 function CellDisplay({ col, row }: { col: ColumnKey; row: ContactRow }) {
   if (col === 'name') {
     const display = row.fullName ?? row.name
     return (
-      <Link href={`/contacts/${row.id}`} className="font-medium text-slate-800 hover:text-gray-600 truncate max-w-full block" onClick={(e) => e.stopPropagation()}>
+      <Link
+        href={`/contacts/${row.id}/edit`}
+        className="block max-w-full truncate font-medium text-slate-800 transition hover:text-gray-600"
+        onClick={(e) => e.stopPropagation()}
+      >
         {display}{isAiGeneratedContact(row) ? '*' : ''}
       </Link>
     )
@@ -322,6 +354,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
   const [columnWidths, setColumnWidths] = useState<Record<ColumnKey, number>>(DEFAULT_WIDTHS)
   const [editingCell, setEditingCell] = useState<EditingCell>(null)
   const [savingCells, setSavingCells] = useState<Set<string>>(new Set())
+  const [sortState, setSortState] = useState<SortState>(null)
 
   useEffect(() => { setRows(contacts) }, [contacts])
 
@@ -335,8 +368,9 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
         columnWidths?: Record<ColumnKey, number>
         groupBy?: GroupBy
         activeView?: ViewKey
+        sortState?: SortState
       }
-      if (parsed.visibleColumns) setVisibleColumns({ ...DEFAULT_VISIBLE, ...parsed.visibleColumns })
+      if (parsed.visibleColumns) setVisibleColumns({ ...DEFAULT_VISIBLE, ...parsed.visibleColumns, name: true })
       if (parsed.columnOrder?.length) {
         const merged = [
           ...parsed.columnOrder.filter((k) => DEFAULT_ORDER.includes(k)),
@@ -347,6 +381,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
       if (parsed.columnWidths) setColumnWidths({ ...DEFAULT_WIDTHS, ...parsed.columnWidths })
       if (parsed.groupBy)   setGroupBy(parsed.groupBy)
       if (parsed.activeView) setActiveView(parsed.activeView)
+      if (parsed.sortState) setSortState(parsed.sortState)
     } catch {}
   }, [])
 
@@ -358,8 +393,8 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ visibleColumns, columnOrder, columnWidths, groupBy, activeView }))
-  }, [visibleColumns, columnOrder, columnWidths, groupBy, activeView])
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ visibleColumns: { ...visibleColumns, name: true }, columnOrder, columnWidths, groupBy, activeView, sortState }))
+  }, [visibleColumns, columnOrder, columnWidths, groupBy, activeView, sortState])
 
   const filtered = useMemo(() => rows.filter((c) => {
     const q = search.trim().toLowerCase()
@@ -374,20 +409,36 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
     return hitSearch && hitRole && hitTemp && hitView
   }), [rows, search, roleFilter, tempFilter, activeView])
 
+  const sorted = useMemo(() => {
+    if (!sortState) return filtered
+    const next = [...filtered]
+    next.sort((a, b) => {
+      const left = getComparableValue(sortState.key, a)
+      const right = getComparableValue(sortState.key, b)
+      if (typeof left === 'number' && typeof right === 'number') {
+        return sortState.direction === 'desc' ? right - left : left - right
+      }
+      return sortState.direction === 'desc'
+        ? String(right).localeCompare(String(left), 'zh-CN')
+        : String(left).localeCompare(String(right), 'zh-CN')
+    })
+    return next
+  }, [filtered, sortState])
+
   const grouped = useMemo(() => {
-    if (groupBy === 'none') return [{ key: 'ALL', title: `全部联系人 (${filtered.length})`, rows: filtered }]
+    if (groupBy === 'none') return [{ key: 'ALL', title: `全部联系人 (${sorted.length})`, rows: sorted }]
     const map = new Map<string, ContactRow[]>()
-    for (const row of filtered) {
+    for (const row of sorted) {
       const key = groupBy === 'roleArchetype' ? (row.roleArchetype ?? 'NONE') : groupBy === 'temperature' ? (row.temperature ?? 'NONE') : (row.company ?? 'NONE')
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(row)
     }
     return Array.from(map.entries()).map(([key, rows]) => ({ key, title: `${groupTitle(groupBy, key)} (${rows.length})`, rows }))
-  }, [filtered, groupBy])
+  }, [sorted, groupBy])
 
   const shownColumns = columnOrder
     .map((key) => COLUMNS.find((c) => c.key === key))
-    .filter((c): c is ColumnConfig => Boolean(c && visibleColumns[c.key]))
+    .filter((c): c is ColumnConfig => Boolean(c && (c.key === 'name' || visibleColumns[c.key])))
 
   const handleDropColumn = (from: ColumnKey, to: ColumnKey) => {
     if (from === to) return
@@ -449,6 +500,14 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
   const handleCellClick = (rowId: string, col: ColumnConfig) => {
     if (!col.editable) return
     setEditingCell({ rowId, field: col.key })
+  }
+
+  const toggleSort = (key: ColumnKey) => {
+    setSortState((current) => {
+      if (!current || current.key !== key) return { key, direction: 'desc' }
+      if (current.direction === 'desc') return { key, direction: 'asc' }
+      return null
+    })
   }
 
   // ── Batch operations ──────────────────────────────────────────────────
@@ -606,51 +665,71 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-white/90">
-      {/* ── Toolbar ── */}
-      <div className="border-b border-line-standard bg-slate-50/80 px-4 py-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/contacts/new" className="inline-flex items-center gap-1 rounded-md bg-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-500">+ 新建</Link>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索姓名、公司、职位" className="h-7 w-52 rounded-md border border-slate-300 bg-white/90 px-2.5 text-xs outline-none focus:border-gray-400" />
-          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as 'ALL' | RoleArchetype)} className="h-7 rounded-md border border-slate-300 bg-white/90 px-2 text-xs">
+    <div className="bg-white">
+      <div className="border-b border-gray-100 bg-[#fcfcfb] px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/contacts/new"
+            className="inline-flex h-9 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+          >
+            <Plus className="h-4 w-4" />
+            新建联系人
+          </Link>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索姓名、公司、职位"
+            className="h-9 w-[220px] rounded-2xl border border-gray-200 bg-white px-3.5 text-sm text-gray-700 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+          />
+          <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as 'ALL' | RoleArchetype)} className="h-9 rounded-2xl border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100">
             <option value="ALL">全部角色</option>{Object.entries(ROLE_ARCHETYPE_LABELS).map(([k, l]) => <option key={k} value={k}>{l.name}</option>)}
           </select>
-          <select value={tempFilter} onChange={(e) => setTempFilter(e.target.value as 'ALL' | Temperature)} className="h-7 rounded-md border border-slate-300 bg-white/90 px-2 text-xs">
+          <select value={tempFilter} onChange={(e) => setTempFilter(e.target.value as 'ALL' | Temperature)} className="h-9 rounded-2xl border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100">
             <option value="ALL">全部温度</option><option value="HOT">热</option><option value="WARM">温</option><option value="COLD">冷</option>
           </select>
-          <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as GroupBy)} className="h-7 rounded-md border border-slate-300 bg-white/90 px-2 text-xs">
+          <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as GroupBy)} className="h-9 rounded-2xl border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100">
             <option value="none">不分组</option><option value="roleArchetype">按角色分组</option><option value="temperature">按温度分组</option><option value="company">按公司分组</option>
           </select>
           <details className="relative">
-            <summary className="flex h-7 cursor-pointer list-none items-center rounded-md border border-slate-300 bg-white/90 px-2.5 text-xs text-slate-700 hover:bg-slate-50">自定义列</summary>
-            <div className="absolute left-0 top-8 z-30 w-44 rounded-md border border-line-standard bg-white/90 p-2 shadow-lg">
-              {COLUMNS.map((col) => <label key={col.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-slate-50"><input type="checkbox" checked={visibleColumns[col.key]} onChange={() => setVisibleColumns((prev) => ({ ...prev, [col.key]: !prev[col.key] }))} /><span>{col.label}</span></label>)}
+            <summary className="flex h-9 cursor-pointer list-none items-center rounded-2xl border border-gray-200 bg-white px-3.5 text-sm text-gray-700 transition hover:border-gray-300 hover:bg-gray-50">自定义列</summary>
+            <div className="absolute left-0 top-11 z-30 w-48 rounded-2xl border border-gray-200 bg-white p-2 shadow-xl shadow-gray-200/60">
+              {COLUMNS.map((col) => (
+                <label key={col.key} className="flex items-center gap-2 rounded-xl px-2 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={col.key === 'name' ? true : visibleColumns[col.key]}
+                    disabled={col.key === 'name'}
+                    onChange={() => setVisibleColumns((prev) => ({ ...prev, [col.key]: !prev[col.key] }))}
+                  />
+                  <span>{col.label}</span>
+                </label>
+              ))}
             </div>
           </details>
-          <span className="ml-auto text-xs text-text-secondary">{filtered.length} 条 · 点击单元格可编辑</span>
+          <span className="ml-auto text-sm text-gray-400">{sorted.length} 条 · 除姓名外均可直接在表格内编辑</span>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {(['all', 'followup', 'hot'] as ViewKey[]).map((v) => (
-            <button key={v} onClick={() => setActiveView(v)} className={`px-2 py-0.5 text-xs rounded border ${activeView === v ? 'bg-gray-600 text-white border-gray-600' : 'bg-white/90 text-slate-600 border-slate-300'}`}>
+            <button key={v} onClick={() => setActiveView(v)} className={`rounded-full border px-3 py-1 text-xs transition ${activeView === v ? 'border-[#202020] bg-[#202020] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'}`}>
               {v === 'all' ? '全部' : v === 'followup' ? '待跟进' : '高温'}
             </button>
           ))}
-          <div className="h-4 w-px bg-slate-300" />
-          <label className="flex items-center gap-1 text-xs text-slate-600"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />全选</label>
-          <span className="text-xs text-text-secondary">已选 {selectedIds.length}</span>
-          <button onClick={deleteAll} disabled={isDeletingAll} className="px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-700 disabled:opacity-50">全部删除</button>
-          <button onClick={deleteAllAiGenerated} disabled={isDeletingAi} className="px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-700 disabled:opacity-50">删AI生成</button>
-          <button onClick={saveCurrentView} className="px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-700">保存视图</button>
+          <div className="h-4 w-px bg-gray-200" />
+          <label className="flex items-center gap-1.5 text-xs text-gray-600"><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />全选</label>
+          <span className="text-xs text-gray-400">已选 {selectedIds.length}</span>
+          <button onClick={deleteAll} disabled={isDeletingAll} className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50">全部删除</button>
+          <button onClick={deleteAllAiGenerated} disabled={isDeletingAi} className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50">删 AI 生成</button>
+          <button onClick={saveCurrentView} className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">保存视图</button>
           <details className="relative">
-            <summary className="px-2 py-0.5 text-xs rounded border border-slate-300 text-slate-700 cursor-pointer list-none">已保存视图</summary>
-            <div className="absolute left-0 top-7 z-30 w-60 rounded-md border border-line-standard bg-white/90 p-2 shadow-xl space-y-1">
-              {savedViews.length === 0 && <p className="text-xs text-slate-400 px-2 py-1">还没有保存的视图</p>}
+            <summary className="cursor-pointer list-none rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">已保存视图</summary>
+            <div className="absolute left-0 top-9 z-30 w-60 space-y-1 rounded-2xl border border-gray-200 bg-white p-2 shadow-xl shadow-gray-200/60">
+              {savedViews.length === 0 && <p className="px-2 py-1 text-xs text-gray-400">还没有保存的视图</p>}
               {savedViews.map((view) => (
                 <div key={view.id} className="flex items-center gap-1">
-                  <button onClick={() => applySavedView(view)} className="flex-1 text-left px-2 py-1 text-xs rounded hover:bg-slate-50">{view.name}</button>
-                  <button onClick={() => renameSavedView(view.id, view.name)} className="px-1.5 py-1 text-xs text-gray-600">改</button>
-                  <button onClick={() => removeSavedView(view.id)} className="px-1.5 py-1 text-xs text-gray-600">删</button>
+                  <button onClick={() => applySavedView(view)} className="flex-1 rounded-xl px-2 py-1.5 text-left text-xs text-gray-700 hover:bg-gray-50">{view.name}</button>
+                  <button onClick={() => renameSavedView(view.id, view.name)} className="px-1.5 py-1 text-xs text-gray-500">改</button>
+                  <button onClick={() => removeSavedView(view.id)} className="px-1.5 py-1 text-xs text-gray-500">删</button>
                 </div>
               ))}
             </div>
@@ -658,63 +737,63 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
         </div>
 
         {batchPanelOpen && (
-          <div className="mt-2 p-2 rounded-lg border border-gray-200 bg-gray-50/50 flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
             <span className="text-xs font-medium text-gray-800">批量字段</span>
-            <select value={batchField} onChange={(e) => { const f = e.target.value as BatchField; setBatchField(f); setBatchValue(f === 'temperature' ? 'HOT' : f === 'roleArchetype' ? 'BINDER' : '3') }} className="h-7 rounded-md border border-gray-200 bg-white/90 px-2 text-xs">
+            <select value={batchField} onChange={(e) => { const f = e.target.value as BatchField; setBatchField(f); setBatchValue(f === 'temperature' ? 'HOT' : f === 'roleArchetype' ? 'BINDER' : '3') }} className="h-8 rounded-xl border border-gray-200 bg-white px-2.5 text-xs text-gray-700">
               <option value="temperature">温度</option><option value="roleArchetype">角色定位</option><option value="trustLevel">契合度</option>
             </select>
-            {batchField === 'temperature' && <select value={batchValue} onChange={(e) => setBatchValue(e.target.value)} className="h-7 rounded-md border border-gray-200 bg-white/90 px-2 text-xs"><option value="HOT">热</option><option value="WARM">温</option><option value="COLD">冷</option></select>}
-            {batchField === 'roleArchetype' && <select value={batchValue} onChange={(e) => setBatchValue(e.target.value)} className="h-7 rounded-md border border-gray-200 bg-white/90 px-2 text-xs">{Object.entries(ROLE_ARCHETYPE_LABELS).map(([k, l]) => <option key={k} value={k}>{l.name}</option>)}</select>}
-            {batchField === 'trustLevel' && <select value={batchValue} onChange={(e) => setBatchValue(e.target.value)} className="h-7 rounded-md border border-gray-200 bg-white/90 px-2 text-xs"><option value="1">1星</option><option value="2">2星</option><option value="3">3星</option><option value="4">4星</option><option value="5">5星</option></select>}
-            <button disabled={isBatching || selectedIds.length === 0} onClick={applyBatch} className="px-3 py-1 text-xs rounded-md bg-gray-600 text-white disabled:opacity-40">应用到已选 {selectedIds.length} 条</button>
+            {batchField === 'temperature' && <select value={batchValue} onChange={(e) => setBatchValue(e.target.value)} className="h-8 rounded-xl border border-gray-200 bg-white px-2.5 text-xs text-gray-700"><option value="HOT">热</option><option value="WARM">温</option><option value="COLD">冷</option></select>}
+            {batchField === 'roleArchetype' && <select value={batchValue} onChange={(e) => setBatchValue(e.target.value)} className="h-8 rounded-xl border border-gray-200 bg-white px-2.5 text-xs text-gray-700">{Object.entries(ROLE_ARCHETYPE_LABELS).map(([k, l]) => <option key={k} value={k}>{l.name}</option>)}</select>}
+            {batchField === 'trustLevel' && <select value={batchValue} onChange={(e) => setBatchValue(e.target.value)} className="h-8 rounded-xl border border-gray-200 bg-white px-2.5 text-xs text-gray-700"><option value="1">1星</option><option value="2">2星</option><option value="3">3星</option><option value="4">4星</option><option value="5">5星</option></select>}
+            <button disabled={isBatching || selectedIds.length === 0} onClick={applyBatch} className="rounded-xl bg-[#202020] px-3 py-1.5 text-xs text-white disabled:opacity-40">应用到已选 {selectedIds.length} 条</button>
           </div>
         )}
 
         {undoStack.length > 0 && (
-          <div className="mt-2 p-2 rounded-md border border-gray-300 bg-gray-50 space-y-1">
-            <p className="text-xs text-gray-800">可撤销最近批量编辑（10秒内）</p>
+          <div className="mt-3 space-y-1 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
+            <p className="text-xs text-gray-700">可撤销最近批量编辑（10 秒内）</p>
             {undoStack.map((entry, idx) => (
               <div key={entry.id} className="flex items-center justify-between">
-                <span className="text-xs text-gray-700">操作 #{undoStack.length - idx}</span>
-                <button onClick={() => undoBatch(entry.id)} className="px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-800">撤销</button>
+                <span className="text-xs text-gray-600">操作 #{undoStack.length - idx}</span>
+                <button onClick={() => undoBatch(entry.id)} className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-700">撤销</button>
               </div>
             ))}
           </div>
         )}
 
         {deleteUndoStack.length > 0 && (
-          <div className="mt-2 p-2 rounded-md border border-gray-300 bg-gray-50 space-y-1">
-            <p className="text-xs text-gray-800">可撤销删除</p>
+          <div className="mt-3 space-y-1 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
+            <p className="text-xs text-gray-700">可撤销删除</p>
             {deleteUndoStack.map((entry, idx) => (
               <div key={entry.id} className="flex items-center justify-between gap-2">
-                <span className="text-xs text-gray-700 truncate">#{deleteUndoStack.length - idx} · {entry.row.name}</span>
-                <button onClick={() => undoDelete(entry.id)} className="px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-800">撤销删除</button>
+                <span className="truncate text-xs text-gray-600">#{deleteUndoStack.length - idx} · {entry.row.name}</span>
+                <button onClick={() => undoDelete(entry.id)} className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-700">撤销删除</button>
               </div>
             ))}
           </div>
         )}
 
         {(undoSync.running || undoSync.total > 0) && (
-          <div className="mt-2 p-2 rounded-md border border-gray-300 bg-gray-50 flex items-center justify-between gap-2">
-            <span className="text-xs text-gray-800">服务端回滚：{undoSync.done}/{undoSync.total}{undoSync.failedRows.length > 0 ? ` · 失败 ${undoSync.failedRows.length}` : ''}</span>
-            {undoSync.failedRows.length > 0 && !undoSync.running && <button onClick={retryUndoSync} className="px-2 py-0.5 text-xs rounded border border-gray-300 text-gray-800">重试</button>}
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
+            <span className="text-xs text-gray-700">服务端回滚：{undoSync.done}/{undoSync.total}{undoSync.failedRows.length > 0 ? ` · 失败 ${undoSync.failedRows.length}` : ''}</span>
+            {undoSync.failedRows.length > 0 && !undoSync.running && <button onClick={retryUndoSync} className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-700">重试</button>}
           </div>
         )}
       </div>
 
-      {/* ── Table ── */}
-      {filtered.length === 0 ? (
-        <div className="px-6 py-14 text-center text-sm text-text-secondary">暂无匹配联系人</div>
+      {sorted.length === 0 ? (
+        <div className="px-6 py-16 text-center text-sm text-gray-400">暂无匹配联系人</div>
       ) : (
         <div className="overflow-x-auto">
           {grouped.map((group) => (
-            <div key={group.key} className="border-b border-line-standard">
-              <div className="sticky left-0 z-10 border-b border-line-standard bg-slate-100 px-4 py-1.5 text-xs font-semibold text-slate-600">{group.title}</div>
-              <table className="w-full text-xs" style={{ minWidth: shownColumns.reduce((n, c) => n + columnWidths[c.key], 0) + 148 }}>
+            <div key={group.key} className="border-t border-gray-100 first:border-t-0">
+              <div className="sticky left-0 z-10 bg-[#fafaf9] px-5 py-2.5 text-xs font-semibold text-gray-500">{group.title}</div>
+              <table className="w-full text-xs" style={{ minWidth: shownColumns.reduce((n, c) => n + columnWidths[c.key], 0) + 56 }}>
                 <thead>
-                  <tr className="bg-white/90">
-                    <th className="border-b border-r border-line-standard px-2 py-1.5 text-left text-[11px] font-semibold text-text-secondary" style={{ width: 100, minWidth: 100 }}>操作</th>
-                    <th className="border-b border-r border-line-standard px-2 py-1.5 text-left text-[11px] font-semibold text-text-secondary" style={{ width: 32, minWidth: 32 }}>选</th>
+                  <tr className="bg-white">
+                    <th className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 backdrop-blur" style={{ width: 40, minWidth: 40 }}>
+                      <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />
+                    </th>
                     {shownColumns.map((col) => (
                       <th
                         key={col.key}
@@ -722,11 +801,31 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
                         onDragStart={(e) => e.dataTransfer.setData('text/col', col.key)}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => handleDropColumn(e.dataTransfer.getData('text/col') as ColumnKey, col.key)}
-                        className="relative border-b border-r border-line-standard px-2 py-1.5 text-left text-[11px] font-semibold text-text-secondary"
+                        className="sticky top-0 z-20 relative border-b border-gray-100 bg-white/95 px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400 backdrop-blur"
                         style={{ width: columnWidths[col.key], minWidth: columnWidths[col.key] }}
                       >
-                        {col.label}
-                        {col.editable && <span className="ml-1 text-gray-300 font-normal">✎</span>}
+                        <div className="flex items-center justify-between gap-2">
+                          <span>
+                            {col.label}
+                            {col.key === 'name' ? (
+                              <span className="ml-1 text-[10px] normal-case italic tracking-normal text-gray-400">
+                                （*为AI生成的测试人）
+                              </span>
+                            ) : null}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault()
+                              event.stopPropagation()
+                              toggleSort(col.key)
+                            }}
+                            className="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:bg-gray-100"
+                            aria-label={`按${col.label}排序`}
+                          >
+                            <SortIcon state={sortState?.key === col.key ? sortState : null} />
+                          </button>
+                        </div>
                         <div className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize" onMouseDown={(e) => startResize(col.key, e)} />
                       </th>
                     ))}
@@ -734,14 +833,8 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
                 </thead>
                 <tbody>
                   {group.rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50/40 group">
-                      <td className="border-b border-r border-slate-100 px-2 py-1">
-                        <div className="flex items-center gap-1">
-                          <Link href={`/contacts/${row.id}/edit`} className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] text-slate-700 hover:bg-slate-50">编辑</Link>
-                          <button onClick={() => deleteOne(row)} className="rounded border border-gray-300 px-1.5 py-0.5 text-[10px] text-gray-700 hover:bg-gray-50">删除</button>
-                        </div>
-                      </td>
-                      <td className="border-b border-r border-slate-100 px-2 py-1">
+                    <tr key={row.id} className="group/row transition hover:bg-[#fbfbfa]">
+                      <td className="border-b border-gray-100 px-3 py-3 align-top">
                         <input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelect(row.id)} />
                       </td>
                       {shownColumns.map((col) => {
@@ -753,7 +846,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
                         return (
                           <td
                             key={col.key}
-                            className={`border-b border-r border-slate-100 px-2 py-1 ${col.editable && !isEditing ? 'cursor-pointer hover:bg-blue-50/30' : ''} ${isSaving ? 'opacity-60' : ''}`}
+                            className={`border-b border-gray-100 px-3 py-3 align-top ${col.editable && !isEditing ? 'cursor-pointer' : ''} ${isSaving ? 'opacity-60' : ''}`}
                             style={{ maxWidth: columnWidths[col.key] }}
                             onClick={() => !isEditing && handleCellClick(row.id, col)}
                           >
@@ -776,6 +869,22 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
                                   onSave={(v) => saveCell(row.id, col.key, v)}
                                 />
                               )
+                            ) : col.key === 'name' ? (
+                              <div className="relative min-w-0 pl-7">
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    void deleteOne(row)
+                                  }}
+                                  className="absolute left-0 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-gray-300 opacity-0 transition hover:bg-gray-100 hover:text-gray-600 group-hover/row:opacity-100"
+                                  aria-label={`删除${row.fullName ?? row.name}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                                <CellDisplay col={col.key} row={row} />
+                              </div>
                             ) : (
                               <CellDisplay col={col.key} row={row} />
                             )}

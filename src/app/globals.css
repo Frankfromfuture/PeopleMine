@@ -349,3 +349,16 @@
 .scrollbar-ghost::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.20);
 }
+
+@keyframes xminerPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.42;
+    transform: scale(1.18);
+  }
+}

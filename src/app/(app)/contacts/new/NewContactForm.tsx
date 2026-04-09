@@ -33,8 +33,11 @@ type InitialContact = {
   companyName?: string | null
   companyProfile?: string | null
   companyScale?: CompanyScaleNew | null
+  industry?: string | null
   industryL1?: string | null
   industryL2?: string | null
+  title?: string | null
+  jobTitle?: string | null
   jobPosition?: JobPosition | null
   jobFunction?: JobFunction | null
   influence?: InfluenceLevel | null
@@ -717,7 +720,7 @@ export default function NewContactForm({
 
   return (
     <div className="min-h-full bg-[#f6f6f4]">
-      <div className="flex min-h-screen w-full min-w-0 flex-col gap-4 px-6 py-4 lg:px-8">
+      <div className="flex min-h-screen w-full min-w-0 flex-col px-6 py-4 lg:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -738,7 +741,7 @@ export default function NewContactForm({
           ]}
         />
 
-        <div className="grid flex-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+        <div className="mt-1 grid flex-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="rounded-[32px] border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">Progress</p>
             <div className="mt-4 space-y-3">

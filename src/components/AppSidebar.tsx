@@ -299,7 +299,7 @@ export default function AppSidebar() {
                 ref={searchRef}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="鎼滅储浜鸿剦..."
+                placeholder="搜索人脉..."
                 className="flex-1 bg-transparent outline-none text-gray-700 placeholder-gray-400 min-w-0"
                 style={{ fontSize: 12 }}
               />
@@ -309,7 +309,7 @@ export default function AppSidebar() {
                   className="text-gray-400 hover:text-gray-600 cursor-pointer shrink-0 leading-none"
                   style={{ fontSize: 14 }}
                 >
-                  脳
+                  ×
                 </button>
               )}
             </div>
@@ -317,7 +317,7 @@ export default function AppSidebar() {
         ) : (
           <button
             onClick={openSearch}
-            title="鎼滅储"
+            title="搜索"
             className="w-full flex items-center justify-center py-2.5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             <Search size={18} strokeWidth={1.5} />
@@ -345,7 +345,7 @@ export default function AppSidebar() {
           {!isNarrow && (
             <div className="flex flex-col leading-none gap-[3px] min-w-0">
               <span className="text-gray-700 truncate" style={{ fontSize: 12 }}>PeopleMine</span>
-              <span className="text-gray-400 truncate" style={{ fontSize: 10 }}>浜鸿剦绠＄悊骞冲彴</span>
+              <span className="text-gray-400 truncate" style={{ fontSize: 10 }}>人脉管理平台</span>
             </div>
           )}
         </div>

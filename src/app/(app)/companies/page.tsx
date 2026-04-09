@@ -69,7 +69,7 @@ export default async function CompaniesPage() {
         </div>
       )}
 
-      <div className="px-8 py-7">
+      <div className="px-6 py-4 lg:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -95,7 +95,7 @@ export default async function CompaniesPage() {
           }
         />
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white">
           <CompaniesTable companies={companies as never} />
         </div>
       </div>

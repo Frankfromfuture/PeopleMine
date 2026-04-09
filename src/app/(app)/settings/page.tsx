@@ -44,7 +44,7 @@ const defaultPreferences: PreferenceState = {
 }
 
 const pageWrap = 'min-h-full bg-[#f6f6f4]'
-const shell = 'max-w-5xl mx-auto px-8 py-7'
+const shell = 'mx-auto max-w-5xl px-6 py-4 lg:px-8'
 const card = 'rounded-3xl border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]'
 const subtleCard = 'rounded-2xl border border-gray-200 bg-[#fafaf9]'
 const inputCls =
@@ -346,7 +346,7 @@ export default function SettingsPage() {
           ]}
         />
 
-        <div className={`${card} overflow-hidden`}>
+        <div className={`mt-1 ${card} overflow-hidden`}>
           <div className="space-y-10 px-8 py-8">
             {message && (
               <div
@@ -369,19 +369,19 @@ export default function SettingsPage() {
 
               <div className="grid gap-4">
                 <div className={`${subtleCard} p-4`}>
-                  <p className="mb-3 text-sm font-medium text-gray-900">浜鸿剦鍒楄〃榛樿瑙嗗浘</p>
+                  <p className="mb-3 text-sm font-medium text-gray-900">人脉列表默认视图</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <OptionButton
                       active={preferences.contactsView === 'table'}
                       icon={<List className="h-4 w-4" />}
-                      label="琛ㄦ牸"
+                      label="表格"
                       hint="Best for quick scanning, batch filtering, and fast data entry."
                       onClick={() => updatePreference('contactsView', 'table')}
                     />
                     <OptionButton
                       active={preferences.contactsView === 'card'}
                       icon={<LayoutGrid className="h-4 w-4" />}
-                      label="鍗＄墖"
+                      label="卡片"
                       hint="Best for browsing profile details, notes, and relationship context."
                       onClick={() => updatePreference('contactsView', 'card')}
                     />
@@ -389,7 +389,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className={`${subtleCard} p-4`}>
-                  <p className="mb-3 text-sm font-medium text-gray-900">闃呰瀵嗗害</p>
+                  <p className="mb-3 text-sm font-medium text-gray-900">阅读密度</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <OptionButton
                       active={preferences.density === 'comfortable'}
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                     />
                     <OptionButton
                       active={preferences.density === 'compact'}
-                      label="绱у噾"
+                      label="紧凑"
                       hint="Fits more information on screen for higher-frequency triage."
                       onClick={() => updatePreference('density', 'compact')}
                     />
@@ -407,7 +407,7 @@ export default function SettingsPage() {
                 </div>
 
                 <ToggleRow
-                  title="鍦ㄥ垪琛ㄤ腑鏄剧ず鑳介噺淇″彿"
+                  title="在列表中显示能量信号"
                   description="Keep energy signals visible so it is easier to spot relationships that need care or deserve priority follow-up."
                   value={preferences.showEnergy}
                   onToggle={() => updatePreference('showEnergy', !preferences.showEnergy)}
@@ -425,7 +425,7 @@ export default function SettingsPage() {
               <div className={`${subtleCard} space-y-5 p-5`}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-gray-700">榛樿鐢熸垚鏁伴噺</span>
+                    <span className="mb-2 block text-sm font-medium text-gray-700">默认生成数量</span>
                     <input
                       type="number"
                       min="1"
@@ -457,8 +457,8 @@ export default function SettingsPage() {
                         className="w-full accent-gray-800"
                       />
                       <div className="mt-2 flex justify-between text-xs text-gray-400">
-                        <span>闆嗕腑</span>
-                        <span>澶氭牱</span>
+                        <span>集中</span>
+                        <span>多样</span>
                       </div>
                     </div>
                   </div>
@@ -466,7 +466,7 @@ export default function SettingsPage() {
 
                 <div>
                   <div className="mb-2 flex items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-gray-700">鍋忓ソ琛屼笟</p>
+                    <p className="text-sm font-medium text-gray-700">偏好行业</p>
                     <p className="text-xs text-gray-400">
                       {preferences.generatorIndustries.length === 0
                         ? 'No restriction. All industries stay in the random pool.'
@@ -497,7 +497,8 @@ export default function SettingsPage() {
                 {availableL2.length > 0 && (
                   <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
                     <p className="text-xs leading-5 text-gray-500">
-                      褰撳墠閰嶇疆涓嬶紝缁嗗垎琛屼笟灏嗕粠浠ヤ笅鑼冨洿鍐呴殢鏈虹敓鎴愩€?                    </p>
+                      当前配置下，细分行业将从以下范围内随机生成。
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {availableL2.map(({ l1, l2 }) => (
                         <span
@@ -521,12 +522,12 @@ export default function SettingsPage() {
                   {isGenerating ? (
                     <>
                       <InlineLoadingSpinner className="h-4 w-4" />
-                      姝ｅ湪鐢熸垚
+                      正在生成
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
-                      浣跨敤褰撳墠閰嶇疆鐢熸垚娴嬭瘯鏁版嵁
+                      使用当前配置生成测试数据
                     </>
                   )}
                 </button>
@@ -542,7 +543,7 @@ export default function SettingsPage() {
 
               <div className="grid gap-4">
                 <div className={`${subtleCard} p-5`}>
-                  <p className="mb-3 text-sm font-medium text-gray-900">榛樿瀵煎嚭鏍煎紡</p>
+                  <p className="mb-3 text-sm font-medium text-gray-900">默认导出格式</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <OptionButton
                       active={preferences.exportFormat === 'csv'}
@@ -569,19 +570,19 @@ export default function SettingsPage() {
                     {isExporting ? (
                       <>
                         <InlineLoadingSpinner className="h-4 w-4" />
-                        姝ｅ湪瀵煎嚭
+                        正在导出
                       </>
                     ) : (
                       <>
                         <Download className="h-4 w-4" />
-                        瀵煎嚭褰撳墠浜鸿剦鏁版嵁
+                        导出当前人脉数据
                       </>
                     )}
                   </button>
                 </div>
 
                 <div className={`${subtleCard} p-5`}>
-                  <p className="mb-3 text-sm font-medium text-gray-900">浣犲彲鑳戒細鐢ㄥ埌</p>
+                  <p className="mb-3 text-sm font-medium text-gray-900">你可能会用到</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <a
                       href="/me"
@@ -589,12 +590,13 @@ export default function SettingsPage() {
                     >
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
                         <UserRound className="h-4 w-4" />
-                        涓汉璧勬枡
+                        个人资料
                       </div>
                       <p className="mt-2 text-xs leading-5 text-gray-500">
-                        鏇存柊鈥滄垜鈥濈殑鏍囩銆佺洰鏍囧拰涓汉鑳屾櫙锛屽奖鍝嶆梾绋嬪垎鏋愪笂涓嬫枃銆?                      </p>
+                        更新“我”的标签、目标和个人背景，影响旅程分析上下文。
+                      </p>
                       <span className="mt-3 inline-flex items-center gap-1 text-xs text-gray-400">
-                        鍓嶅線缂栬緫 <ExternalLink className="h-3.5 w-3.5" />
+                        前往编辑 <ExternalLink className="h-3.5 w-3.5" />
                       </span>
                     </a>
 
@@ -604,12 +606,13 @@ export default function SettingsPage() {
                     >
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
                         <Settings2 className="h-4 w-4" />
-                        鏂板缓浜鸿剦
+                        新建人脉
                       </div>
                       <p className="mt-2 text-xs leading-5 text-gray-500">
-                        鐩存帴鍥炲埌鈥?浜鸿剦鈥濇祦绋嬶紝寤剁画鍚屾牱鐨勮緭鍏ヨ妭濂忓拰瑙嗚璇█銆?                      </p>
+                        直接回到“+人脉”流程，延续同样的输入节奏和视觉语言。
+                      </p>
                       <span className="mt-3 inline-flex items-center gap-1 text-xs text-gray-400">
-                        绔嬪嵆鍓嶅線 <ExternalLink className="h-3.5 w-3.5" />
+                        立即前往 <ExternalLink className="h-3.5 w-3.5" />
                       </span>
                     </a>
                   </div>
@@ -664,7 +667,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className={`${subtleCard} p-5`}>
-                  <p className="text-sm font-medium text-gray-900">鍏充簬褰撳墠鐗堟湰</p>
+                  <p className="text-sm font-medium text-gray-900">关于当前版本</p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-gray-400">Version</p>
@@ -684,7 +687,8 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <p className="mt-4 text-xs leading-6 text-gray-500">
-                    褰撳墠椤垫柊澧炵殑鍋忓ソ椤归兘浼氫繚瀛樺湪鏈湴娴忚鍣紝鐢熸垚銆佸鍑恒€佹竻绌鸿繖涓夌被鍔ㄤ綔鍒欑户缁鐢ㄤ粨搴撻噷宸叉湁鎺ュ彛銆?                  </p>
+                    当前页新增的偏好项都会保存在本地浏览器，生成、导出、清空这三类动作则继续复用仓库里已有接口。
+                  </p>
                 </div>
               </div>
             </section>
