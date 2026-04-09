@@ -2,7 +2,7 @@
 
 ## Overview
 
-PeopleMine uses a clean, light, grayscale-first design system accented with a warm orange (`#FF7F27`). The palette deliberately avoids violet/purple to differentiate from typical SaaS tooling, leaning into a neutral, professional feel with high contrast.
+PeopleMine uses a clean, light, grayscale-first design system accented with a warm orange (`#A04F47`). The palette deliberately avoids violet/purple to differentiate from typical SaaS tooling, leaning into a neutral, professional feel with high contrast.
 
 ---
 
@@ -29,10 +29,10 @@ PeopleMine uses a clean, light, grayscale-first design system accented with a wa
 ### Accent (Orange)
 | Token | Value | Usage |
 |-------|-------|-------|
-| Primary accent | `#FF7F27` | Buttons, active indicators, AI branding |
-| Hover | `#e0701f` | Button hover state |
-| Orange brand (logo) | `#F58220` | Logo gradient start |
-| Orange badge bg | `rgba(255,127,39,0.12)` | AI avatar background |
+| Primary accent | `#A04F47` | Buttons, active indicators, AI branding |
+| Hover | `#A04F47` | Button hover state |
+| Orange brand (logo) | `#A04F47` | Logo gradient start |
+| Orange badge bg | `rgba(160,79,71,0.12)` | AI avatar background |
 
 ### Borders & Dividers
 | Token | Value | Usage |
@@ -48,8 +48,8 @@ PeopleMine uses a clean, light, grayscale-first design system accented with a wa
 |-------|-------|-------|
 | Darkest | `#2D2D2D` / `#1a1a1a` | Avatar colors, urgent badges |
 | Dark | `#3d3d3d` | User avatar bg |
-| Mid-dark | `#4A4A4A` | "凉" temperature |
-| Mid | `#6E6E6E` | "温" temperature |
+| Mid-dark | `#4A4A4A` | "鍑? temperature |
+| Mid | `#6E6E6E` | "娓? temperature |
 | Light-mid | `#8F959E` | Logo gray elements |
 | Light | `#9ca3af` | Contribution grid mid |
 | Very light | `#e5e7eb` | Contribution grid empty |
@@ -74,21 +74,20 @@ PeopleMine uses a clean, light, grayscale-first design system accented with a wa
 
 ## Sidebar
 
-- Width range: `56px` (collapsed) → `299px` (max), default `209px`
+- Width range: `56px` (collapsed) 鈫?`299px` (max), default `209px`
 - Narrow threshold: `< 100px` = icon-only mode
 - Background: `#F7F7F7`
 - Right border: `1px solid #E8E8E8`
 - Transition: `width 0.22s cubic-bezier(0.4,0,0.2,1)` (disabled during drag)
-- Active indicator: `2px` orange left bar (`#FF7F27`)
+- Active indicator: `2px` orange left bar (`#A04F47`)
 - Collapse toggle: circular button at `-right-3 top-1/2`, `1px solid #E0E0E0`
 - Resize handle: `6px` wide zone at right edge; shows orange line on hover/drag
 - Search: `#EFEFEF` bg, `1px solid #E2E2E2` border, `fontSize 12`
 
 ### Nav Sections
-1. 我 / + 人脉 / 人脉资产
-2. 人脉宇宙 / 企业宇宙 / 目标分析
-3. 关系温度 / 社交建议 / 游乐场
-4. (accent divider) 设置
+1. 鎴?/ + 浜鸿剦 / 浜鸿剦璧勪骇
+2. 浜鸿剦瀹囧畽 / 浼佷笟瀹囧畽 / 鐩爣鍒嗘瀽
+3. 鍏崇郴娓╁害 / 绀句氦寤鸿 / 娓镐箰鍦?4. (accent divider) 璁剧疆
 5. (border) User profile at bottom
 
 ---
@@ -114,21 +113,21 @@ border border-gray-300 rounded-xl bg-white/40 backdrop-blur-sm
 - Gap: `16px`
 - Ghost placeholder: orange dashed border + very faint orange bg
 - Drag animation: `translate` transform during drag, smooth `200ms cubic-bezier(.4,0,.2,1)` transition on drop
-- Auto-align toggle: orange `#FF7F27` when active, gray-300 when off
+- Auto-align toggle: orange `#A04F47` when active, gray-300 when off
 
 ---
 
 ## Widget Catalog
 
 ### AIChatWidget (Xminer)
-- Orange `X` logo mark (24×24 rounded-md)
+- Orange `X` logo mark (24脳24 rounded-md)
 - Box-style chat bubbles: user = `#2e2e2e` dark, AI = white
 - Slash command dropdown with orange accents
-- Send button: `#FF7F27`
+- Send button: `#A04F47`
 
 ### StatCard
 - Big number: `52px` bold with text-shadow
-- Accent variant uses `#FF7F27` for number and icon
+- Accent variant uses `#A04F47` for number and icon
 - Trend badge: gray-100 bg, tiny TrendingUp/Down icon
 
 ### NeedsMaintenanceWidget
@@ -137,12 +136,12 @@ border border-gray-300 rounded-xl bg-white/40 backdrop-blur-sm
 - Urgency badges: dark gray text on near-transparent bg
 
 ### RandomGeneratorWidget
-- `+/−` stepper controls
+- `+/鈭抈 stepper controls
 - Gray generate button
 
 ### ContributionWidget
 - GitHub-style heatmap
-- Grayscale cells: `#e5e7eb` → `#1a1a1a`
+- Grayscale cells: `#e5e7eb` 鈫?`#1a1a1a`
 
 ### TraitsSummaryWidget
 - Recharts RadarChart (orange stroke, 15% fill opacity)
@@ -159,12 +158,12 @@ border border-gray-300 rounded-xl bg-white/40 backdrop-blur-sm
 
 | Interaction | Duration | Easing |
 |-------------|----------|--------|
-| Nav hover | instant | — |
+| Nav hover | instant | 鈥?|
 | Sidebar collapse | 220ms | `cubic-bezier(0.4,0,0.2,1)` |
-| Widget drag | none (real-time) | — |
+| Widget drag | none (real-time) | 鈥?|
 | Widget drop | 200ms | `cubic-bezier(.4,0,.2,1)` |
 | Ghost snap | 80ms | `ease` |
-| Toggle switch | 200ms | — |
+| Toggle switch | 200ms | 鈥?|
 | Button/link | 160ms | `ease` |
 
 ---

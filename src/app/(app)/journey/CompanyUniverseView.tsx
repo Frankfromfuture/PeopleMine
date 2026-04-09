@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import LottieLoader from '@/components/LottieLoader'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Group    = 'listed' | 'large' | 'mid' | 'sme' | 'startup'
@@ -280,6 +281,8 @@ export default function CompanyUniverseView() {
   const [hovered, setHovered]       = useState<{ node:SphereNode; meta:CompanyMeta; wx:number; wy:number } | null>(null)
   const [activeView, setActiveView]   = useState<string | null>(null)
   const [zoom, setZoom]             = useState(1.0)
+  // Entrance explosion progress: 0 → 1, driven by RAF loop
+  const entranceRef = useRef({ progress: 0, done: false })
 
   const industryTargetsRef  = useRef<Map<string,[number,number,number]>>(new Map())
   const industryCentersRef  = useRef<Map<string,[number,number,number]>>(new Map())
@@ -513,6 +516,16 @@ export default function CompanyUniverseView() {
     vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.13)')
     ctx.fillStyle=vig; ctx.fillRect(0,0,w,h)
 
+    // ── Entrance explosion scale ────────────────────────────────────────────
+    const ep = entranceRef.current.progress
+    const eased = ep < 1 ? 1 + 2.7*(ep-1)**3 + 1.7*(ep-1)**2 : 1
+    const entranceScale = Math.max(0.001, eased)
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.scale(entranceScale, entranceScale)
+    ctx.translate(-cx, -cy)
+    ctx.globalAlpha = Math.min(ep * 3, 1)
+
     const focusId=hoveredId
     const focused=new Set<string>()
     if(focusId){
@@ -678,6 +691,10 @@ export default function CompanyUniverseView() {
         ctx.restore()
       }
     }
+
+    // close entrance scale transform
+    ctx.restore()
+    ctx.globalAlpha = 1
   }, [])
 
   // ── Find node ──────────────────────────────────────────────────────────
@@ -749,6 +766,11 @@ export default function CompanyUniverseView() {
 
     const loop=()=>{
       timeRef.current+=0.016
+      // Drive entrance explosion (completes in ~25 frames ≈ 400ms)
+      if (!entranceRef.current.done) {
+        entranceRef.current.progress = Math.min(entranceRef.current.progress + 0.04, 1)
+        if (entranceRef.current.progress >= 1) entranceRef.current.done = true
+      }
       const targetTrans=activeViewRef.current==='industry'?1:0
       viewTransRef.current+=(targetTrans-viewTransRef.current)*0.028
       if(!drag.current.on){
@@ -801,9 +823,10 @@ export default function CompanyUniverseView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center w-full h-full"
+      <div className="flex flex-col items-center justify-center w-full h-full gap-2"
         style={{ background:'radial-gradient(ellipse at 40% 36%, #fafafa 0%, #eeeeee 70%, #e8e8e8 100%)', fontFamily:FONT }}>
-        <div style={{ fontSize:13, color:'#aaa', letterSpacing:'0.12em' }}>加载中…</div>
+        <LottieLoader className="w-20 h-20" />
+        <div style={{ fontSize:13, color:'#aaa', letterSpacing:'0.12em' }}>加载企业宇宙…</div>
       </div>
     )
   }

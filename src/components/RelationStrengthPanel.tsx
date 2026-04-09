@@ -77,18 +77,6 @@ function Slider({
   )
 }
 
-function ScoreBar({ value, size = 'md' }: { value: number; size?: 'sm' | 'md' }) {
-  const pct = Math.round(value * 100)
-  const barW = size === 'sm' ? 'w-12' : 'w-16'
-  return (
-    <span className="inline-flex items-center gap-1">
-      <span className={`${barW} h-1.5 bg-gray-100 rounded-full overflow-hidden inline-block`}>
-        <span className="h-full bg-gray-600 rounded-full block" style={{ width: `${pct}%` }} />
-      </span>
-      <span className="text-[10px] text-gray-400 tabular-nums">{value.toFixed(2)}</span>
-    </span>
-  )
-}
 
 /** 4×4 or N×N editable cell matrix */
 function MatrixEditor<K extends string>({
@@ -125,7 +113,6 @@ function MatrixEditor<K extends string>({
               {keys.map(col => {
                 const v = matrix[row]?.[col] ?? 0.5
                 const isDiag = row === col
-                const hue = Math.round(v * 100)
                 return (
                   <td key={col} className="px-0.5 py-0.5">
                     <input
@@ -256,7 +243,7 @@ export default function RelationStrengthPanel() {
           <button
             onClick={save}
             disabled={saving}
-            className="px-2.5 py-1 rounded text-[10px] bg-gray-700 text-white hover:bg-gray-900 disabled:opacity-50"
+            className="px-2.5 py-1 rounded text-[10px] bg-[#A04F47] text-white hover:bg-[#A04F47]/90 disabled:opacity-50"
           >{saving ? '保存中…' : saved ? '✓ 已保存' : '保存'}</button>
         </div>
       </div>

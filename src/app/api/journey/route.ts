@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { db } from '@/lib/db'
-import { getAuthUserId, requireAuth } from '@/lib/session'
+import { requireAuth } from '@/lib/session'
 import { scoreAllContacts, selectTopContacts } from '@/lib/journey/scoring'
 import { buildCandidatePaths } from '@/lib/journey/pathfinding'
 import { analyzeJourneyWithClaude, CompanyContext } from '@/lib/journey/prompt'
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { goal } = body
+    const { goal, selectedPlan } = body
 
     if (!goal || typeof goal !== 'string' || goal.trim().length === 0) {
       return NextResponse.json({ error: '目标不能为空' }, { status: 400 })
@@ -239,6 +239,7 @@ export async function POST(request: NextRequest) {
         candidatePaths,
         selfProfile ?? undefined,
         companies.length > 0 ? companies : undefined,
+        selectedPlan ?? undefined,
       )
     } catch (claudeError) {
       console.error('Qwen 分析失败:', claudeError)

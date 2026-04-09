@@ -26,7 +26,7 @@ export function MarketingFrame({ children, active }: { children: ReactNode; acti
               </Link>
             ))}
           </nav>
-          <Link href="/login" className="rounded-full bg-[#1d1f22] px-5 py-2 text-sm font-medium text-white hover:bg-black">
+          <Link href="/login" className="rounded-full bg-[#A04F47] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#A04F47]/90">
             开始使用
           </Link>
         </div>
@@ -36,8 +36,8 @@ export function MarketingFrame({ children, active }: { children: ReactNode; acti
 
       <section className="bg-[#bf234f] px-6 py-14 text-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-3xl font-semibold md:text-4xl">让团队协作、关系经营与目标推进在同一节奏里发生。</h2>
-          <Link href="/login" className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#bf234f]">
+          <h2 className="text-3xl font-semibold md:text-4xl">让团队协作、关系经营与目标推进在同一套系统里发生。</h2>
+          <Link href="/login" className="inline-flex rounded-full bg-[#A04F47] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#A04F47]/90">
             立即开始
           </Link>
         </div>
@@ -47,10 +47,10 @@ export function MarketingFrame({ children, active }: { children: ReactNode; acti
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-4">
           <div>
             <div className="mb-3 h-8 w-32 rounded-sm border border-white/40" />
-            <p className="text-sm text-white/80">PeopleMine · 把人脉经营成可复利资产。</p>
+            <p className="text-sm text-white/80">PeopleMine · 把人脉经营成可导航的长期资产。</p>
           </div>
           {[
-            ["产品", "功能总览", "标签系统", "能量追踪", "航程分析"],
+            ["产品", "功能总览", "标签系统", "能量追踪", "路径分析"],
             ["解决方案", "学生用户", "职场新人", "创业团队", "社区组织"],
             ["资源", "定价", "更新日志", "帮助中心", "联系我们"],
           ].map((col) => (

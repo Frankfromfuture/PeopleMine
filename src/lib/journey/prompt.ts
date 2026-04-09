@@ -6,6 +6,8 @@ import {
   PathStep,
   AlternativePath,
   MissingNode,
+  DecompositionPlan,
+  NetworkExpansionSuggestion,
 } from './types'
 import { ROLE_ARCHETYPE_LABELS, RoleArchetype } from '@/types'
 import { ContactRelation } from '@prisma/client'
@@ -153,6 +155,7 @@ function buildPrompt(
   candidatePaths: CandidatePath[],
   selfProfile?: SelfProfile,
   companies?: CompanyContext[],
+  selectedPlan?: DecompositionPlan,
 ): string {
   const topContactIds = new Set(scoredContacts.map((c) => c.id))
   const formattedContacts = formatContactsForPrompt(scoredContacts)
@@ -202,9 +205,25 @@ ${JSON.stringify(formatted, null, 2)}
 `
   }
 
+  // 用户选定的拆解方案
+  let planSection = ''
+  if (selectedPlan) {
+    const stepsText = selectedPlan.steps.map(s => `  步骤${s.id}「${s.label}」：${s.description}`).join('\n')
+    planSection = `
+## 用户选定的行动方案：方案${selectedPlan.id} —「${selectedPlan.title}」
+- 方案特征：${selectedPlan.summary}
+- 策略思路：${selectedPlan.strategy}
+- 执行步骤：
+${stepsText}
+
+请在生成路径时，优先按照此方案的策略思路来选择和排序联系人节点。
+
+`
+  }
+
   return `## 用户的人脉拓展目标
 ${goal}
-${selfSection}${companySection}
+${planSection}${selfSection}${companySection}
 ## 用户的人脉网络概况
 - 总联系人数：${scoredContacts.length}
 - 已分析（Top-15）：${formattedContacts.length}
@@ -232,20 +251,20 @@ ${JSON.stringify(
 
 你的分析应该包含：
 
-1. **最优主路径选择**：从候选路径中选择或微调最佳路径，并为每个步骤提供具体的沟通建议
-   - 开场白：具体可说的话（中文）
-   - 核心信息：你想表达的核心诉求（中文）
-   - 时机：什么时候最好联系（中文）
-   - 注意事项：可能的风险或敏感点（中文，可为空）
-   - 沟通渠道：建议用 wechat / call / meeting / email / event 中的哪一种
+1. **最优主路径选择**：从候选路径中选择或微调最佳路径，并为每个步骤提供：
+   - keyTactic：1-2句话的关键攻略（告诉用户如何高效利用这位联系人）
+   - expandedTactics：展开攻略（话术建议、助攻联系人、互惠关系、好感度提升）
+   - communicationAdvice：具体沟通建议（开场白、核心诉求、时机、渠道等）
 
-2. **备选路径**：提供 1-2 条备选路径及其适用场景（中文）
+2. **备选路径**：提供最多3条备选路径，分别标注 pathCategory（planB 或 assist）和 categoryLabel
 
 3. **缺失节点分析**：指出当前网络缺少什么类型的人脉，以及如何弥补
 
-4. **整体策略摘要**：用 2-3 句话总结建议（中文）
+4. **人脉拓展建议**：如当前人脉不足以达成目标，提供需要拓展的人脉方向（行业、企业画像、职级）
 
-5. **整体置信度**：0-1 的数字，表示你对这个方案的信心度
+5. **整体策略摘要**：用 2-3 句话总结建议（中文）
+
+6. **整体置信度**：0-1 的数字，表示你对这个方案的信心度
 
 ## 输出 JSON schema（必须严格遵守）
 {
@@ -256,11 +275,18 @@ ${JSON.stringify(
       "hopIndex": 0,
       "introductionVia": null,
       "introductionViaName": null,
+      "keyTactic": "1-2句关键攻略，说明如何高效利用此联系人（中文）",
+      "expandedTactics": {
+        "scriptSuggestion": "完整话术脚本，包含具体措辞（中文）",
+        "assistContactIds": [],
+        "mutualBenefit": "你能给对方带来什么价值，互惠关系说明（中文）",
+        "rapportTips": "如何加强好感度，具体行动建议（中文）"
+      },
       "communicationAdvice": {
-        "openingLine": "string",
-        "keyMessage": "string",
-        "timing": "string",
-        "caution": "string or null",
+        "openingLine": "具体开场白（中文）",
+        "keyMessage": "核心诉求（中文）",
+        "timing": "联系时机建议（中文）",
+        "caution": "注意事项或null",
         "channelSuggestion": "wechat|call|meeting|email|event"
       },
       "confidenceAtThisStep": 0.95
@@ -269,9 +295,19 @@ ${JSON.stringify(
   "alternativePaths": [
     {
       "pathId": "alt-1",
-      "steps": [...same as primaryPath step format...],
+      "pathCategory": "planB",
+      "categoryLabel": "Plan B 备选",
+      "steps": [...same format as primaryPath steps, including keyTactic and expandedTactics...],
       "score": 0.82,
-      "rationale": "中文：为什么这是备选"
+      "rationale": "中文：为什么这是备选，适用于什么情况"
+    },
+    {
+      "pathId": "alt-2",
+      "pathCategory": "assist",
+      "categoryLabel": "助攻路径",
+      "steps": [...],
+      "score": 0.75,
+      "rationale": "中文：这条路径如何从侧面助攻主目标"
     }
   ],
   "missingNodes": [
@@ -280,6 +316,15 @@ ${JSON.stringify(
       "roleName": "中文名称",
       "whyNeeded": "为什么对这个目标很重要",
       "howToFind": "建议在哪儿或怎么找这类人脉"
+    }
+  ],
+  "networkExpansion": [
+    {
+      "industry": "目标行业（中文）",
+      "companyProfile": "企业画像：类型/规模（中文）",
+      "level": "目标职级/资历（中文）",
+      "reason": "为何需要此类人脉（中文）",
+      "urgency": "high|medium|low"
     }
   ],
   "overallStrategy": "中文：2-3 句总结性建议",
@@ -307,14 +352,15 @@ export async function analyzeJourneyWithClaude(
   candidatePaths: CandidatePath[],
   selfProfile?: SelfProfile,
   companies?: CompanyContext[],
+  selectedPlan?: DecompositionPlan,
 ): Promise<JourneyPathData> {
   // 如果没有 API key，返回使用预计算数据的兜底结果（用于测试）
   if (!process.env.QWEN_API_KEY) {
     console.warn('未配置 QWEN_API_KEY，使用预计算数据生成响应')
-    return generateFallbackPathData(goal, scoredContacts, relations, candidatePaths)
+    return generateFallbackPathData(goal, scoredContacts, relations, candidatePaths, selectedPlan)
   }
 
-  const prompt = buildPrompt(goal, scoredContacts, relations, candidatePaths, selfProfile, companies)
+  const prompt = buildPrompt(goal, scoredContacts, relations, candidatePaths, selfProfile, companies, selectedPlan)
 
   const aiClient = getAIClient()
   if (!aiClient) throw new Error('未配置 AI 服务')
@@ -366,12 +412,20 @@ export async function analyzeJourneyWithClaude(
     (step: unknown, index: number) => {
       const stepData = step as Record<string, unknown>
       const commAdvice = stepData.communicationAdvice as Record<string, unknown> || {}
+      const expanded = stepData.expandedTactics as Record<string, unknown> | undefined
       return {
         contactId: (stepData.contactId as string),
         contactName: (stepData.contactName as string) || getContactNameById((stepData.contactId as string), scoredContacts),
         hopIndex: (stepData.hopIndex as number) ?? index,
         introductionVia: (stepData.introductionVia as string) || null,
         introductionViaName: (stepData.introductionViaName as string) || null,
+        keyTactic: (stepData.keyTactic as string) || undefined,
+        expandedTactics: expanded ? {
+          scriptSuggestion: (expanded.scriptSuggestion as string) || '',
+          assistContactIds: (expanded.assistContactIds as string[]) || [],
+          mutualBenefit: (expanded.mutualBenefit as string) || '',
+          rapportTips: (expanded.rapportTips as string) || '',
+        } : undefined,
         communicationAdvice: {
           openingLine: (commAdvice.openingLine as string) || '你好',
           keyMessage: (commAdvice.keyMessage as string) || '',
@@ -392,15 +446,25 @@ export async function analyzeJourneyWithClaude(
     const stepsArray = (altData.steps as unknown[]) || []
     return ({
       pathId: (altData.pathId as string) || `alt-${index + 1}`,
+      pathCategory: (altData.pathCategory as 'planB' | 'assist') || (index === 0 ? 'planB' : 'assist'),
+      categoryLabel: (altData.categoryLabel as string) || (index === 0 ? 'Plan B 备选' : `助攻路径${index}`),
       steps: stepsArray.map((step: unknown, stepIndex: number) => {
         const stepData = step as Record<string, unknown>
         const commAdviceData = stepData.communicationAdvice as Record<string, unknown> || {}
+        const expanded = stepData.expandedTactics as Record<string, unknown> | undefined
         return {
           contactId: stepData.contactId as string,
           contactName: (stepData.contactName as string) || getContactNameById(stepData.contactId as string, scoredContacts),
           hopIndex: (stepData.hopIndex as number) ?? stepIndex,
           introductionVia: (stepData.introductionVia as string) || null,
           introductionViaName: (stepData.introductionViaName as string) || null,
+          keyTactic: (stepData.keyTactic as string) || undefined,
+          expandedTactics: expanded ? {
+            scriptSuggestion: (expanded.scriptSuggestion as string) || '',
+            assistContactIds: (expanded.assistContactIds as string[]) || [],
+            mutualBenefit: (expanded.mutualBenefit as string) || '',
+            rapportTips: (expanded.rapportTips as string) || '',
+          } : undefined,
           communicationAdvice: {
             openingLine: (commAdviceData.openingLine as string) || '',
             keyMessage: (commAdviceData.keyMessage as string) || '',
@@ -426,6 +490,20 @@ export async function analyzeJourneyWithClaude(
         whyNeeded: (missingData.whyNeeded as string) || '',
         howToFind: (missingData.howToFind as string) || '',
       })
+    },
+  )
+
+  // 解析人脉拓展建议
+  const networkExpansionList: NetworkExpansionSuggestion[] = ((claudeOutput.networkExpansion as unknown[]) || []).map(
+    (item: unknown) => {
+      const d = item as Record<string, unknown>
+      return {
+        industry: (d.industry as string) || '',
+        companyProfile: (d.companyProfile as string) || '',
+        level: (d.level as string) || '',
+        reason: (d.reason as string) || '',
+        urgency: (d.urgency as 'high' | 'medium' | 'low') || 'medium',
+      }
     },
   )
 
@@ -455,6 +533,8 @@ export async function analyzeJourneyWithClaude(
     primaryPath: primaryPathSteps,
     alternativePaths: alternativePathsList,
     missingNodes: missingNodesList,
+    networkExpansion: networkExpansionList.length > 0 ? networkExpansionList : undefined,
+    selectedPlan,
     overallStrategy:
       (claudeOutput.overallStrategy as string) || '基于分析，建议按优先级联系相关人脉。',
     overallConfidence: (claudeOutput.overallConfidence as number) ?? 0.75,
@@ -478,6 +558,7 @@ function generateFallbackPathData(
   scoredContacts: ScoredContact[],
   relations: ContactRelation[],
   candidatePaths: CandidatePath[],
+  selectedPlan?: DecompositionPlan,
 ): JourneyPathData {
   const goalCategory = detectGoalCategory(goal)
   const now = new Date().toISOString()
@@ -554,6 +635,7 @@ function generateFallbackPathData(
     primaryPath: primaryPathSteps,
     alternativePaths: alternativePathsList,
     missingNodes: [],
+    selectedPlan,
     overallStrategy:
       '根据预计算的网络评分，以上路径代表了达成目标的最优方案。建议按顺序联系相关人脉。',
     overallConfidence: 0.7,

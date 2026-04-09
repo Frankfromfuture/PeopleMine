@@ -228,14 +228,21 @@ function randomSeed() {
   }
 }
 
-async function aiGenerate(count: number, tagVariability: number): Promise<GeneratedContact[]> {
+async function aiGenerate(count: number, tagVariability: number, industryFilter?: string[]): Promise<GeneratedContact[]> {
   const qwenKey = process.env.QWEN_API_KEY
   if (!qwenKey) throw new Error('AI_KEY_MISSING')
 
   const { seed, industries, cities, fiveNames } = randomSeed()
 
+  // 如果用户指定了行业，优先使用；否则用随机池
+  const effectiveIndustries = industryFilter && industryFilter.length > 0 ? industryFilter : industries
+
   // 随机打乱角色分布，让每次生成的角色比例不同
   const roleHints = [...ROLES].sort(() => Math.random() - 0.5).join(' / ')
+
+  const industryConstraint = industryFilter && industryFilter.length > 0
+    ? `- 行业必须从以下范围选择（严格限定）：${industryFilter.join('、')}\n- industryL2 根据对应一级行业随机生成合理细分`
+    : `- 行业参考（可突破）：${effectiveIndustries.join('、')}`
 
   const prompt = `随机种子：${seed}。直接输出 JSON，禁止输出任何思考过程或解释。
 
@@ -243,7 +250,7 @@ async function aiGenerate(count: number, tagVariability: number): Promise<Genera
 
 【本次随机约束】
 - 姓氏参考（可突破）：${fiveNames.join('、')}
-- 行业参考（可突破）：${industries.join('、')}
+${industryConstraint}
 - 城市分布参考：${cities.join('、')}
 - roleArchetype 分布顺序：${roleHints}
 - tagVariability=${tagVariability}（0=行业聚焦，100=极度多元）
@@ -322,7 +329,7 @@ async function aiGenerate(count: number, tagVariability: number): Promise<Genera
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { count = 10, tagVariability = 50 } = body
+    const { count = 10, tagVariability = 50, industryFilter } = body
 
     if (!Number.isInteger(count) || count < 1 || count > 500) {
       return NextResponse.json({ error: '生成数量必须在 1-500 之间' }, { status: 400 })
@@ -330,10 +337,14 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(tagVariability) || tagVariability < 0 || tagVariability > 100) {
       return NextResponse.json({ error: '标签波动性必须在 0-100 之间' }, { status: 400 })
     }
+    const validatedIndustryFilter: string[] | undefined =
+      Array.isArray(industryFilter) && industryFilter.length > 0
+        ? industryFilter.map(String).slice(0, 11)
+        : undefined
 
     const userId = await getAuthUserId()
 
-    const randomContacts = await withTimeout(aiGenerate(count, tagVariability), 120000, 'AI_GENERATE')
+    const randomContacts = await withTimeout(aiGenerate(count, tagVariability, validatedIndustryFilter), 120000, 'AI_GENERATE')
 
     // 为每个联系人生成过去一年内的随机登记时间（均匀分布）
     const now = Date.now()

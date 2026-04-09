@@ -85,7 +85,7 @@ export default function NodeDetailPanel({
                 selectedNode.temperature === 'HOT'
                   ? 'bg-gray-100 text-gray-700'
                   : selectedNode.temperature === 'WARM'
-                    ? 'bg-orange-100 text-orange-700'
+                        ? 'bg-[#A04F47]/10 text-[#A04F47]'
                     : 'bg-gray-100 text-gray-700'
               }`}
             >

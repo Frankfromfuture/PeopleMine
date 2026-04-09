@@ -8,7 +8,7 @@ const TEST_COMPANIES = [
     industry: '互联网',
     scale: 'LARGE',
     mainBusiness: '短视频、信息流、企业服务',
-    tags: ['AI', '互联网', '内容', '广告', '出海'],
+    tags: ['Xminer AI', '互联网', '内容', '广告', '出海'],
     founderName: '张一鸣',
     investors: ['红杉资本', 'KKR', '软银'],
     upstreams: ['AWS', '阿里云'],
@@ -46,14 +46,14 @@ const TEST_COMPANIES = [
     energyScore: 85,
   },
   {
-    name: '某 AI 初创',
-    industry: 'AI',
+    name: '某 Xminer AI 初创',
+    industry: 'Xminer AI',
     scale: 'STARTUP',
-    mainBusiness: 'LLM 应用、企业 AI 助手',
-    tags: ['AI', 'SaaS', 'B2B', '大模型'],
+    mainBusiness: 'LLM 应用、企业 Xminer AI 助手',
+    tags: ['Xminer AI', 'SaaS', 'B2B', '大模型'],
     founderName: '李明',
     investors: ['源码资本', 'IDG'],
-    upstreams: ['OpenAI', 'Qwen'],
+    upstreams: ['OpenAI', 'Xminer AI'],
     downstreams: ['企业客户'],
     familiarityLevel: 5,
     temperature: 'HOT',
@@ -93,7 +93,7 @@ export default function CompanyTestPanel() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loadingList, setLoadingList] = useState(false)
 
-  // AI extract test
+  // Xminer AI extract test
   const [extractText, setExtractText] = useState(SAMPLE_EXTRACT_TEXT)
   const [extracting, setExtracting] = useState(false)
   const [extractResult, setExtractResult] = useState<Record<string, unknown> | null>(null)
@@ -180,11 +180,11 @@ export default function CompanyTestPanel() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setExtractResult(data.extracted)
-      addLog(`✓ AI 提取成功：${data.extracted.name}`)
+      addLog(`✓ Xminer AI 提取成功：${data.extracted.name}`)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'AI 提取失败'
+      const msg = e instanceof Error ? e.message : 'Xminer AI 提取失败'
       setExtractError(msg)
-      addLog(`✗ AI 提取失败：${msg}`)
+      addLog(`✗ Xminer AI 提取失败：${msg}`)
     } finally {
       setExtracting(false)
     }
@@ -290,10 +290,10 @@ export default function CompanyTestPanel() {
         )}
       </div>
 
-      {/* ── 2. AI Extract Test ── */}
+      {/* ── 2. Xminer AI Extract Test ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-1">AI 智能提取测试</h2>
-        <p className="text-xs text-gray-400 mb-4">需配置 QWEN_API_KEY</p>
+        <h2 className="text-sm font-semibold text-gray-700 mb-1">Xminer AI 智能提取测试</h2>
+        <p className="text-xs text-gray-400 mb-4">需配置 Xminer AI 服务密钥</p>
 
         <textarea
           value={extractText}
@@ -307,7 +307,7 @@ export default function CompanyTestPanel() {
           disabled={extracting || !extractText.trim()}
           className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
         >
-          {extracting ? 'AI 提取中…' : '测试 AI 提取'}
+          {extracting ? 'Xminer AI 提取中…' : '测试 Xminer AI 提取'}
         </button>
 
         {extractError && (

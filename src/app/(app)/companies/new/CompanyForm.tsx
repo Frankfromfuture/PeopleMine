@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import PageShell from '@/components/PageShell'
 import { COMPANY_SCALE_LABELS } from '@/types'
 import type { CompanyScale, Temperature } from '@/types'
 
@@ -68,7 +69,6 @@ export default function CompanyForm({
   const [temperature, setTemperature] = useState<Temperature | ''>(initialCompany?.temperature as Temperature ?? '')
   const [energyScore, setEnergyScore] = useState<number>(initialCompany?.energyScore ?? 50)
   const [notes, setNotes] = useState(initialCompany?.notes ?? '')
-  const [tagV2Text, setTagV2Text] = useState(initialCompany?.tagV2 ? JSON.stringify(initialCompany.tagV2, null, 2) : '')
 
   // AI extract
   const [extractText, setExtractText] = useState('')
@@ -127,16 +127,6 @@ export default function CompanyForm({
     if (!name.trim()) { setError('公司名称不能为空'); return }
     setError('')
 
-    let parsedTagV2: unknown = null
-    if (tagV2Text.trim()) {
-      try {
-        parsedTagV2 = JSON.parse(tagV2Text)
-      } catch {
-        setError('标签 V2 JSON 格式不正确')
-        return
-      }
-    }
-
     const payload = {
       name: name.trim(),
       mainBusiness: mainBusiness.trim() || null,
@@ -175,9 +165,23 @@ export default function CompanyForm({
   }
 
   return (
-    <div className="min-h-full px-8 py-7">
+    <PageShell
+      items={[
+        { label: '首页', href: '/dashboard' },
+        { label: '企业资产', href: '/companies' },
+        { label: isEdit ? '编辑企业' : '新增企业' },
+      ]}
+      title={isEdit ? '编辑企业' : '新增企业'}
+      summary={isEdit ? '修正企业标签、关系温度与生态信息。' : '补充企业基本资料、生态关系和后续可追踪的协作上下文。'}
+      hints={[
+        '这里沿用和宇宙页一致的题头与全宽工作区规则。',
+        '表单主体会跟随侧边栏宽度和视口空间自适应。',
+        '简易模式和完整模式的功能逻辑保持不变。',
+      ]}
+      contentClassName="items-start"
+    >
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+      <div className="hidden items-center gap-2 text-sm text-gray-400 mb-6">
         <a href="/dashboard" className="hover:text-gray-600 transition-colors">首页</a>
         <span>/</span>
         <a href="/companies" className="hover:text-gray-600 transition-colors">企业数据库</a>
@@ -187,7 +191,7 @@ export default function CompanyForm({
 
       <div className="max-w-2xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">{isEdit ? '编辑企业标签' : '新增企业标签'}</h1>
+          <h1 className="hidden text-2xl font-semibold text-gray-900">{isEdit ? '编辑企业标签' : '新增企业标签'}</h1>
           {/* AI Extract button */}
           <button
             onClick={() => setShowExtract(!showExtract)}
@@ -533,6 +537,6 @@ export default function CompanyForm({
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

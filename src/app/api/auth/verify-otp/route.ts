@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const { phone, code } = await req.json()
 
     if (!phone || !code) {
-      return NextResponse.json({ error: '参数缺失' }, { status: 400 })
+      return NextResponse.json({ error: '缺少手机号或验证码' }, { status: 400 })
     }
 
     const otp = await db.phoneOtp.findFirst({
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '验证码错误或已过期' }, { status: 400 })
     }
 
-    // 清理该手机号所有旧 OTP，防止表无限增长
+    // Remove older OTP rows for this phone so the table stays clean.
     await db.phoneOtp.deleteMany({ where: { phone } })
 
     const now = new Date()
@@ -33,8 +33,6 @@ export async function POST(req: NextRequest) {
       update: {},
       create: { phone },
     })
-
-    // 新用户的 createdAt 与 now 相差不超过 5 秒
     const isNew = now.getTime() - user.createdAt.getTime() < 5000
 
     const session = await getSession()

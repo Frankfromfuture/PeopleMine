@@ -1,4 +1,4 @@
-import { InteractionType, QuickContext, RelationVector, RoleArchetype, Temperature } from '@/types'
+import { InteractionType, RelationVector, RoleArchetype, Temperature } from '@/types'
 
 // ── 步骤执行状态（存入 Journey.pathData，无需迁移） ────────────────────────────
 export type StepExecutionStatus = 'pending' | 'in_progress' | 'done' | 'skipped' | 'failed'
@@ -69,6 +69,12 @@ export interface JourneyPathData {
 
   // 目标结构化元数据（GoalInput 向导写入，初始可能不存在）
   goalMeta?: GoalMeta
+
+  // Step 1: 用户选定的拆解方案
+  selectedPlan?: DecompositionPlan
+
+  // Step 5: 人脉拓展建议
+  networkExpansion?: NetworkExpansionSuggestion[]
 }
 
 /**
@@ -113,6 +119,10 @@ export interface PathStep {
   communicationAdvice: CommunicationAdvice
 
   confidenceAtThisStep: number // 路径在此步骤的可信度（随着跳数衰减）
+
+  // Step 3 新增
+  keyTactic?: string           // 1-2句关键攻略（始终可见）
+  expandedTactics?: ExpandedTactics // 展开后的完整攻略
 }
 
 /**
@@ -134,6 +144,8 @@ export interface AlternativePath {
   steps: PathStep[]
   score: number
   rationale: string // 为什么这是备选（中文）
+  pathCategory?: PathCategory  // Step 2 新增
+  categoryLabel?: string       // 中文标签，如"Plan B 备选"
 }
 
 /**
@@ -181,11 +193,53 @@ export interface CandidatePath {
   roleSequence: string[] // 对应的关系角色序列
 }
 
+// ── 目标拆解计划（Step 1）────────────────────────────────────────────────────
+
+export interface DecompositionStep {
+  id: number
+  label: string
+  description: string
+}
+
+export interface DecompositionPlan {
+  id: 'A' | 'B' | 'C'
+  title: string
+  summary: string          // 一句话特征总结（≤20字）
+  steps: DecompositionStep[]
+  difficulty: 'easy' | 'medium' | 'hard'
+  successRate: number      // 0-100 整数
+  strategy: string         // 策略思路说明（≤40字）
+}
+
+// ── 路径类型（Step 2）────────────────────────────────────────────────────────
+
+export type PathCategory = 'primary' | 'planB' | 'assist'
+
+// ── 扩展的沟通攻略（Step 3 展开后）──────────────────────────────────────────
+
+export interface ExpandedTactics {
+  scriptSuggestion: string    // 话术建议（完整脚本）
+  assistContactIds: string[]  // 可助攻的其他联系人 ID
+  mutualBenefit: string       // 互惠关系助攻说明
+  rapportTips: string         // 好感度加强建议
+}
+
+// ── 人脉拓展建议（Step 5）───────────────────────────────────────────────────
+
+export interface NetworkExpansionSuggestion {
+  industry: string        // 目标行业
+  companyProfile: string  // 企业画像（类型/规模）
+  level: string           // 职级/资历要求
+  reason: string          // 为何需要此类人脉
+  urgency: 'high' | 'medium' | 'low'
+}
+
 /**
  * API 请求体
  */
 export interface JourneyAnalysisRequest {
   goal: string
+  selectedPlan?: DecompositionPlan
 }
 
 /**

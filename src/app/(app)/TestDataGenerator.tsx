@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { InlineLoadingSpinner } from '@/components/ThinkingToast'
 
 export default function TestDataGenerator() {
   const [count, setCount] = useState(10)
@@ -29,7 +30,7 @@ export default function TestDataGenerator() {
       if (response.ok) {
         setMessage({
           type: 'success',
-          text: `✓ 成功生成 ${data.count} 个随机联系人（AI 真随机）`,
+          text: `✓ 成功生成 ${data.count} 个随机联系人（Xminer AI 真随机）`,
         })
         // 刷新页面以显示新数据
         setTimeout(() => window.location.reload(), 1500)
@@ -168,7 +169,7 @@ export default function TestDataGenerator() {
           💡 <strong>说明：</strong>
           <ul className="mt-2 space-y-1 ml-5 list-disc">
             <li>必填随机项：姓名、男女、首次认识时间、企业、行业（一级+二级）、职位</li>
-            <li>其余字段由 AI 按 50%-100% 完整度随机填写，模拟真实登记掌握程度</li>
+            <li>其余字段由 Xminer AI 按 50%-100% 完整度随机填写，模拟真实登记掌握程度</li>
             <li>波动性越高，生成的行业越多元；越低，行业越集中聚焦</li>
             <li>每条写入新标签体系：角色定位（破局者/布道者…）+ 气场动物（老虎/孔雀…）</li>
             <li>生成数量严格校验，请求多少条就必须成功写入多少条</li>
@@ -197,7 +198,7 @@ export default function TestDataGenerator() {
           >
             {isGenerating ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <InlineLoadingSpinner className="h-4 w-4" />
                 生成中...
               </>
             ) : (
@@ -215,7 +216,7 @@ export default function TestDataGenerator() {
           >
             {isClearing ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <InlineLoadingSpinner className="h-4 w-4" />
                 清除中...
               </>
             ) : (

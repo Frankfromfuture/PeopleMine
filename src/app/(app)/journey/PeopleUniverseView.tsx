@@ -210,9 +210,11 @@ function NodeCard({ node, meta, wx, wy }: { node: SphereNode; meta: PersonMeta; 
 interface PeopleUniverseViewProps {
   contacts: NetworkContact[]
   relations: NetworkRelation[]
+  focusContactId?: string | null  // external search focus
+  onNodeClick?: (contactId: string) => void
 }
 
-export default function PeopleUniverseView({ contacts, relations }: PeopleUniverseViewProps) {
+export default function PeopleUniverseView({ contacts, relations, focusContactId, onNodeClick }: PeopleUniverseViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef    = useRef<HTMLCanvasElement>(null)
   const rafRef       = useRef<number>(0)
@@ -221,20 +223,26 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
   const particlesRef = useRef<FlowParticle[]>([])
   const flashesRef   = useRef<EdgeFlash[]>([])
   const prevHovRef   = useRef<string | null>(null)
-  const zoomRef      = useRef<number>(1.0)
+  const zoomRef      = useRef<number>(1.04)
+  const dragMoved    = useRef(false)
 
   const simRef = useRef<{
     nodes: SphereNode[]; edges: Edge[]; nodeMap: Map<string, SphereNode>
     metaMap: Map<string, PersonMeta>
     rotX: number; rotY: number; hoveredId: string | null
+    externalFocusId: string | null
+    targetRot: { x: number; y: number } | null
     w: number; h: number
-  }>({ nodes:[], edges:[], nodeMap:new Map(), metaMap:new Map(), rotX:0.28, rotY:0, hoveredId:null, w:0, h:0 })
+  }>({ nodes:[], edges:[], nodeMap:new Map(), metaMap:new Map(), rotX:0.28, rotY:0, hoveredId:null,
+    externalFocusId:null, targetRot:null, w:0, h:0 })
 
   const drag = useRef({ on:false, lx:0, ly:0, vx:0, vy:0 })
 
   const [hovered, setHovered]     = useState<{ node:SphereNode; meta:PersonMeta; wx:number; wy:number } | null>(null)
   const [activeView, setActiveView] = useState<string | null>(null)
-  const [zoom, setZoom]           = useState(1.0)
+  const [zoom, setZoom]           = useState(1.04)
+  // Entrance explosion progress: 0 → 1, driven by RAF loop
+  const entranceRef = useRef({ progress: 0, done: false })
 
   const industryTargetsRef  = useRef<Map<string,[number,number,number]>>(new Map())
   const industryCentersRef  = useRef<Map<string,[number,number,number]>>(new Map())
@@ -260,8 +268,8 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
         roleZh:      roleToZh(c.roleArchetype || ''),
         value:       c.energyScore,
         warmth:      tempToWarmth(c.temperature),
-        industry:    tagsArr[0] || '未分类',
-        subIndustry: tagsArr[1] || '',
+        industry:    c.industryL1 || tagsArr[0] || '未分类',
+        subIndustry: c.industryL2 || tagsArr[1] || '',
         company:     c.company || '',
         relation:    roleToZh(c.roleArchetype || ''),
       }
@@ -338,7 +346,7 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
       ...p, ...pts[i],
       rx: pts[i].bx, ry: pts[i].by, rz: pts[i].bz,
       px: 0, py: 0, depth: 0,
-      baseRadius: p.group === 'core' ? 15 : 8 + Math.min(deg[p.id]||0, 4),
+      baseRadius: p.group === 'core' ? 16.5 : 9 + Math.min(deg[p.id]||0, 4) * 1.05,
       degree: deg[p.id]||0,
     }))
 
@@ -367,7 +375,7 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
   const project = useCallback(() => {
     const { nodes, edges, nodeMap, rotX, rotY, w, h } = simRef.current
     const cx = w/2, cy = h/2
-    const sR = Math.min(w,h)*0.39*zoomRef.current
+    const sR = Math.min(w,h)*0.42*zoomRef.current
     const FOV = 3.2
     const cosY=Math.cos(rotY), sinY=Math.sin(rotY)
     const cosX=Math.cos(rotX), sinX=Math.sin(rotX)
@@ -412,15 +420,16 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
 
   // ── Effects update ─────────────────────────────────────────────────────
   const updateEffects = useCallback(() => {
-    const { hoveredId, edges } = simRef.current
+    const { hoveredId, edges, externalFocusId } = simRef.current
+    const effectiveId = hoveredId || externalFocusId
     const particles = particlesRef.current, flashes = flashesRef.current
 
-    if (hoveredId !== prevHovRef.current) {
-      prevHovRef.current = hoveredId
+    if (effectiveId !== prevHovRef.current) {
+      prevHovRef.current = effectiveId
       particles.forEach(p => { p.dying = true })
-      if (hoveredId) {
+      if (effectiveId) {
         edges.forEach(e => {
-          if (e.source===hoveredId||e.target===hoveredId) {
+          if (e.source===effectiveId||e.target===effectiveId) {
             const fi = flashes.findIndex(f => f.edgeIdx===e.idx)
             if (fi>=0) flashes.splice(fi,1)
             flashes.push({edgeIdx:e.idx, alpha:1.0})
@@ -429,13 +438,13 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
       }
     }
 
-    if (hoveredId) {
+    if (effectiveId) {
       edges.forEach(e => {
-        if (e.source!==hoveredId&&e.target!==hoveredId) return
+        if (e.source!==effectiveId&&e.target!==effectiveId) return
         const cfg = PCFG[e.type]
         const live = particles.filter(p=>p.edgeIdx===e.idx&&!p.dying).length
         if (live<cfg.max&&Math.random()<cfg.rate) {
-          const fromSrc = e.source===hoveredId
+          const fromSrc = e.source===effectiveId
           particles.push({
             edgeIdx:e.idx, t:fromSrc?0.03:0.97, dir:fromSrc?1:-1,
             speed:cfg.speed, alpha:0, maxAlpha:cfg.a, dying:false, size:cfg.size,
@@ -446,7 +455,7 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
 
     for (let i=particles.length-1;i>=0;i--) {
       const p=particles[i]; const e=edges[p.edgeIdx]
-      if (!e||(hoveredId!==e.source&&hoveredId!==e.target)) p.dying=true
+      if (!e||(effectiveId!==e.source&&effectiveId!==e.target)) p.dying=true
       if (p.dying) { p.alpha-=0.055; if(p.alpha<=0){particles.splice(i,1);continue} }
       else p.alpha=Math.min(p.alpha+0.08, p.maxAlpha)
       p.t+=p.speed*p.dir
@@ -472,7 +481,18 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
     vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.13)')
     ctx.fillStyle=vig; ctx.fillRect(0,0,w,h)
 
-    const focusId=hoveredId
+    // ── Entrance explosion scale ────────────────────────────────────────────
+    const ep = entranceRef.current.progress
+    // easeOutBack: fast expand with slight overshoot
+    const eased = ep < 1 ? 1 + 2.7*(ep-1)**3 + 1.7*(ep-1)**2 : 1
+    const entranceScale = Math.max(0.001, eased)
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.scale(entranceScale, entranceScale)
+    ctx.translate(-cx, -cy)
+    ctx.globalAlpha = Math.min(ep * 3, 1)
+
+    const focusId=hoveredId||simRef.current.externalFocusId
     const focused=new Set<string>()
     if(focusId){
       focused.add(focusId)
@@ -637,6 +657,10 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
         ctx.restore()
       }
     }
+
+    // close entrance scale transform
+    ctx.restore()
+    ctx.globalAlpha = 1
   }, [])
 
   // ── Find node ──────────────────────────────────────────────────────────
@@ -662,6 +686,7 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
     if(drag.current.on){
       const rawVx=(e.clientX-drag.current.lx)*0.009
       const rawVy=(e.clientY-drag.current.ly)*0.009
+      if(Math.abs(e.clientX-drag.current.lx)>4||Math.abs(e.clientY-drag.current.ly)>4) dragMoved.current=true
       drag.current.vx=Math.max(-0.040,Math.min(0.040,rawVx))
       drag.current.vy=Math.max(-0.040,Math.min(0.040,rawVy))
       simRef.current.rotY+=drag.current.vx
@@ -677,10 +702,21 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
 
   const onMouseDown = useCallback((e:MouseEvent) => {
     drag.current={on:true,lx:e.clientX,ly:e.clientY,vx:0,vy:0}
+    dragMoved.current=false
     simRef.current.hoveredId=null; setHovered(null)
   }, [])
   const onMouseUp    = useCallback(()=>{ drag.current.on=false }, [])
   const onMouseLeave = useCallback(()=>{ simRef.current.hoveredId=null; setHovered(null) }, [])
+
+  const onClickCanvas = useCallback((e:MouseEvent) => {
+    if (dragMoved.current) return
+    const canvas=canvasRef.current; if(!canvas) return
+    const rect=canvas.getBoundingClientRect()
+    const sx=simRef.current.w/rect.width, sy=simRef.current.h/rect.height
+    const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy
+    const hit=findNode(mx,my)
+    if(hit) onNodeClick?.(hit.id)
+  }, [findNode, onNodeClick])
 
   // ── Main loop ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -688,6 +724,32 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
     const container=containerRef.current
     if(!canvas||!container) return
 
+    // During sidebar CSS transition (300ms), only update simRef.w/h so the
+    // sphere centre shifts smoothly. Debounce the actual canvas bitmap resize
+    // to after the transition settles — resetting canvas.width clears the bitmap.
+    let resizeDebounce=0
+    const resizeCanvas=()=>{
+      const dpr=Math.min(window.devicePixelRatio||1,2)
+      const w=container.offsetWidth, h=container.offsetHeight
+      if(w===0||h===0) return
+      // Always update logical centre immediately — no flicker
+      simRef.current.w=w; simRef.current.h=h
+      // Debounce the bitmap resize to after the CSS transition finishes (~350ms)
+      clearTimeout(resizeDebounce)
+      resizeDebounce=window.setTimeout(()=>{
+        const w2=container.offsetWidth, h2=container.offsetHeight
+        if(w2===0||h2===0) return
+        const tw=Math.round(w2*dpr), th=Math.round(h2*dpr)
+        if(canvas.width===tw && canvas.height===th) return
+        canvas.width=tw; canvas.height=th
+        canvas.style.width=`${w2}px`; canvas.style.height=`${h2}px`
+        const ctx=canvas.getContext('2d')
+        if(ctx) ctx.setTransform(dpr,0,0,dpr,0,0)
+        simRef.current.w=w2; simRef.current.h=h2
+      }, 350)
+    }
+
+    // Full init — only called once on mount (or when contacts change)
     const setup=()=>{
       const dpr=Math.min(window.devicePixelRatio||1,2)
       const w=container.offsetWidth, h=container.offsetHeight
@@ -703,11 +765,19 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
     canvas.addEventListener('mousemove',  onMouseMove)
     canvas.addEventListener('mousedown',  onMouseDown)
     canvas.addEventListener('mouseleave', onMouseLeave)
+    canvas.addEventListener('click',      onClickCanvas)
     window.addEventListener('mouseup',    onMouseUp)
-    window.addEventListener('resize',     setup)
+    window.addEventListener('resize',     resizeCanvas)
+    const ro = new ResizeObserver(() => resizeCanvas())
+    ro.observe(container)
 
     const loop=()=>{
       timeRef.current+=0.016
+      // Drive entrance explosion (completes in ~25 frames ≈ 400ms)
+      if (!entranceRef.current.done) {
+        entranceRef.current.progress = Math.min(entranceRef.current.progress + 0.04, 1)
+        if (entranceRef.current.progress >= 1) entranceRef.current.done = true
+      }
       const targetTrans=activeViewRef.current==='industry'?1:0
       viewTransRef.current+=(targetTrans-viewTransRef.current)*0.028
       if(!drag.current.on){
@@ -715,7 +785,16 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
         simRef.current.rotX+=drag.current.vy*0.5
         drag.current.vx*=0.55
         drag.current.vy*=0.55
-        if(!simRef.current.hoveredId){
+        if(simRef.current.targetRot){
+          // Smooth rotation toward focused node
+          const tx=simRef.current.targetRot.x
+          const ty=simRef.current.targetRot.y
+          simRef.current.rotX+=(tx-simRef.current.rotX)*0.07
+          simRef.current.rotY+=(ty-simRef.current.rotY)*0.07
+          if(Math.abs(tx-simRef.current.rotX)<0.002&&Math.abs(ty-simRef.current.rotY)<0.002){
+            simRef.current.targetRot=null
+          }
+        } else if(!simRef.current.hoveredId&&!simRef.current.externalFocusId){
           simRef.current.rotY+=0.0004
           simRef.current.rotX+=(0.28-simRef.current.rotX)*0.004
         }
@@ -727,16 +806,40 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
 
     return ()=>{
       cancelAnimationFrame(rafRef.current)
+      clearTimeout(resizeDebounce)
       canvas.removeEventListener('mousemove',  onMouseMove)
       canvas.removeEventListener('mousedown',  onMouseDown)
       canvas.removeEventListener('mouseleave', onMouseLeave)
+      canvas.removeEventListener('click',      onClickCanvas)
       window.removeEventListener('mouseup',    onMouseUp)
-      window.removeEventListener('resize',     setup)
+      window.removeEventListener('resize',     resizeCanvas)
+      ro.disconnect()
     }
-  }, [init, project, draw, updateEffects, onMouseMove, onMouseDown, onMouseLeave, onMouseUp])
+  }, [init, project, draw, updateEffects, onMouseMove, onMouseDown, onMouseLeave, onMouseUp, onClickCanvas])
 
   // Sync zoom state → ref
   useEffect(() => { zoomRef.current = zoom }, [zoom])
+
+  // External focus: highlight + smooth rotate toward focused node
+  useEffect(() => {
+    simRef.current.externalFocusId = focusContactId ?? null
+    if (focusContactId) {
+      const node = simRef.current.nodeMap.get(focusContactId)
+      if (node) {
+        const { bx, by, bz } = node
+        const r = Math.sqrt(bx * bx + bz * bz)
+        const targetY = -Math.atan2(bx, bz)
+        const targetX = r < 0.001 ? (by > 0 ? -Math.PI / 2 : Math.PI / 2) : -Math.atan2(by, r)
+        // Normalize Y to shortest rotation path
+        let dY = targetY - simRef.current.rotY
+        while (dY > Math.PI) dY -= 2 * Math.PI
+        while (dY < -Math.PI) dY += 2 * Math.PI
+        simRef.current.targetRot = { x: targetX, y: simRef.current.rotY + dY }
+      }
+    } else {
+      simRef.current.targetRot = null
+    }
+  }, [focusContactId])
 
   const { edges } = simRef.current
   const primCount = edges.filter(e=>e.type==='primary').length
@@ -760,13 +863,6 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
 
       {/* Hovered node card */}
       {hovered && <NodeCard node={hovered.node} meta={hovered.meta} wx={hovered.wx} wy={hovered.wy} />}
-
-      {/* Title */}
-      <div className="absolute top-8 left-10 pointer-events-none select-none">
-        <div style={{ fontSize:11, color:'#999', letterSpacing:'0.18em', marginBottom:5 }}>人脉网络</div>
-        <div style={{ fontSize:28, color:'#111', letterSpacing:'-0.02em', lineHeight:1 }}>人脉宇宙</div>
-        <div style={{ fontSize:13, color:'#777', marginTop:5, letterSpacing:'0.04em' }}>社交关系宇宙视图</div>
-      </div>
 
       {/* Stats */}
       <div className="absolute top-8 right-10 pointer-events-none select-none text-right">
@@ -850,7 +946,7 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
           {([
             { label:'+', title:'放大',   action:()=>setZoom(z=>Math.min(z*1.25, 4))    },
             { label:'−', title:'缩小',   action:()=>setZoom(z=>Math.max(z/1.25, 0.25)) },
-            { label:'⊡', title:'铺满画布', action:()=>setZoom(1.0)                      },
+            { label:'⊡', title:'铺满画布', action:()=>setZoom(1.04)                     },
           ] as const).map(btn=>(
             <button
               key={btn.title}
@@ -873,12 +969,12 @@ export default function PeopleUniverseView({ contacts, relations }: PeopleUniver
         </div>
       </div>
 
-      {/* Hint */}
+      {/* Signature */}
       <div
         className="absolute pointer-events-none select-none"
         style={{ bottom:32, left:'50%', transform:'translateX(-50%)', fontSize:11, color:'#bbb', letterSpacing:'0.12em' }}
       >
-        拖拽旋转 &nbsp;·&nbsp; 悬停查看详情
+        Xminer 智能社交关系网络图
       </div>
     </div>
   )

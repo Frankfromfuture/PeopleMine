@@ -147,7 +147,7 @@ export default function ContactQuickPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-        {steps.map((step, i) => {
+        {steps.map((step) => {
           const node = nodes.find(n => n.contactId === step.contactId)
           return (
             <ContactCard key={step.contactId} step={step} node={node} />

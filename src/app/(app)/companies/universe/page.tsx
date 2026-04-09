@@ -1,16 +1,28 @@
-"use client"
+'use client'
 
-import CompanyUniverseView from "../../../(app)/journey/CompanyUniverseView"
+import PageShell from '@/components/PageShell'
+import CompanyUniverseView from '../../../(app)/journey/CompanyUniverseView'
 
 export default function CompanyUniversePage() {
   return (
-    <div className="flex flex-col h-[calc(100vh-0px)] overflow-hidden">
-      <div className="shrink-0 px-5 py-3 border-b border-gray-200" style={{ background: "#f4f4f4" }}>
-        <h1 className="text-gray-800 font-medium" style={{ fontSize: 15 }}>企业宇宙</h1>
+    <PageShell
+      items={[
+        { label: '首页', href: '/dashboard' },
+        { label: '企业宇宙' },
+      ]}
+      title="企业宇宙"
+      summary="从公司维度观察你的人脉网络分布、组织关系和重点连接节点。"
+      hints={[
+        '这个视图延续宇宙页面的全屏工作台布局。',
+        '右侧详情和画布区域会随着窗口尺寸自适应铺满。',
+        '后续如需强化数据说明，可继续在这个壳层内扩展。',
+      ]}
+    >
+      <div className="min-h-[720px] flex-1 overflow-hidden rounded-[32px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="h-full overflow-hidden rounded-[24px] border border-gray-200 bg-[#fbfbfa]">
+          <CompanyUniverseView />
+        </div>
       </div>
-      <div className="flex-1 relative min-w-0 flex overflow-hidden">
-        <CompanyUniverseView />
-      </div>
-    </div>
+    </PageShell>
   )
 }

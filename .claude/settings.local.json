@@ -93,5 +93,17 @@
     "additionalDirectories": [
       "C:\\Users\\Frank Fan\\PeopleMine\\src\\app\\(app)\\companies\\[id]"
     ]
-  }
+  },
+ "hooks": {
+ "UserPromptSubmit": [
+ {
+ "hooks": [
+ {
+ "type": "command",
+ "command": "jq -r '.prompt // \"\"' | { read -r p; [ \"$p\" = \"3000\" ] || exit0; powershell -NoProfile -Command \"$pids = Get-NetTCPConnection -LocalPort3000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach ($pid in $pids) { Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue }\"; nohup npm run dev -- -p3000 > /tmp/peoplemine-dev-3000.log2>&1 & }"
+ }
+ ]
+ }
+ ]
+ }
 }

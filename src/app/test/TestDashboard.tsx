@@ -1,5 +1,6 @@
 'use client'
 
+import { InlineLoadingSpinner } from '@/components/ThinkingToast'
 import { useState, useEffect } from 'react'
 
 // ─── 预设测试数据 ─────────────────────────────────────────────
@@ -7,15 +8,15 @@ import { useState, useEffect } from 'react'
 const SEED_CONTACTS = [
   { name: '张伟', roleArchetype: 'EVANGELIST', tags: ['互联网', 'VC'], energyScore: 80, temperature: 'HOT', trustLevel: 4 },
   { name: '李娜', roleArchetype: 'BREAKER', tags: ['投资', '金融'], energyScore: 70, temperature: 'WARM', trustLevel: 3 },
-  { name: '王强', roleArchetype: 'ANALYST', tags: ['AI', '产品'], energyScore: 60, temperature: 'WARM', trustLevel: 4 },
+  { name: '王强', roleArchetype: 'ANALYST', tags: ['Xminer AI', '产品'], energyScore: 60, temperature: 'WARM', trustLevel: 4 },
   { name: '刘芳', roleArchetype: 'BREAKER', tags: ['互联网', '创业'], energyScore: 50, temperature: 'COLD', trustLevel: 2 },
-  { name: '陈磊', roleArchetype: 'BINDER', tags: ['工程师', 'AI'], energyScore: 85, temperature: 'HOT', trustLevel: 5 },
+  { name: '陈磊', roleArchetype: 'BINDER', tags: ['工程师', 'Xminer AI'], energyScore: 85, temperature: 'HOT', trustLevel: 5 },
 ]
 
 const SEED_COMPANIES = [
-  { name: '字节跳动', industry: '互联网', scale: 'LARGE', mainBusiness: '短视频、信息流', tags: ['AI', '互联网'], founderName: '张一鸣', investors: ['红杉资本', '软银'], energyScore: 78, temperature: 'WARM', familiarityLevel: 3 },
+  { name: '字节跳动', industry: '互联网', scale: 'LARGE', mainBusiness: '短视频、信息流', tags: ['Xminer AI', '互联网'], founderName: '张一鸣', investors: ['红杉资本', '软银'], energyScore: 78, temperature: 'WARM', familiarityLevel: 3 },
   { name: '红杉资本', industry: '投资', scale: 'SME', mainBusiness: '早期科技投资', tags: ['VC', '投资'], energyScore: 60, temperature: 'COLD', familiarityLevel: 2 },
-  { name: '某AI初创', industry: 'AI', scale: 'STARTUP', mainBusiness: 'LLM企业应用', tags: ['AI', 'SaaS'], founderName: '李明', investors: ['IDG'], energyScore: 92, temperature: 'HOT', familiarityLevel: 5 },
+  { name: '某Xminer AI初创', industry: 'Xminer AI', scale: 'STARTUP', mainBusiness: 'LLM企业应用', tags: ['Xminer AI', 'SaaS'], founderName: '李明', investors: ['IDG'], energyScore: 92, temperature: 'HOT', familiarityLevel: 5 },
 ]
 
 const EXTRACT_SAMPLE = '字节跳动成立于2012年，总部北京，旗下有抖音、TikTok，创始人张一鸣，员工超10万，投资方包括红杉资本、软银，上游合作阿里云、AWS，主要客户为品牌广告主。'
@@ -130,7 +131,7 @@ export default function TestDashboard() {
     fetchStats()
   }
 
-  // ── 测试 AI 提取 ──
+  // ── 测试 Xminer AI 提取 ──
   async function testExtract() {
     setStatus('extract', 'loading')
     setExtractResult('')
@@ -143,12 +144,12 @@ export default function TestDashboard() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setExtractResult(JSON.stringify(data.extracted, null, 2))
-      log_(`✓ AI提取成功：${data.extracted?.name}`, 'ok')
+      log_(`✓ Xminer AI提取成功：${data.extracted?.name}`, 'ok')
       setStatus('extract', 'ok')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setExtractResult(`错误：${msg}`)
-      log_(`✗ AI提取失败：${msg}`, 'err')
+      log_(`✗ Xminer AI提取失败：${msg}`, 'err')
       setStatus('extract', 'error')
     }
   }
@@ -286,10 +287,10 @@ export default function TestDashboard() {
             </div>
           </div>
 
-          {/* AI 提取 */}
+          {/* Xminer AI 提取 */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-700">AI 提取 — /api/companies/extract</h2>
+              <h2 className="text-sm font-semibold text-gray-700">Xminer AI 提取 — /api/companies/extract</h2>
               <Btn onClick={testExtract} status={apiStatus.extract} color="violet">测试</Btn>
             </div>
             <p className="text-[10px] text-gray-400 mb-2">样本文本（固定）：{EXTRACT_SAMPLE.slice(0, 60)}…</p>
@@ -376,7 +377,7 @@ export default function TestDashboard() {
                   <span className="text-gray-600">{process.env[k] ?? '未设置'}</span>
                 </div>
               ))}
-              <p className="text-[10px] text-gray-300 mt-1">服务端变量（如 QWEN_API_KEY）需在日志中通过 API 响应间接确认</p>
+              <p className="text-[10px] text-gray-300 mt-1">服务端变量（如 XMINER_AI_API_KEY）需在日志中通过 API 响应间接确认</p>
             </div>
           </div>
         </div>
@@ -405,7 +406,7 @@ function Btn({
   }
   return (
     <button onClick={onClick} disabled={loading} className={`${base} ${styles[color]}`}>
-      {loading && <span className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" />}
+      {loading && <InlineLoadingSpinner className="h-3 w-3" />}
       {children}
     </button>
   )

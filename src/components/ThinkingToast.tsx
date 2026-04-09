@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import LottieLoader from '@/components/LottieLoader'
 
 const MESSAGES = [
   '同步视图中',
@@ -42,41 +43,31 @@ function FloatingLoader({ visible }: { visible: boolean }) {
     return () => clearInterval(timer)
   }, [visible])
 
-  const dots = useMemo(() => [0, 1, 2], [])
-
   return (
     <AnimatePresence>
       {visible ? (
         <motion.div
-          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          initial={{ opacity: 0, y: 10, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.98 }}
-          transition={{ duration: reduceMotion ? 0.1 : 0.2 }}
-          className="pointer-events-none fixed bottom-6 right-6 z-[9999]"
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.18 }}
+          className="pointer-events-none fixed bottom-5 right-5 z-[9999]"
         >
-          <div className="relative flex items-center gap-2.5 overflow-hidden rounded-[14px] border border-line-standard bg-white/92 px-4 py-2.5 shadow-dialog backdrop-blur-md">
-            <motion.div
-              className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0%,rgba(113,112,255,0.08)_50%,transparent_100%)]"
-              animate={reduceMotion ? undefined : { x: ['-120%', '120%'] }}
-              transition={reduceMotion ? undefined : { duration: 2.2, repeat: Infinity, ease: 'linear' }}
-            />
-
-            <div className="relative flex h-4 items-end gap-0.5">
-              {dots.map((i) => (
-                <motion.span
-                  key={i}
-                  className="h-1.5 w-1.5 rounded-full bg-brand"
-                  animate={reduceMotion ? undefined : { y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
-                  transition={reduceMotion ? undefined : { duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: 'easeInOut' }}
-                />
-              ))}
-            </div>
-
-            <span className="relative whitespace-nowrap text-sm font-medium text-text-primary">{msg}</span>
+          <div className="relative flex items-center gap-2">
+            <LottieLoader className="h-10 w-10 shrink-0" />
+            <div className="whitespace-nowrap text-[10px] italic text-gray-400/80">{msg}</div>
           </div>
         </motion.div>
       ) : null}
     </AnimatePresence>
+  )
+}
+
+export function InlineLoadingSpinner({ className = 'h-4 w-4' }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center justify-center ${className}`} aria-hidden="true">
+      <LottieLoader className="h-full w-full" />
+    </span>
   )
 }
 

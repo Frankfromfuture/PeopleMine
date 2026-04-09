@@ -1,11 +1,1 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(ls src/app/api/companies/[id]/)",
-      "Bash(cat src/app/api/companies/[id]/route.ts)"
-    ],
-    "additionalDirectories": [
-      "C:\\Users\\Frank Fan\\PeopleMine\\src\\app\\api\\companies\\[id]"
-    ]
-  }
-}
+

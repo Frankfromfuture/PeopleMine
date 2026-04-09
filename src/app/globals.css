@@ -276,6 +276,19 @@
   transition: transform 140ms ease, opacity 140ms ease, max-width 180ms ease;
 }
 
+.widget-cut-corners {
+  clip-path: polygon(
+    18px 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    18px 100%,
+    0 calc(100% - 18px),
+    0 18px
+  );
+}
+
 .widget-shell[data-widget-size="sm"] {
   max-width: 66%;
   opacity: 0.98;

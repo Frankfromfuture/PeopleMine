@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '手机号格式不正确' }, { status: 400 })
     }
 
-    // 所有环境都做限流，防止表无限增长
+    // All environments share the same rate limit to avoid unlimited OTP growth.
     const recentOtp = await db.phoneOtp.findFirst({
       where: {
         phone,
@@ -23,16 +23,19 @@ export async function POST(req: NextRequest) {
     })
 
     if (recentOtp) {
-      const waitSeconds = OTP_RATE_LIMIT_SECONDS - Math.floor((Date.now() - recentOtp.createdAt.getTime()) / 1000)
-      return NextResponse.json({ error: `请等待 ${waitSeconds} 秒后再试` }, { status: 429 })
+      const waitSeconds =
+        OTP_RATE_LIMIT_SECONDS - Math.floor((Date.now() - recentOtp.createdAt.getTime()) / 1000)
+      return NextResponse.json({ error: `请等待 ${waitSeconds} 秒后重试` }, { status: 429 })
     }
 
     const expiresAt = new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000)
-    // 开发环境跳过真实短信，固定 000000 方便内部测试
     const code = IS_DEV ? '000000' : generateOtp()
+
     await db.phoneOtp.create({ data: { phone, code, expiresAt } })
 
-    if (!IS_DEV) await sendOtp(phone, code)
+    if (!IS_DEV) {
+      await sendOtp(phone, code)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {
