@@ -9,7 +9,8 @@
     "lint": "next lint",
     "postinstall": "npm run prisma:generate",
     "prisma:generate": "prisma generate",
-    "test": "npm run lint && npm run build",
+    "test": "npm run lint && npm run build && npm run test:report",
+    "test:report": "node scripts/write-mochawesome-report.mjs",
     "backfill:industry": "node scripts/backfill-contact-industry.mjs",
     "backfill:industry:apply": "node scripts/backfill-contact-industry.mjs --apply"
   },
