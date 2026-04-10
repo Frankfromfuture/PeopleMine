@@ -6,6 +6,7 @@ import { APP_VERSION } from "@/lib/version"
 const FONT_SANS =
   '"Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
 const FONT_MONO = '"Geist Mono", "SFMono-Regular", "Courier New", monospace'
+const PAGE_GUTTER_CLASS = "px-[clamp(16px,4vw,72px)]"
 
 const PRINCIPLES = [
   {
@@ -45,7 +46,7 @@ const WORKFLOW = [
 
 function Hero() {
   return (
-    <section className="relative min-h-[100svh] overflow-hidden bg-[#fbf8f3] pt-20 text-[#111] sm:pt-24">
+    <section className="relative min-h-[100svh] overflow-hidden bg-[#fbf8f3] pt-[clamp(78px,9vw,118px)] text-[#111]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,0.88),transparent_24%),radial-gradient(circle_at_76%_34%,rgba(255,255,255,0.72),transparent_30%),linear-gradient(180deg,rgba(251,248,243,0.02)_0%,rgba(251,248,243,0.16)_34%,rgba(251,248,243,0.52)_62%,rgba(251,248,243,0.86)_100%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(251,248,243,0.99)_0%,rgba(251,248,243,0.94)_18%,rgba(251,248,243,0.68)_48%,rgba(251,248,243,0.84)_100%)]" />
       <div className="pointer-events-none absolute inset-y-[-12%] right-[-12%] hidden w-[74vw] min-w-[860px] lg:block">
@@ -55,37 +56,39 @@ function Hero() {
         <AsciiUniverseCanvas variant="light" quality="mobile" className="opacity-[0.9]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-[1440px] items-center px-4 pb-12 sm:px-8 lg:px-12 lg:pb-16">
-        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,680px)_minmax(280px,1fr)] lg:items-center">
-          <div className="max-w-[680px]">
+      <div
+        className={`relative flex min-h-[calc(100svh-5.5rem)] w-full items-center pb-[clamp(48px,6vw,80px)] ${PAGE_GUTTER_CLASS}`}
+      >
+        <div className="grid w-full gap-[clamp(24px,4vw,56px)] xl:grid-cols-[minmax(560px,48vw)_minmax(320px,1fr)] xl:items-center">
+          <div className="flex max-w-[min(760px,92vw)] flex-col justify-center gap-[clamp(18px,2.8vh,30px)] py-[clamp(8px,2vh,24px)]">
             <div
-              className="mb-7 inline-flex items-center gap-3 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-[11px] text-[#585858]"
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-[clamp(8px,1vw,12px)] py-[clamp(4px,0.55vw,6px)] text-[clamp(9px,0.72vw,11px)] leading-none text-[#585858]"
               style={{ fontFamily: FONT_MONO, letterSpacing: "0.18em", textTransform: "uppercase" }}
             >
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#2AA952] shadow-[0_0_0_3px_rgba(42,169,82,0.16)]" />
+              <span className="inline-block h-[5px] w-[5px] animate-pulse rounded-full bg-[#2AA952] shadow-[0_0_0_3px_rgba(42,169,82,0.16)]" />
               Powered by XMiner AI Platfrom
             </div>
 
-            <div className="space-y-6">
-              <div className="space-y-4">
+            <div className="space-y-[clamp(14px,2vh,24px)]">
+              <div className="space-y-[clamp(10px,1.6vh,18px)]">
                 <p
-                  className="text-[12px] text-[#6e6e6e] sm:text-[13px]"
+                  className="text-[clamp(11px,1.1vw,13px)] text-[#6e6e6e]"
                   style={{ fontFamily: FONT_MONO, letterSpacing: "0.24em", textTransform: "uppercase" }}
                 >
                   PeopleMine
                 </p>
                 <h1
-                  className="max-w-[10ch] text-[38px] font-semibold leading-[1.02] tracking-[-0.05em] text-[#161616] sm:text-[56px] lg:text-[74px]"
+                  className="max-w-[12.5ch] text-[clamp(34px,6.6vw,82px)] font-semibold leading-[1.02] tracking-[-0.05em] text-[#161616]"
                   style={{ fontFamily: FONT_SANS }}
                 >
                   把人脉经营成
                   <br />
-                  可导航的资产宇宙
+                  <span className="whitespace-nowrap">可导航的资产宇宙</span>
                 </h1>
               </div>
 
               <p
-                className="max-w-[34rem] text-[15px] leading-8 text-[#4f4f4f] sm:text-[17px]"
+                className="max-w-[40rem] text-[clamp(14px,1.5vw,18px)] leading-[1.9] text-[#4f4f4f]"
                 style={{ fontFamily: FONT_SANS }}
               >
                 PeopleMine 把联系人、公司、目标与关系状态组织成一张可以持续经营的网络图谱。
@@ -93,17 +96,17 @@ function Hero() {
               </p>
             </div>
 
-            <div className="mt-9 flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="/login"
-                className="inline-flex h-14 items-center justify-center rounded-full border border-[#A04F47]/18 bg-[#A04F47] px-8 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(160,79,71,0.16)] transition duration-300 hover:-translate-y-0.5 hover:border-[#8f443d] hover:bg-[#96463f] hover:shadow-[0_18px_38px_rgba(160,79,71,0.18)] active:translate-y-0 sm:h-16 sm:px-10 sm:text-[17px]"
+                className="inline-flex h-[clamp(50px,5.2vw,64px)] items-center justify-center rounded-full border border-[#A04F47]/18 bg-[#A04F47] px-[clamp(24px,2.5vw,42px)] text-[clamp(15px,1.45vw,18px)] font-semibold text-white shadow-[0_14px_34px_rgba(160,79,71,0.16)] transition duration-300 hover:-translate-y-0.5 hover:border-[#8f443d] hover:bg-[#96463f] hover:shadow-[0_18px_38px_rgba(160,79,71,0.18)] active:translate-y-0"
                 style={{ fontFamily: FONT_SANS }}
               >
                 开始使用
               </Link>
               <Link
                 href="/product"
-                className="inline-flex h-14 items-center justify-center rounded-full border border-black/12 bg-white/72 px-8 text-[16px] font-semibold text-[#2f2f2f] shadow-[0_12px_28px_rgba(0,0,0,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-black/18 hover:bg-white hover:text-[#1f1f1f] hover:shadow-[0_16px_32px_rgba(0,0,0,0.06)] active:translate-y-0 sm:h-16 sm:px-10 sm:text-[17px]"
+                className="inline-flex h-[clamp(50px,5.2vw,64px)] items-center justify-center rounded-full border border-black/12 bg-white/72 px-[clamp(24px,2.5vw,42px)] text-[clamp(15px,1.45vw,18px)] font-semibold text-[#2f2f2f] shadow-[0_12px_28px_rgba(0,0,0,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-black/18 hover:bg-white hover:text-[#1f1f1f] hover:shadow-[0_16px_32px_rgba(0,0,0,0.06)] active:translate-y-0"
                 style={{ fontFamily: FONT_SANS }}
               >
                 查看产品
@@ -137,7 +140,7 @@ function Hero() {
       </div>
 
       <span
-        className="absolute bottom-3 left-4 text-[10px] italic tracking-[0.08em] text-[#6d655d] sm:bottom-4 sm:left-8 lg:bottom-5 lg:left-12"
+        className="absolute bottom-[clamp(12px,2vw,24px)] left-[clamp(16px,4vw,72px)] text-[10px] italic tracking-[0.08em] text-[#6d655d]"
         style={{ fontFamily: FONT_SANS }}
       >
         {APP_VERSION}
@@ -149,7 +152,7 @@ function Hero() {
 function Principles() {
   return (
     <section id="core" className="border-t border-white/8 bg-[#1a1a1a] py-20 sm:py-24">
-      <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
+      <div className={`w-full ${PAGE_GUTTER_CLASS}`}>
         <div className="mb-12 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p
@@ -216,7 +219,7 @@ function Workflow() {
       className="relative overflow-hidden border-t border-white/8 bg-[#070707] py-20 sm:py-24"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
-      <div className="mx-auto max-w-[1440px] px-6 sm:px-8 lg:px-12">
+      <div className={`w-full ${PAGE_GUTTER_CLASS}`}>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,420px)_1fr]">
           <div className="lg:pt-1">
             <p
@@ -275,7 +278,7 @@ function UniverseBand() {
     <section className="relative h-[340px] overflow-hidden border-t border-white/8 bg-[#141414] sm:h-[420px]">
       <AsciiUniverseCanvas className="opacity-95" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(20,20,20,0.9)_0%,rgba(20,20,20,0.28)_34%,rgba(20,20,20,0.92)_100%)]" />
-      <div className="relative mx-auto flex h-full max-w-[1440px] items-center px-6 sm:px-8 lg:px-12">
+      <div className={`relative flex h-full w-full items-center ${PAGE_GUTTER_CLASS}`}>
         <div className="max-w-[38rem]">
           <p
             className="mb-3 text-[11px] text-[#878787]"
@@ -307,7 +310,7 @@ function UniverseBand() {
 function FinalCta() {
   return (
     <section id="start" className="border-t border-white/8 bg-[#050505] py-20 sm:py-24">
-      <div className="mx-auto max-w-[960px] px-6 text-center sm:px-8">
+      <div className={`w-full text-center ${PAGE_GUTTER_CLASS}`}>
         <p
           className="mb-4 text-[11px] text-[#7a7a7a]"
           style={{ fontFamily: FONT_MONO, letterSpacing: "0.24em", textTransform: "uppercase" }}
@@ -354,7 +357,9 @@ function FinalCta() {
 function Footer() {
   return (
     <footer className="border-t border-black/8 bg-[#e8e5e0] py-8">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-3 px-6 text-[11px] text-[#6d6d6d] sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-12">
+      <div
+        className={`flex w-full flex-col gap-3 text-[11px] text-[#6d6d6d] lg:flex-row lg:items-center lg:justify-between ${PAGE_GUTTER_CLASS}`}
+      >
         <span style={{ fontFamily: FONT_MONO, letterSpacing: "0.18em", textTransform: "uppercase" }}>
           PeopleMine
         </span>
