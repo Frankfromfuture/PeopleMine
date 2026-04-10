@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
+import { Users } from "lucide-react"
 import {
   AIChatWidget,
   ContributionWidget,
@@ -9,7 +10,6 @@ import {
   StatCard,
   TodayExpandWidget,
   TraitsSummaryWidget,
-  Users,
   type DashboardStats,
 } from "./DashboardWidgets"
 

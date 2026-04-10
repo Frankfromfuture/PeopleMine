@@ -1,11 +1,11 @@
 import Link from "next/link"
 import AsciiUniverseCanvas from "@/components/AsciiUniverseCanvas"
 import LandingNav from "@/components/LandingNav"
+import { APP_VERSION } from "@/lib/version"
 
 const FONT_SANS =
   '"Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
 const FONT_MONO = '"Geist Mono", "SFMono-Regular", "Courier New", monospace'
-const APP_VERSION = "v0.6.1"
 
 const PRINCIPLES = [
   {

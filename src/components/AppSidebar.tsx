@@ -19,12 +19,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
+import { APP_VERSION } from "@/lib/version"
 
 const MIN_W = 56
 const MAX_W = 299
 const DEFAULT_W = 209
 const NARROW_THRESHOLD = 100
-const APP_VERSION = "v0.6.1"
 
 const NAV_MAIN = [
   { icon: LayoutDashboard, label: "首页", href: "/dashboard" },

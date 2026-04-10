@@ -1,7 +1,6 @@
 ﻿"use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
-export { default as RelationStrengthPanel } from "./RelationStrengthPanel"
 import { useRouter } from "next/navigation"
 import {
   Activity,
@@ -15,7 +14,6 @@ import {
   Users,
   Zap,
 } from "lucide-react"
-export { Users, Zap, AlertTriangle }
 import { ContributionGrid } from "./ContributionGrid"
 import {
   Area,
@@ -95,6 +93,14 @@ const WARM_LEVELS = [
   { level: 5, label: "高强维护", desc: "强连接动作，显著提升热度" },
 ] as const
 
+const WARM_LEVEL_ICONS: Record<number, React.ElementType> = {
+  1: Send,
+  2: Shuffle,
+  3: Sparkles,
+  4: Users,
+  5: Zap,
+}
+
 function WidgetHeader({
   icon: Icon,
   title,
@@ -116,7 +122,7 @@ function WidgetHeader({
 }
 
 function normalizeContactName(contact: MatchedContact) {
-  return contact.fullName || contact.name || "鏈懡鍚嶈仈绯讳汉"
+  return contact.fullName || contact.name || "未命名联系人"
 }
 
 function normalizeCompany(contact: MatchedContact) {
@@ -290,7 +296,7 @@ export function AIChatWidget() {
               : "border-gray-200 bg-white text-gray-500 hover:border-gray-500 hover:text-gray-700"
           }`}
           style={{ borderRadius: 5, fontSize: 12, fontWeight: 600 }}
-          title="鏄剧ず鏂滄潬鍛戒护"
+          title="显示斜杠命令"
         >
           <Command size={14} />
         </button>
@@ -350,7 +356,7 @@ export function RandomGeneratorWidget() {
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
-      <WidgetHeader icon={Shuffle} title="娴嬭瘯鏁版嵁鐢熸垚" />
+      <WidgetHeader icon={Shuffle} title="测试数据生成" />
       <div className="mt-4 flex flex-1 flex-col justify-between gap-4">
         <p className={`${WIDGET_BODY_CLASS} max-w-[260px]`}>
           用于本地演示或调试，生成后会自动刷新 dashboard 数据。
@@ -387,8 +393,8 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
     [
       { trait: "社交力", value: 0 },
       { trait: "影响力", value: 0 },
-      { trait: "琛屼笟娣卞害", value: 0 },
-      { trait: "璧勬簮鏁村悎", value: 0 },
+      { trait: "行业深度", value: 0 },
+      { trait: "资源整合", value: 0 },
       { trait: "信任度", value: 0 },
       { trait: "活跃度", value: 0 },
     ]
@@ -397,7 +403,7 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
-      <WidgetHeader icon={Zap} title="浜鸿剦缁撴瀯鐢诲儚" />
+      <WidgetHeader icon={Zap} title="人脉结构画像" />
       <div className="mt-4 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="min-h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -407,7 +413,7 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
               <Radar dataKey="value" stroke="#3f3f46" fill="#3f3f46" fillOpacity={0.1} strokeWidth={2} />
               <Tooltip
                 contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }}
-                formatter={(value) => [String(value ?? ''), "寰楀垎"]}
+                formatter={(value) => [String(value ?? ""), "得分"]}
               />
             </RadarChart>
           </ResponsiveContainer>
@@ -415,7 +421,7 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
 
         <div className="flex flex-col justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-[11px] font-medium text-gray-500">Top 琛屼笟</p>
+            <p className="text-[11px] font-medium text-gray-500">Top 行业</p>
             <div className="flex flex-wrap gap-2">
               {industries.map((item) => (
                 <span key={item} className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600">
@@ -444,7 +450,7 @@ export function NetworkTrendWidget({ stats }: { stats: DashboardStats | null }) 
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
-      <WidgetHeader icon={Activity} title="浜鸿剦澧為暱瓒嬪娍" />
+      <WidgetHeader icon={Activity} title="人脉增长趋势" />
       <div className="mt-4 min-h-[180px] flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
@@ -473,15 +479,15 @@ export function NeedsMaintenanceWidget({ stats }: { stats: DashboardStats | null
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
       <WidgetHeader
         icon={AlertTriangle}
-        title="闇€瑕佺淮鎶ょ殑浜鸿剦"
+        title="需要维护的人脉"
         end={
           <span className="rounded-full bg-gray-100 px-2.5 py-[5px] text-[10px] text-gray-600">
-            {`${stats?.needsMaintenance ?? 0} 浣嶅緟璺熻繘`}
+            {`${stats?.needsMaintenance ?? 0} 位待跟进`}
           </span>
         }
       />
 
-      <div className="mt-4 flex-1 space-y-2 overflow-y-auto pr-1">
+      <div className="mt-4 grid flex-1 grid-cols-2 gap-2 overflow-y-auto pr-1">
         {list.length ? (
           list.map((contact) => (
             <div key={contact.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-gray-200 px-4 py-3">
@@ -491,19 +497,19 @@ export function NeedsMaintenanceWidget({ stats }: { stats: DashboardStats | null
                   <span className="truncate text-[13px] font-medium text-gray-800">{contact.name}</span>
                 </div>
                 <p className="mt-1 truncate text-[11px] text-gray-500">
-                  {[contact.title, contact.company].filter(Boolean).join(" 路 ") || "暂无职位与公司信息"}
+                  {[contact.title, contact.company].filter(Boolean).join(" · ") || "暂无职位与公司信息"}
                 </p>
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="text-[11px] text-gray-500">{`涓婃鑱旂郴 ${contact.lastDays} 澶╁墠`}</p>
-                <p className="mt-1 text-[11px] text-gray-600">{`鍏崇郴鑳介噺 ${contact.energyScore}`}</p>
+                <p className="text-[11px] text-gray-500">{`上次联系 ${contact.lastDays} 天前`}</p>
+                <p className="mt-1 text-[11px] text-gray-600">{`关系能量 ${contact.energyScore}`}</p>
               </div>
             </div>
           ))
         ) : (
-          <div className="flex h-full min-h-[180px] items-center justify-center rounded-[18px] border border-dashed border-gray-200 text-[12px] text-gray-400">
-            鏆傛棤闇€瑕佺淮鎶ょ殑浜鸿剦
+          <div className="col-span-2 flex h-full min-h-[180px] items-center justify-center rounded-[18px] border border-dashed border-gray-200 text-[12px] text-gray-400">
+            暂无需要维护的人脉
           </div>
         )}
       </div>
@@ -585,6 +591,8 @@ export function TodayExpandWidget() {
     setPhase({ kind: "idle" })
   }
 
+  const isIdleLayout = phase.kind === "idle" && !error
+
   return (
     <div
       className={`${WIDGET_SHELL_CLASS} p-5`}
@@ -596,12 +604,17 @@ export function TodayExpandWidget() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <WidgetHeader icon={Users} title="人脉维护记录" />
+      <WidgetHeader icon={Users} title="今天见了谁？" />
 
-      <div className="mt-3 min-h-0 flex flex-1 flex-col overflow-y-auto">
-        <h3 className="text-[22px] font-semibold tracking-tight text-gray-900">今天维护了哪些人？</h3>
-
-        <form onSubmit={handleSearch} className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <div
+        className={`mt-3 min-h-0 flex flex-1 flex-col ${
+          phase.kind === "warmup" ? "overflow-hidden" : "overflow-y-auto"
+        } ${isIdleLayout ? "justify-center" : ""}`}
+      >
+        <form
+          onSubmit={handleSearch}
+          className={`flex w-full flex-col gap-2 sm:flex-row ${isIdleLayout ? "mx-auto max-w-[560px]" : ""}`}
+        >
           <div className="flex min-h-[48px] flex-1 items-center rounded-[16px] border border-gray-200 bg-white px-4">
             <Search size={15} className="mr-2 text-gray-400" />
             <input
@@ -634,7 +647,7 @@ export function TodayExpandWidget() {
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-medium text-gray-800">{normalizeContactName(contact)}</p>
                   <p className="mt-1 truncate text-[11px] text-gray-500">
-                    {[normalizeTitle(contact), normalizeCompany(contact)].filter(Boolean).join(" 路 ")}
+                    {[normalizeTitle(contact), normalizeCompany(contact)].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <ArrowRight size={14} className="shrink-0 text-gray-400" />
@@ -648,23 +661,28 @@ export function TodayExpandWidget() {
             <div className="mb-3">
               <p className="text-[14px] font-medium text-gray-900">{selectedSummary?.name}</p>
               <p className="mt-1 text-[11px] text-gray-500">
-                {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" 路 ")}
+                {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" · ")}
               </p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              {WARM_LEVELS.map((item) => (
-                <button
-                  key={item.level}
-                  onClick={() => handleWarmUp(phase.contact, item.level)}
-                  className="rounded-[16px] border border-gray-200 px-4 py-3 text-left transition hover:border-gray-400 hover:bg-gray-50"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[13px] font-medium text-gray-800">{item.label}</span>
-                    <span className="text-[11px] text-gray-600">{`Lv.${item.level}`}</span>
-                  </div>
-                  <p className="mt-1 text-[11px] leading-5 text-gray-500">{item.desc}</p>
-                </button>
-              ))}
+            <div className="mt-auto grid grid-cols-5 gap-2">
+              {WARM_LEVELS.map((item) => {
+                const Icon = WARM_LEVEL_ICONS[item.level] ?? Sparkles
+
+                return (
+                  <button
+                    key={item.level}
+                    onClick={() => handleWarmUp(phase.contact, item.level)}
+                    title={item.desc}
+                    className="rounded-[14px] border border-gray-200 bg-white px-2 py-2 text-center transition hover:border-gray-400 hover:bg-gray-50"
+                  >
+                    <div className="mx-auto flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-700">
+                      <Icon size={14} />
+                    </div>
+                    <p className="mt-1 truncate text-[11px] font-medium text-gray-800">{item.label}</p>
+                    <p className="text-[10px] text-gray-500">{`Lv.${item.level}`}</p>
+                  </button>
+                )
+              })}
             </div>
           </div>
         ) : null}
@@ -678,7 +696,7 @@ export function TodayExpandWidget() {
               <div className="mt-3">
                 <p className="text-[15px] font-medium text-gray-900">{selectedSummary?.name}</p>
                 <p className="mt-1 text-[11px] text-gray-500">
-                  {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" 路 ")}
+                  {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" · ")}
                 </p>
               </div>
             </div>
