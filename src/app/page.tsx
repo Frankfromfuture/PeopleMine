@@ -5,6 +5,7 @@ import LandingNav from "@/components/LandingNav"
 const FONT_SANS =
   '"Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
 const FONT_MONO = '"Geist Mono", "SFMono-Regular", "Courier New", monospace'
+const APP_VERSION = "v0.6.1"
 
 const PRINCIPLES = [
   {
@@ -44,7 +45,7 @@ const WORKFLOW = [
 
 function Hero() {
   return (
-    <section className="relative min-h-[100svh] overflow-hidden bg-[#fbf8f3] pt-24 text-[#111]">
+    <section className="relative min-h-[100svh] overflow-hidden bg-[#fbf8f3] pt-20 text-[#111] sm:pt-24">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,0.88),transparent_24%),radial-gradient(circle_at_76%_34%,rgba(255,255,255,0.72),transparent_30%),linear-gradient(180deg,rgba(251,248,243,0.02)_0%,rgba(251,248,243,0.16)_34%,rgba(251,248,243,0.52)_62%,rgba(251,248,243,0.86)_100%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(251,248,243,0.99)_0%,rgba(251,248,243,0.94)_18%,rgba(251,248,243,0.68)_48%,rgba(251,248,243,0.84)_100%)]" />
       <div className="pointer-events-none absolute inset-y-[-12%] right-[-12%] hidden w-[74vw] min-w-[860px] lg:block">
@@ -54,15 +55,15 @@ function Hero() {
         <AsciiUniverseCanvas variant="light" quality="mobile" className="opacity-[0.9]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-[calc(100svh-6rem)] max-w-[1440px] items-center px-6 pb-12 sm:px-8 lg:px-12 lg:pb-16">
-        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,720px)_minmax(320px,1fr)] lg:items-center">
-          <div className="max-w-[740px]">
+      <div className="relative mx-auto flex min-h-[calc(100svh-5.5rem)] max-w-[1440px] items-center px-4 pb-12 sm:px-8 lg:px-12 lg:pb-16">
+        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,680px)_minmax(280px,1fr)] lg:items-center">
+          <div className="max-w-[680px]">
             <div
               className="mb-7 inline-flex items-center gap-3 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-[11px] text-[#585858]"
               style={{ fontFamily: FONT_MONO, letterSpacing: "0.18em", textTransform: "uppercase" }}
             >
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#5b5b5b]" />
-              Xminer Social Graph System
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#2AA952] shadow-[0_0_0_3px_rgba(42,169,82,0.16)]" />
+              Powered by XMiner AI Platfrom
             </div>
 
             <div className="space-y-6">
@@ -74,7 +75,7 @@ function Hero() {
                   PeopleMine
                 </p>
                 <h1
-                  className="max-w-[13ch] whitespace-nowrap text-[40px] font-semibold leading-[1.06] tracking-[-0.05em] text-[#161616] sm:text-[58px] lg:text-[78px]"
+                  className="max-w-[10ch] text-[38px] font-semibold leading-[1.02] tracking-[-0.05em] text-[#161616] sm:text-[56px] lg:text-[74px]"
                   style={{ fontFamily: FONT_SANS }}
                 >
                   把人脉经营成
@@ -84,7 +85,7 @@ function Hero() {
               </div>
 
               <p
-                className="max-w-[36rem] text-[15px] leading-8 text-[#4f4f4f] sm:text-[17px]"
+                className="max-w-[34rem] text-[15px] leading-8 text-[#4f4f4f] sm:text-[17px]"
                 style={{ fontFamily: FONT_SANS }}
               >
                 PeopleMine 把联系人、公司、目标与关系状态组织成一张可以持续经营的网络图谱。
@@ -92,17 +93,17 @@ function Hero() {
               </p>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center gap-4">
+            <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link
                 href="/login"
-                className="inline-flex h-12 items-center justify-center rounded-full bg-[#A04F47] px-7 text-[13px] font-semibold text-white transition hover:bg-[#A04F47]"
+                className="inline-flex h-14 items-center justify-center rounded-full border border-[#A04F47]/18 bg-[#A04F47] px-8 text-[16px] font-semibold text-white shadow-[0_14px_34px_rgba(160,79,71,0.16)] transition duration-300 hover:-translate-y-0.5 hover:border-[#8f443d] hover:bg-[#96463f] hover:shadow-[0_18px_38px_rgba(160,79,71,0.18)] active:translate-y-0 sm:h-16 sm:px-10 sm:text-[17px]"
                 style={{ fontFamily: FONT_SANS }}
               >
                 开始使用
               </Link>
               <Link
                 href="/product"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-black/12 px-7 text-[13px] font-medium text-[#2f2f2f] transition hover:border-black/25 hover:bg-black/[0.03]"
+                className="inline-flex h-14 items-center justify-center rounded-full border border-black/12 bg-white/72 px-8 text-[16px] font-semibold text-[#2f2f2f] shadow-[0_12px_28px_rgba(0,0,0,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-black/18 hover:bg-white hover:text-[#1f1f1f] hover:shadow-[0_16px_32px_rgba(0,0,0,0.06)] active:translate-y-0 sm:h-16 sm:px-10 sm:text-[17px]"
                 style={{ fontFamily: FONT_SANS }}
               >
                 查看产品
@@ -134,6 +135,13 @@ function Hero() {
           </div>
         </div>
       </div>
+
+      <span
+        className="absolute bottom-3 left-4 text-[10px] italic tracking-[0.08em] text-[#6d655d] sm:bottom-4 sm:left-8 lg:bottom-5 lg:left-12"
+        style={{ fontFamily: FONT_SANS }}
+      >
+        {APP_VERSION}
+      </span>
     </section>
   )
 }

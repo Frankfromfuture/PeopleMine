@@ -72,7 +72,7 @@ const slideVariants = {
 }
 
 const fieldCls =
-  'h-11 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-800 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100'
+  'h-10 w-full rounded-2xl border border-gray-200 bg-white px-4 text-sm text-gray-800 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100'
 const textAreaCls =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100 resize-none'
 
@@ -481,68 +481,75 @@ export default function NewContactForm({
   }
 
   const stepContent = [
-    <div key="intro" className="grid gap-5 md:grid-cols-2">
-      <div className="md:col-span-2 rounded-[24px] border border-gray-200 bg-[#fafaf9] p-5">
-        <p className="text-sm leading-6 text-gray-500">先确定这个人的名字、关系位置和你们之间的互惠状态，后面的信息都可以继续补录。</p>
-      </div>
-      <div>
-        <FieldLabel>姓名</FieldLabel>
-        <input value={fullName} onChange={(event) => setFullName(event.target.value)} className={fieldCls} />
-      </div>
-      <div>
-        <FieldLabel>城市</FieldLabel>
-        <input value={city} onChange={(event) => setCity(event.target.value)} className={fieldCls} />
-      </div>
-      <div>
-        <FieldLabel>年龄</FieldLabel>
-        <input type="number" min={1} max={120} value={age} onChange={(event) => setAge(event.target.value)} className={fieldCls} />
-      </div>
-      <div>
-        <FieldLabel>初识年份</FieldLabel>
-        <select value={firstMetYear} onChange={(event) => setFirstMetYear(event.target.value)} className={fieldCls}>
-          <option value="">请选择</option>
-          {Array.from({ length: 40 }, (_, index) => currentYear - index).map((year) => (
-            <option key={year} value={year}>{year} 年</option>
-          ))}
-        </select>
-      </div>
-      <div className="md:col-span-2">
-        <FieldLabel>性别</FieldLabel>
-        <ChoicePills value={gender} onChange={setGender} options={GENDER_OPTIONS} />
-      </div>
-      <div className="md:col-span-2">
-        <FieldLabel>个人关系</FieldLabel>
-        <ChoicePills value={personalRelation} onChange={setPersonalRelation} options={PERSONAL_RELATION_OPTIONS} />
-      </div>
-      <div className="md:col-span-2">
-        <FieldLabel>互惠势能</FieldLabel>
-        <div className="flex flex-wrap gap-2">
-          {RECIPROCITY_OPTIONS.map((option) => {
-            const active = reciprocityLevel === option.value
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setReciprocityLevel(option.value)}
-                className={`rounded-2xl border px-3 py-2 text-left transition ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}
-              >
-                <p className="text-sm font-medium">{option.label}</p>
-                <p className={`mt-1 text-xs ${active ? 'text-gray-300' : 'text-gray-500'}`}>{option.tip}</p>
-              </button>
-            )
-          })}
+    <div key="intro" className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_220px_180px]">
+        <div>
+          <FieldLabel>{'\u59d3\u540d'}</FieldLabel>
+          <input value={fullName} onChange={(event) => setFullName(event.target.value)} className={fieldCls} />
+        </div>
+        <div>
+          <FieldLabel>{'\u6027\u522b'}</FieldLabel>
+          <ChoicePills value={gender} onChange={setGender} options={GENDER_OPTIONS} />
+        </div>
+        <div>
+          <FieldLabel>{'\u5e74\u9f84'}</FieldLabel>
+          <input type="number" min={1} max={120} value={age} onChange={(event) => setAge(event.target.value)} className={fieldCls} />
         </div>
       </div>
-      <div className="md:col-span-2">
-        <FieldLabel>综合价值</FieldLabel>
-        <ChoicePills value={valueScore} onChange={setValueScore} options={VALUE_OPTIONS} />
+
+      <div className="grid gap-4 xl:grid-cols-[180px_220px_minmax(0,1fr)]">
+        <div>
+          <FieldLabel>{'\u521d\u8bc6\u5e74\u4efd'}</FieldLabel>
+          <select value={firstMetYear} onChange={(event) => setFirstMetYear(event.target.value)} className={fieldCls}>
+            <option value="">{'\u8bf7\u9009\u62e9'}</option>
+            {Array.from({ length: 40 }, (_, index) => currentYear - index).map((year) => (
+              <option key={year} value={year}>{year} {'\u5e74'}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <FieldLabel>{'\u57ce\u5e02'}</FieldLabel>
+          <input value={city} onChange={(event) => setCity(event.target.value)} className={fieldCls} />
+        </div>
+        <div>
+          <FieldLabel>{'\u4e2a\u4eba\u5173\u7cfb'}</FieldLabel>
+          <ChoicePills value={personalRelation} onChange={setPersonalRelation} options={PERSONAL_RELATION_OPTIONS} />
+        </div>
       </div>
-      <div className="md:col-span-2">
-        <FieldLabel>当前社交诉求</FieldLabel>
-        <ChoicePills value={networkingNeed} onChange={setNetworkingNeed} options={NETWORKING_OPTIONS} />
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div>
+          <FieldLabel>{'\u5f53\u524d\u793e\u4ea4\u8bc9\u6c42'}</FieldLabel>
+          <ChoicePills value={networkingNeed} onChange={setNetworkingNeed} options={NETWORKING_OPTIONS} />
+        </div>
+        <div>
+          <FieldLabel>{'\u7efc\u5408\u4ef7\u503c'}</FieldLabel>
+          <ChoicePills value={valueScore} onChange={setValueScore} options={VALUE_OPTIONS} />
+        </div>
       </div>
-      <div className="md:col-span-2">
-        <FriendPicker allContacts={allContacts} selectedFriends={selectedFriends} setSelectedFriends={setSelectedFriends} />
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+        <div>
+          <FieldLabel>{'\u4e92\u60e0\u52bf\u80fd'}</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {RECIPROCITY_OPTIONS.map((option) => {
+              const active = reciprocityLevel === option.value
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setReciprocityLevel(option.value)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <FriendPicker allContacts={allContacts} selectedFriends={selectedFriends} setSelectedFriends={setSelectedFriends} />
+        </div>
       </div>
     </div>,
 
@@ -719,8 +726,8 @@ export default function NewContactForm({
   ]
 
   return (
-    <div className="min-h-full bg-[#f6f6f4]">
-      <div className="flex min-h-screen w-full min-w-0 flex-col px-6 py-4 lg:px-8">
+    <div className="min-h-full bg-[#f6f6f4] lg:h-[100dvh] lg:overflow-hidden">
+      <div className="flex min-h-screen w-full min-w-0 flex-col px-4 py-3 sm:px-5 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:px-6 lg:py-3 xl:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -728,7 +735,7 @@ export default function NewContactForm({
             { label: isEdit ? '编辑联系人' : '＋人脉' },
           ]}
           title={isEdit ? '编辑联系人' : '＋人脉'}
-          className="pb-4 lg:pb-5"
+          className="pb-3 lg:pb-3"
           titleNote={
             <span className="text-sm italic text-gray-500">
               {isEdit ? '修正已有联系人的资料、关系与画像信息。' : '分步骤录入新的联系人资料，补齐关系、企业和画像信息。'}
@@ -741,8 +748,8 @@ export default function NewContactForm({
           ]}
         />
 
-        <div className="mt-1 grid flex-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="rounded-[32px] border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="mt-1 grid min-h-0 flex-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[236px_minmax(0,1fr)]">
+          <aside className="rounded-[28px] border border-gray-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:min-h-0 lg:overflow-y-auto">
             <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">Progress</p>
             <div className="mt-4 space-y-3">
               {STEPS.map((item, index) => (
@@ -766,8 +773,8 @@ export default function NewContactForm({
               <p className="mt-2 text-xs leading-5 text-gray-500">信息可以逐步补录，不必一次填满。</p>
             </div>
           </aside>
-          <section className="flex min-h-[760px] flex-col rounded-[32px] border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <div className="border-b border-gray-100 px-6 py-5">
+          <section className="flex min-h-[640px] flex-col rounded-[28px] border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:min-h-0 lg:overflow-hidden">
+            <div className="border-b border-gray-100 px-5 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">Step {step + 1}</p>
@@ -778,7 +785,7 @@ export default function NewContactForm({
               </div>
             </div>
 
-            <div className="flex-1 px-6 py-6">
+            <div className="flex-1 overflow-y-auto px-5 py-4">
               {error ? <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
               <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -790,14 +797,14 @@ export default function NewContactForm({
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.22 }}
-                  className="h-full"
+                  className="min-h-0"
                 >
                   {stepContent[step]}
                 </motion.div>
               </AnimatePresence>
             </div>
 
-            <div className="flex items-center justify-between border-t border-gray-100 px-6 py-5">
+            <div className="flex items-center justify-between border-t border-gray-100 px-5 py-4">
               <button
                 type="button"
                 onClick={goBack}

@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLoading } from '@/components/ThinkingToast'
 import LottieLoader from '@/components/LottieLoader'
@@ -97,74 +98,74 @@ function getRelated(
     .slice(0, max)
 }
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">{children}</p>
-}
-
 function ContactDetailCard({ contact }: { contact: NetworkContact }) {
   const tags = Array.isArray(contact.tags) ? (contact.tags as string[]) : []
   const warmthDotClassName = WARMTH_DOT[contact.temperature ?? '_'] ?? WARMTH_DOT._
 
   return (
-    <section className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-          {contact.name.slice(0, 1)}
-        </div>
+    <section className="rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-lg font-semibold text-gray-900">{contact.name}</h3>
-              <p className="mt-1 truncate text-sm text-gray-500">
-                {[contact.title, contact.company].filter(Boolean).join(' · ') || '未找到职位或公司信息'}
-              </p>
-            </div>
-            <div className="shrink-0 rounded-2xl border border-gray-200 bg-[#fafaf9] px-3 py-2 text-right">
-              <p className="text-lg font-semibold text-gray-900">{contact.energyScore}</p>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">energy</p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-              {roleZh(contact.roleArchetype || '')}
-            </span>
-            <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500">
-              <span className={`h-2 w-2 rounded-full ${warmthDotClassName}`} />
-              {tempLabel(contact.temperature)}
-            </span>
-            {contact.trustLevel ? (
-              <span className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500">
-                信任 {contact.trustLevel}/5
-              </span>
-            ) : null}
-          </div>
-
-          {tags.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {tags.slice(0, 5).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-500"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-gray-200 bg-[#fafaf9] px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">relationship warmth</p>
-              <p className="mt-2 text-sm font-medium text-gray-800">{tempLabel(contact.temperature)}</p>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-[#fafaf9] px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">notes</p>
-              <p className="mt-2 line-clamp-2 text-sm text-gray-500">{contact.notes || '暂无备注'}</p>
+          <h3 className="truncate text-[15px] font-semibold text-gray-900">{contact.name}</h3>
+          <p className="mt-1 truncate text-xs text-gray-500">
+            {[contact.title, contact.company].filter(Boolean).join(' · ') || '\u6682\u65e0\u804c\u4f4d\u6216\u516c\u53f8\u4fe1\u606f'}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+            {'\u80fd\u91cf'} {contact.energyScore}
+          </span>
+          <div className="group/edit relative">
+            <Link
+              href={`/contacts/${contact.id}/edit`}
+              aria-label={'\u524d\u5f80\u4eba\u8109\u7f16\u8f91\u9875'}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition hover:border-gray-300 hover:text-gray-700"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path
+                  d="M9.9 2.1a1.4 1.4 0 1 1 2 2L5.3 10.7 3 11l.3-2.3L9.9 2.1Z"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <path d="M8.7 3.3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            </Link>
+            <div className="pointer-events-none absolute right-0 top-full mt-1.5 min-w-[72px] whitespace-nowrap rounded-md border border-gray-200 bg-white px-3 py-1 text-center text-[10px] text-gray-500 opacity-0 shadow-sm transition group-hover/edit:opacity-100">
+              {'\u524d\u5f80\u7f16\u8f91'}
             </div>
           </div>
         </div>
       </div>
+
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+          {roleZh(contact.roleArchetype || '')}
+        </span>
+        <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+          <span className={`h-2 w-2 rounded-full ${warmthDotClassName}`} />
+          {'\u6e29\u5ea6'} {tempLabel(contact.temperature)}
+        </span>
+        {contact.trustLevel ? (
+          <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+            {'\u4fe1\u4efb'} {contact.trustLevel}/5
+          </span>
+        ) : null}
+        {tags.slice(0, 2).map((tag) => (
+          <span
+            key={tag}
+            className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-500"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+
+      {contact.notes ? (
+        <div className="mt-2.5 rounded-2xl border border-gray-200 bg-[#fafaf9] px-3 py-2">
+          <p className="line-clamp-2 text-xs leading-5 text-gray-500">{contact.notes}</p>
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -181,7 +182,7 @@ function RelatedContactCard({
   const tags = Array.isArray(item.contact.tags) ? (item.contact.tags as string[]) : []
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white">
+    <div className="rounded-[22px] border border-gray-200 bg-white">
       <div
         role="button"
         tabIndex={0}
@@ -192,9 +193,9 @@ function RelatedContactCard({
             setExpanded((current) => !current)
           }
         }}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-gray-50"
+        className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition hover:bg-gray-50"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-800 text-xs font-semibold text-white">
           {item.contact.name.slice(0, 1)}
         </div>
 
@@ -242,30 +243,37 @@ function RelatedContactCard({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 border-t border-gray-100 px-4 py-4">
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] text-gray-600">
-                  {roleZh(item.contact.roleArchetype || '')}
-                </span>
-                <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
-                  温度 {tempLabel(item.contact.temperature)}
-                </span>
-                {item.contact.trustLevel ? (
-                  <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
-                    信任 {item.contact.trustLevel}/5
+            <div className="border-t border-gray-100 px-3.5 py-3">
+              <div className="rounded-[18px] border border-gray-200 bg-[#fcfcfb] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="truncate text-sm font-semibold text-gray-900">{item.contact.name}</h4>
+                    <p className="mt-1 truncate text-xs text-gray-500">
+                      {[item.contact.title, item.contact.company].filter(Boolean).join(' · ') || '\u6682\u65e0\u804c\u4f4d\u6216\u516c\u53f8\u4fe1\u606f'}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+                    {'\u80fd\u91cf'} {item.contact.energyScore}
                   </span>
-                ) : null}
-              </div>
+                </div>
 
-              {item.relationDesc ? (
-                <p className="rounded-2xl border border-gray-200 bg-[#fafaf9] px-3 py-3 text-xs leading-5 text-gray-600">
-                  {item.relationDesc}
-                </p>
-              ) : null}
-
-              {tags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {tags.slice(0, 4).map((tag) => (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+                    {roleZh(item.contact.roleArchetype || '')}
+                  </span>
+                  <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+                    {config.label}
+                  </span>
+                  <span className="flex items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+                    <span className={`h-2 w-2 rounded-full ${WARMTH_DOT[item.contact.temperature ?? '_'] ?? WARMTH_DOT._}`} />
+                    {'\u6e29\u5ea6'} {tempLabel(item.contact.temperature)}
+                  </span>
+                  {item.contact.trustLevel ? (
+                    <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500">
+                      {'\u4fe1\u4efb'} {item.contact.trustLevel}/5
+                    </span>
+                  ) : null}
+                  {tags.slice(0, 2).map((tag) => (
                     <span
                       key={tag}
                       className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-500"
@@ -274,22 +282,15 @@ function RelatedContactCard({
                     </span>
                   ))}
                 </div>
-              ) : null}
 
-              <div className="rounded-2xl border border-gray-200 bg-[#fafaf9] px-3 py-3">
-                <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-gray-400">
-                  <span>energy</span>
-                  <span>{item.contact.energyScore}</span>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-200">
-                  <div
-                    className="h-full rounded-full bg-gray-800"
-                    style={{ width: `${item.contact.energyScore}%` }}
-                  />
-                </div>
+                {item.relationDesc || item.contact.notes ? (
+                  <div className="mt-2.5 rounded-2xl border border-gray-200 bg-white px-3 py-2">
+                    <p className="line-clamp-2 text-xs leading-5 text-gray-500">
+                      {item.relationDesc || item.contact.notes}
+                    </p>
+                  </div>
+                ) : null}
               </div>
-
-              <p className="text-xs leading-5 text-gray-500">{item.contact.notes || '暂无更多备注'}</p>
             </div>
           </motion.div>
         ) : null}
@@ -310,26 +311,59 @@ function SearchResults({
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl shadow-gray-200/60"
+      className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl shadow-gray-200/60"
     >
       {results.map((contact) => (
-        <button
+        <div
           key={contact.id}
-          type="button"
-          onClick={() => onSelect(contact)}
-          className="flex w-full items-center gap-3 border-b border-gray-100 px-4 py-3 text-left transition hover:bg-gray-50 last:border-b-0"
+          className="group relative border-b border-gray-100 px-3 py-3 transition hover:bg-gray-50 last:border-b-0"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-800 text-sm font-semibold text-white">
-            {contact.name.slice(0, 1)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-gray-900">{contact.name}</p>
+          <button
+            type="button"
+            onClick={() => onSelect(contact)}
+            className="block w-full pr-12 text-left"
+          >
+            <p className="truncate text-sm font-semibold text-gray-900">{contact.name}</p>
             <p className="mt-1 truncate text-xs text-gray-500">
-              {[contact.title, contact.company].filter(Boolean).join(' · ') ||
-                roleZh(contact.roleArchetype || '')}
+              {[contact.title, contact.company].filter(Boolean).join(' · ') || '\u6682\u65e0\u804c\u4f4d\u6216\u516c\u53f8\u4fe1\u606f'}
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+              <span className="rounded-full bg-gray-100 px-2.5 py-1 font-medium text-gray-700">
+                {'\u80fd\u91cf'} {contact.energyScore}
+              </span>
+              <span className="rounded-full border border-gray-200 px-2.5 py-1">
+                {'\u6e29\u5ea6'} {tempLabel(contact.temperature)}
+              </span>
+              <span className="rounded-full border border-gray-200 px-2.5 py-1">
+                {roleZh(contact.roleArchetype || '')}
+              </span>
+            </div>
+          </button>
+
+          <div className="absolute bottom-3 right-3">
+            <div className="group/edit relative">
+              <Link
+                href={`/contacts/${contact.id}/edit`}
+                onClick={(event) => event.stopPropagation()}
+                aria-label={'\u524d\u5f80\u4eba\u8109\u7f16\u8f91\u9875'}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 transition hover:border-gray-300 hover:text-gray-700"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path
+                    d="M9.9 2.1a1.4 1.4 0 1 1 2 2L5.3 10.7 3 11l.3-2.3L9.9 2.1Z"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinejoin="round"
+                  />
+                  <path d="M8.7 3.3l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                </svg>
+              </Link>
+              <div className="pointer-events-none absolute bottom-10 right-0 rounded-lg bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 shadow-lg transition group-hover/edit:opacity-100">
+                {'\u524d\u5f80\u7f16\u8f91'}
+              </div>
+            </div>
           </div>
-        </button>
+        </div>
       ))}
     </motion.div>
   )
@@ -362,18 +396,7 @@ function UniversePanelContent({
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <section className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <Eyebrow>Universe Search</Eyebrow>
-            <h2 className="mt-2 text-2xl font-semibold text-gray-900">节点详情</h2>
-            <p className="mt-2 text-sm leading-6 text-gray-500">
-              搜索联系人或点击宇宙节点，右侧会展示关系信息与可继续探索的人脉。
-            </p>
-          </div>
-        </div>
-
-        <div className="relative mt-5">
+      <div className="relative w-full lg:max-w-[248px] xl:max-w-[236px]">
           <svg
             className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             viewBox="0 0 16 16"
@@ -385,7 +408,7 @@ function UniversePanelContent({
           <input
             ref={inputRef}
             value={searchQuery}
-            placeholder="搜索联系人姓名或公司"
+            placeholder={'\u641c\u7d22\u4eba\u8109\u59d3\u540d'}
             onFocus={() => {
               if (searchResults.length > 0) setShowDropdown(true)
             }}
@@ -394,7 +417,7 @@ function UniversePanelContent({
               setSearchQuery(value)
               setShowDropdown(value.trim().length > 0)
             }}
-            className="h-12 w-full rounded-2xl border border-gray-200 bg-[#fafaf9] pl-11 pr-11 text-sm text-gray-800 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+            className="h-10 w-full rounded-2xl border border-gray-200 bg-[#fafaf9] pl-10 pr-10 text-sm text-gray-800 outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
           />
           {searchQuery ? (
             <button
@@ -422,8 +445,7 @@ function UniversePanelContent({
               />
             ) : null}
           </AnimatePresence>
-        </div>
-      </section>
+      </div>
 
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
@@ -433,26 +455,19 @@ function UniversePanelContent({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-4"
+              className="space-y-3"
             >
               <ContactDetailCard contact={selectedContact} />
 
-              <section className="rounded-[28px] border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <Eyebrow>Connected Circle</Eyebrow>
-                    <h3 className="mt-2 text-xl font-semibold text-gray-900">关联人脉</h3>
-                    <p className="mt-2 text-sm text-gray-500">
-                      基于当前仓库中的关系数据，按连接强度与联系人能量综合排序。
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-gray-200 bg-[#fafaf9] px-3 py-2 text-right">
-                    <p className="text-base font-semibold text-gray-900">{relatedContacts.length}</p>
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400">related</p>
-                  </div>
+              <section className="rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-gray-900">{'\u5173\u8054\u4eba\u8109'}</h3>
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700">
+                    {relatedContacts.length} {'\u4eba'}
+                  </span>
                 </div>
 
-                <div className="mt-5 space-y-3">
+                <div className="mt-3 space-y-2">
                   {relatedContacts.length > 0 ? (
                     relatedContacts.map((item) => (
                       <RelatedContactCard key={item.contact.id} item={item} onFocus={onFocusContact} />
@@ -474,7 +489,7 @@ function UniversePanelContent({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="rounded-[28px] border border-dashed border-gray-200 bg-white p-8 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+              className="rounded-[24px] border border-dashed border-gray-200 bg-white p-6 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
             >
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -532,7 +547,7 @@ export default function JourneyPage() {
           contact.name.toLowerCase().includes(query) ||
           (contact.company || '').toLowerCase().includes(query)
       )
-      .slice(0, 6)
+      .slice(0, 5)
   }, [contacts, searchQuery])
 
   const relatedContacts = useMemo(() => {
@@ -607,8 +622,8 @@ export default function JourneyPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#f6f6f4]">
-      <div className="flex min-h-screen w-full min-w-0 flex-col px-6 py-4 lg:px-8">
+    <div className="min-h-full bg-[#f6f6f4] lg:h-[100dvh] lg:overflow-hidden">
+      <div className="flex min-h-screen w-full min-w-0 flex-col px-4 py-3 sm:px-5 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:px-6 lg:py-3 xl:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -616,7 +631,7 @@ export default function JourneyPage() {
           ]}
           title="人脉宇宙"
           titleNote={<span className="text-sm italic text-gray-500">Xminer 智能社交关系网络图</span>}
-          className="pb-4 lg:pb-5"
+          className="pb-3 lg:pb-3"
           hints={[
             '点击宇宙中的节点，可查看联系人详情和关联人脉。',
             '用右侧搜索快速定位联系人，并同步把宇宙焦点移动过去。',
@@ -624,18 +639,18 @@ export default function JourneyPage() {
           ]}
         />
 
-        <div className="mt-1 grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-1 grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_312px] xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_336px]">
           <section className="min-h-0 min-w-0">
-            <div className="h-full min-h-[560px] overflow-hidden rounded-[32px] border border-gray-200 bg-[#f8f8f6] p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <div className="min-h-0 h-full overflow-hidden rounded-[28px] border border-gray-200 bg-transparent">
-                <div className="relative h-full min-h-[560px] xl:min-h-0">{renderUniverseState()}</div>
+            <div className="h-full min-h-[420px] overflow-hidden rounded-[28px] border border-gray-200 bg-[#f8f8f6] p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:min-h-0">
+              <div className="h-full min-h-0 overflow-hidden rounded-[24px] border border-gray-200 bg-transparent">
+                <div className="relative h-full min-h-[420px] lg:min-h-0">{renderUniverseState()}</div>
               </div>
             </div>
           </section>
 
-          <div className="hidden min-h-0 xl:block">
+          <div className="hidden min-h-0 lg:block">
             <div
-              className={`h-full min-h-[560px] overflow-hidden rounded-[32px] border border-gray-200 bg-[#f8f8f6] p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-300 ${
+              className={`h-full min-h-[420px] overflow-hidden rounded-[28px] border border-gray-200 bg-[#f8f8f6] p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-300 lg:min-h-0 ${
                 sidebarOpen ? 'opacity-100' : 'opacity-100'
               }`}
             >
@@ -694,7 +709,7 @@ export default function JourneyPage() {
           </div>
         </div>
 
-        <div className="mt-6 xl:hidden">
+        <div className="mt-5 lg:hidden">
           <UniversePanelContent
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}

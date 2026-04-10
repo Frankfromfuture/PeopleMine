@@ -24,6 +24,7 @@ const MIN_W = 56
 const MAX_W = 299
 const DEFAULT_W = 209
 const NARROW_THRESHOLD = 100
+const APP_VERSION = "v0.6.1"
 
 const NAV_MAIN = [
   { icon: LayoutDashboard, label: "首页", href: "/dashboard" },
@@ -332,6 +333,14 @@ export default function AppSidebar() {
         <Divider accent />
         {renderGroup(NAV_SYSTEM)}
       </nav>
+
+      {!isNarrow && (
+        <div className="px-4 pb-1">
+          <span className="text-gray-400" style={{ fontSize: 10, fontStyle: "italic" }}>
+            {APP_VERSION}
+          </span>
+        </div>
+      )}
 
       {/* User profile */}
       <div className="px-4 py-3 shrink-0 overflow-hidden" style={{ borderTop: "1px solid #E8E8E8" }}>

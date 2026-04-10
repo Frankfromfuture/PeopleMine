@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
 export { default as RelationStrengthPanel } from "./RelationStrengthPanel"
@@ -82,7 +82,7 @@ const SLASH_COMMANDS = [
   { cmd: "/分析人脉", desc: "分析当前人脉结构" },
   { cmd: "/生成报告", desc: "生成本周关系洞察" },
   { cmd: "/推荐连接", desc: "寻找值得拓展的新联系人" },
-  { cmd: "/查找同行", desc: "在现有人脉中筛选同行资源" },
+  { cmd: "/查找同行", desc: "在现有人脉中筛选同业资源" },
   { cmd: "/维护提醒", desc: "安排需要跟进的人脉" },
   { cmd: "/导出数据", desc: "导出当前人脉数据" },
 ] as const
@@ -116,11 +116,11 @@ function WidgetHeader({
 }
 
 function normalizeContactName(contact: MatchedContact) {
-  return contact.fullName || contact.name || "未命名联系人"
+  return contact.fullName || contact.name || "鏈懡鍚嶈仈绯讳汉"
 }
 
 function normalizeCompany(contact: MatchedContact) {
-  return contact.companyName || contact.company || "已有联系人"
+  return contact.companyName || contact.company || "已有关联人脉"
 }
 
 function normalizeTitle(contact: MatchedContact) {
@@ -209,7 +209,8 @@ export function AIChatWidget() {
     connectionStatus === "online"
       ? "bg-[#2f5d46] shadow-[0_0_0_4px_rgba(47,93,70,0.12)] animate-[xminerPulse_1.35s_ease-in-out_infinite]"
       : "bg-gray-400"
-  const statusLabel = connectionStatus === "online" ? "已连接" : connectionStatus === "offline" ? "未连接" : "检测中"
+  const statusLabel =
+    connectionStatus === "online" ? "已连接" : connectionStatus === "offline" ? "未连接" : "检测中"
   const statusShellClassName =
     connectionStatus === "online"
       ? "border border-[#d8e5dd] bg-[#eef5f1] text-[#385645]"
@@ -226,7 +227,7 @@ export function AIChatWidget() {
       { role: "user", text },
       {
         role: "ai",
-        text: "已收到。我会结合最近互动与关系热度，整理下一步动作建议。",
+        text: "已收到。我会结合最近互动与关系热度，整理下一步维护建议。",
       },
     ])
     setInput("")
@@ -289,7 +290,7 @@ export function AIChatWidget() {
               : "border-gray-200 bg-white text-gray-500 hover:border-gray-500 hover:text-gray-700"
           }`}
           style={{ borderRadius: 5, fontSize: 12, fontWeight: 600 }}
-          title="显示斜杠命令"
+          title="鏄剧ず鏂滄潬鍛戒护"
         >
           <Command size={14} />
         </button>
@@ -304,7 +305,7 @@ export function AIChatWidget() {
                 send()
               }
             }}
-            placeholder="问问 Xminer：谁值得优先维护？"
+            placeholder="询问 Xminer：谁值得优先维护？"
             className="w-full bg-transparent text-[12px] text-gray-700 outline-none placeholder:text-gray-400"
           />
         </div>
@@ -349,7 +350,7 @@ export function RandomGeneratorWidget() {
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
-      <WidgetHeader icon={Shuffle} title="测试数据生成" />
+      <WidgetHeader icon={Shuffle} title="娴嬭瘯鏁版嵁鐢熸垚" />
       <div className="mt-4 flex flex-1 flex-col justify-between gap-4">
         <p className={`${WIDGET_BODY_CLASS} max-w-[260px]`}>
           用于本地演示或调试，生成后会自动刷新 dashboard 数据。
@@ -386,8 +387,8 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
     [
       { trait: "社交力", value: 0 },
       { trait: "影响力", value: 0 },
-      { trait: "行业深度", value: 0 },
-      { trait: "资源整合", value: 0 },
+      { trait: "琛屼笟娣卞害", value: 0 },
+      { trait: "璧勬簮鏁村悎", value: 0 },
       { trait: "信任度", value: 0 },
       { trait: "活跃度", value: 0 },
     ]
@@ -396,7 +397,7 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
-      <WidgetHeader icon={Zap} title="人脉结构画像" />
+      <WidgetHeader icon={Zap} title="浜鸿剦缁撴瀯鐢诲儚" />
       <div className="mt-4 grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="min-h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -406,7 +407,7 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
               <Radar dataKey="value" stroke="#3f3f46" fill="#3f3f46" fillOpacity={0.1} strokeWidth={2} />
               <Tooltip
                 contentStyle={{ borderRadius: 12, borderColor: "#e5e7eb" }}
-                formatter={(value) => [String(value ?? ''), "得分"]}
+                formatter={(value) => [String(value ?? ''), "寰楀垎"]}
               />
             </RadarChart>
           </ResponsiveContainer>
@@ -414,7 +415,7 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
 
         <div className="flex flex-col justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-[11px] font-medium text-gray-500">Top 行业</p>
+            <p className="text-[11px] font-medium text-gray-500">Top 琛屼笟</p>
             <div className="flex flex-wrap gap-2">
               {industries.map((item) => (
                 <span key={item} className="rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-600">
@@ -443,7 +444,7 @@ export function NetworkTrendWidget({ stats }: { stats: DashboardStats | null }) 
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
-      <WidgetHeader icon={Activity} title="人脉增长趋势" />
+      <WidgetHeader icon={Activity} title="浜鸿剦澧為暱瓒嬪娍" />
       <div className="mt-4 min-h-[180px] flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
@@ -472,10 +473,10 @@ export function NeedsMaintenanceWidget({ stats }: { stats: DashboardStats | null
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
       <WidgetHeader
         icon={AlertTriangle}
-        title="需要维护的人脉"
+        title="闇€瑕佺淮鎶ょ殑浜鸿剦"
         end={
           <span className="rounded-full bg-gray-100 px-2.5 py-[5px] text-[10px] text-gray-600">
-            {`${stats?.needsMaintenance ?? 0} 位待跟进`}
+            {`${stats?.needsMaintenance ?? 0} 浣嶅緟璺熻繘`}
           </span>
         }
       />
@@ -490,19 +491,19 @@ export function NeedsMaintenanceWidget({ stats }: { stats: DashboardStats | null
                   <span className="truncate text-[13px] font-medium text-gray-800">{contact.name}</span>
                 </div>
                 <p className="mt-1 truncate text-[11px] text-gray-500">
-                  {[contact.title, contact.company].filter(Boolean).join(" · ") || "暂无职位与公司信息"}
+                  {[contact.title, contact.company].filter(Boolean).join(" 路 ") || "暂无职位与公司信息"}
                 </p>
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="text-[11px] text-gray-500">{`上次联系 ${contact.lastDays} 天前`}</p>
-                <p className="mt-1 text-[11px] text-gray-600">{`关系能量 ${contact.energyScore}`}</p>
+                <p className="text-[11px] text-gray-500">{`涓婃鑱旂郴 ${contact.lastDays} 澶╁墠`}</p>
+                <p className="mt-1 text-[11px] text-gray-600">{`鍏崇郴鑳介噺 ${contact.energyScore}`}</p>
               </div>
             </div>
           ))
         ) : (
           <div className="flex h-full min-h-[180px] items-center justify-center rounded-[18px] border border-dashed border-gray-200 text-[12px] text-gray-400">
-            暂无需要维护的人脉
+            鏆傛棤闇€瑕佺淮鎶ょ殑浜鸿剦
           </div>
         )}
       </div>
@@ -585,7 +586,16 @@ export function TodayExpandWidget() {
   }
 
   return (
-    <div className={`${WIDGET_SHELL_CLASS} p-5`}>
+    <div
+      className={`${WIDGET_SHELL_CLASS} p-5`}
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.72), rgba(255,255,255,0.72)), url('/assets/people.webp')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <WidgetHeader icon={Users} title="人脉维护记录" />
 
       <div className="mt-3 min-h-0 flex flex-1 flex-col overflow-y-auto">
@@ -624,7 +634,7 @@ export function TodayExpandWidget() {
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-medium text-gray-800">{normalizeContactName(contact)}</p>
                   <p className="mt-1 truncate text-[11px] text-gray-500">
-                    {[normalizeTitle(contact), normalizeCompany(contact)].filter(Boolean).join(" · ")}
+                    {[normalizeTitle(contact), normalizeCompany(contact)].filter(Boolean).join(" 路 ")}
                   </p>
                 </div>
                 <ArrowRight size={14} className="shrink-0 text-gray-400" />
@@ -638,7 +648,7 @@ export function TodayExpandWidget() {
             <div className="mb-3">
               <p className="text-[14px] font-medium text-gray-900">{selectedSummary?.name}</p>
               <p className="mt-1 text-[11px] text-gray-500">
-                {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" · ")}
+                {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" 路 ")}
               </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
@@ -668,7 +678,7 @@ export function TodayExpandWidget() {
               <div className="mt-3">
                 <p className="text-[15px] font-medium text-gray-900">{selectedSummary?.name}</p>
                 <p className="mt-1 text-[11px] text-gray-500">
-                  {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" · ")}
+                  {[selectedSummary?.title, selectedSummary?.company].filter(Boolean).join(" 路 ")}
                 </p>
               </div>
             </div>

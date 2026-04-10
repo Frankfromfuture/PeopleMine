@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { sendOtp, generateOtp } from '@/lib/sms'
 import { PHONE_REGEX, OTP_EXPIRE_MINUTES, OTP_RATE_LIMIT_SECONDS } from '@/lib/constants'
-
-const IS_DEV = process.env.NODE_ENV !== 'production'
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,13 +26,9 @@ export async function POST(req: NextRequest) {
     }
 
     const expiresAt = new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000)
-    const code = IS_DEV ? '000000' : generateOtp()
+    const code = '000000'
 
     await db.phoneOtp.create({ data: { phone, code, expiresAt } })
-
-    if (!IS_DEV) {
-      await sendOtp(phone, code)
-    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

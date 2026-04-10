@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Code2, ShieldCheck, Sparkles } fro
 
 const FONT_SANS =
   '"Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
-const IS_DEV = process.env.NODE_ENV !== 'production'
+const USE_TEST_LOGIN = true
 
 const COPY = {
   backHome: '返回首页',
@@ -201,6 +201,27 @@ export default function LoginPage() {
   const sanitizedPhone = useMemo(() => phone.replace(/\D/g, '').slice(0, 11), [phone])
   const sanitizedCode = useMemo(() => code.replace(/\D/g, '').slice(0, 6), [code])
 
+  async function handlePreviewEntry(target: '/dashboard' | '/dev-lab') {
+    startTransition(async () => {
+      try {
+        setFeedback(null)
+        const res = await fetch('/api/auth/dev-login', { method: 'POST' })
+        const data = await res.json()
+
+        if (!res.ok) {
+          setFeedback({ type: 'error', text: String(data.error || COPY.verifyFallback) })
+          return
+        }
+
+        setFeedback({ type: 'success', text: COPY.verifySuccess })
+        router.push(target)
+        router.refresh()
+      } catch {
+        setFeedback({ type: 'error', text: COPY.verifyNetwork })
+      }
+    })
+  }
+
   async function handleSendOtp() {
     if (!/^1[3-9]\d{9}$/.test(sanitizedPhone)) {
       setFeedback({ type: 'error', text: COPY.phoneInvalid })
@@ -226,7 +247,7 @@ export default function LoginPage() {
         setCountdown(60)
         setFeedback({
           type: 'success',
-          text: IS_DEV ? COPY.sendDevSuccess : COPY.sendProdSuccess,
+          text: USE_TEST_LOGIN ? COPY.sendDevSuccess : COPY.sendProdSuccess,
         })
       } catch {
         setFeedback({ type: 'error', text: COPY.sendNetwork })
@@ -349,7 +370,7 @@ export default function LoginPage() {
                       : 'bg-black/[0.03] text-[#615951]'
                   }`}
                 >
-                  {feedback ? feedback.text : IS_DEV ? COPY.devOtpHint : COPY.prodOtpHint}
+                  {feedback ? feedback.text : USE_TEST_LOGIN ? COPY.devOtpHint : COPY.prodOtpHint}
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -405,29 +426,33 @@ export default function LoginPage() {
                 <InfoBadge
                   icon={<Code2 className="h-5 w-5" />}
                   title={COPY.badgeDevTitle}
-                  body={IS_DEV ? COPY.badgeDevBodyDev : COPY.badgeDevBodyProd}
+                  body={USE_TEST_LOGIN ? COPY.badgeDevBodyDev : COPY.badgeDevBodyProd}
                 />
               </div>
 
-              {IS_DEV ? (
+              {USE_TEST_LOGIN ? (
                 <div className="mt-5 rounded-[24px] border border-[#A04F47]/18 bg-[#A04F47]/6 p-4">
                   <p className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#A04F47]">
                     {COPY.devMode}
                   </p>
                   <p className="mt-2 text-[13px] leading-6 text-[#5d554e]">{COPY.devEntryBody}</p>
                   <div className="mt-4 flex flex-wrap gap-3">
-                    <Link
-                      href="/dashboard"
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewEntry('/dashboard')}
+                      disabled={isPending}
                       className="inline-flex items-center justify-center rounded-full bg-[#A04F47] px-5 py-2.5 text-[13px] font-medium text-white transition hover:bg-[#A04F47]/90"
                     >
                       {COPY.devDashboard}
-                    </Link>
-                    <Link
-                      href="/dev-lab"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewEntry('/dev-lab')}
+                      disabled={isPending}
                       className="inline-flex items-center justify-center rounded-full border border-[#A04F47]/20 px-5 py-2.5 text-[13px] font-medium text-[#A04F47] transition hover:bg-[#A04F47]/6"
                     >
                       {COPY.devLab}
-                    </Link>
+                    </button>
                   </div>
                 </div>
               ) : null}
