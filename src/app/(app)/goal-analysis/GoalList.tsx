@@ -95,6 +95,7 @@ export default function GoalList({
   onRestore: (id: string) => void
 }) {
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [recentlyDeleted, setRecentlyDeleted] = useState<JourneySummary | null>(null)
 
   return (
     <div className="flex h-full flex-col">
@@ -111,7 +112,7 @@ export default function GoalList({
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <div className="min-h-0 flex-1 overflow-y-scroll px-3 py-3">
         {journeys.length === 0 ? (
           <div className="flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-4 text-center">
             <p className="text-sm text-gray-500">还没有目标</p>
@@ -154,6 +155,7 @@ export default function GoalList({
                   <button
                     onClick={(event) => {
                       event.stopPropagation()
+                      setRecentlyDeleted(journey)
                       onDelete(journey.id)
                     }}
                     className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-xl text-gray-300 opacity-0 transition hover:bg-gray-50 hover:text-gray-600 group-hover:opacity-100"
@@ -167,6 +169,32 @@ export default function GoalList({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {recentlyDeleted && deletedJourneys.some((item) => item.id === recentlyDeleted.id) && (
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 12, opacity: 0 }}
+            className="shrink-0 border-t border-gray-200 bg-white px-4 py-2.5"
+          >
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-[#fcfcfb] px-3 py-2">
+              <p className="line-clamp-1 flex-1 text-[11px] text-gray-500">
+                已删除：{parseGoalDisplay(recentlyDeleted.goal)}
+              </p>
+              <button
+                onClick={() => {
+                  onRestore(recentlyDeleted.id)
+                  setRecentlyDeleted(null)
+                }}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+              >
+                撤回
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {deletedJourneys.length > 0 && (
         <div className="border-t border-gray-200 bg-[#fcfcfb]">

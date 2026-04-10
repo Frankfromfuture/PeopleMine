@@ -46,14 +46,14 @@ const WORKFLOW = [
 
 function Hero() {
   return (
-    <section className="relative min-h-[100svh] overflow-hidden bg-[#fbf8f3] pt-[clamp(78px,9vw,118px)] text-[#111]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_20%,rgba(255,255,255,0.88),transparent_24%),radial-gradient(circle_at_76%_34%,rgba(255,255,255,0.72),transparent_30%),linear-gradient(180deg,rgba(251,248,243,0.02)_0%,rgba(251,248,243,0.16)_34%,rgba(251,248,243,0.52)_62%,rgba(251,248,243,0.86)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(251,248,243,0.99)_0%,rgba(251,248,243,0.94)_18%,rgba(251,248,243,0.68)_48%,rgba(251,248,243,0.84)_100%)]" />
+    <section className="relative min-h-[100svh] overflow-hidden bg-[#FCFCFC] pt-[clamp(78px,9vw,118px)] text-[#111]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(128%_88%_at_12%_-10%,#F4F4F4_0%,#FCFCFC_56%,#E5E5E5_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(78%_58%_at_36%_102%,rgba(229,229,229,0.95)_0%,rgba(229,229,229,0.68)_38%,rgba(252,252,252,0)_72%)]" />
       <div className="pointer-events-none absolute inset-y-[-12%] right-[-12%] hidden w-[74vw] min-w-[860px] lg:block">
-        <AsciiUniverseCanvas variant="light" quality="desktop" className="opacity-[0.94]" />
+        <AsciiUniverseCanvas variant="light" quality="desktop" className="opacity-[0.38] mix-blend-multiply" />
       </div>
       <div className="pointer-events-none absolute right-[-34%] top-[6%] h-[48vh] w-[95vw] sm:hidden">
-        <AsciiUniverseCanvas variant="light" quality="mobile" className="opacity-[0.9]" />
+        <AsciiUniverseCanvas variant="light" quality="mobile" className="opacity-[0.34] mix-blend-multiply" />
       </div>
 
       <div

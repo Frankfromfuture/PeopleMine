@@ -7,19 +7,18 @@ import {
   DecompositionPlan,
   JourneyAnalysisResponse,
   JourneyPathData,
-  NetworkExpansionSuggestion,
   PathStep,
   StepExecutionStatus,
   StepStatus,
 } from '@/lib/journey/types'
 import { InteractionType, INTERACTION_TYPE_LABELS } from '@/types'
-import { CHANNEL_ICON } from '../journey/JourneyGraph'
 import GoalList, { JourneySummary, deriveGoalStatus } from './GoalList'
 import LottieLoader from '@/components/LottieLoader'
 import PageHeader from '@/components/PageHeader'
 
 type UIPhase = 'idle' | 'decomposing' | 'plan_selection' | 'analyzing' | 'path_view'
 type LoadingStep = 'idle' | 'step1' | 'step2' | 'step3' | 'step4'
+type PathViewTab = 'routes' | 'network'
 
 interface RawJourney {
   id: string
@@ -66,13 +65,12 @@ const STATUS_STYLE: Record<StepExecutionStatus, string> = {
 const ROUTE_BADGES = ['A', 'B', 'C', 'D']
 const ROUTE_LABELS = ['主路径', 'Plan B', '助攻一', '助攻二']
 
-const URGENCY_CFG = {
-  high: { label: '紧急', cls: 'bg-gray-900 text-white' },
-  medium: { label: '建议', cls: 'bg-gray-500 text-white' },
-  low: { label: '备用', cls: 'bg-gray-100 text-gray-700' },
-} as const
-
 const DELETED_KEY = 'pm-deleted-journey-ids'
+const DEFAULT_QUICK_START = [
+  '认识 3 位医疗行业 HR 总监，争取内推机会',
+  '找到能在 AI 领域帮助我成长的导师',
+  '打入互联网产品圈，拓展核心人脉',
+]
 
 function loadDeleted(): Set<string> {
   try {
@@ -89,6 +87,35 @@ function saveDeleted(ids: Set<string>) {
   } catch {
     // ignore localStorage errors
   }
+}
+
+function buildQuickStartQuestions(coreGoal: string, plans: DecompositionPlan[]): string[] {
+  const cleanGoal = coreGoal.replace(/\s+/g, ' ').trim()
+  if (!cleanGoal || plans.length === 0) return DEFAULT_QUICK_START
+
+  const questions = plans.slice(0, 3).map((plan, index) => {
+    const title = plan.title?.trim() || `路径 ${index + 1}`
+    const firstStep = plan.steps?.[0]
+    const stepLabel = firstStep?.label?.trim()
+    const stepDesc = firstStep?.description?.trim()
+
+    if (stepLabel && stepDesc) {
+      return `围绕“${cleanGoal}”，若采用「${title}」，你会如何先完成“${stepLabel}”：${stepDesc}？`
+    }
+    if (stepLabel) {
+      return `围绕“${cleanGoal}”，若采用「${title}」，你会如何推进第一步“${stepLabel}”？`
+    }
+    if (plan.summary?.trim()) {
+      return `围绕“${cleanGoal}”，你会如何验证「${title}」这条路径：${plan.summary.trim()}？`
+    }
+    return `围绕“${cleanGoal}”，你会如何启动「${title}」这条推进路径？`
+  })
+
+  while (questions.length < 3) {
+    questions.push(`围绕“${cleanGoal}”，你下一步最先要链接的关键人脉是谁？`)
+  }
+
+  return questions.slice(0, 3)
 }
 
 function StepStatusBadge({
@@ -291,18 +318,50 @@ function ContactTacticCard({
   journeyId,
   onUpdate,
   allSteps,
+  strategyOnly = false,
 }: {
   step: PathStep
   stepStatus: StepStatus | undefined
   journeyId: string | null
   onUpdate: (status: StepStatus) => void
   allSteps: PathStep[]
+  strategyOnly?: boolean
 }) {
   const [expanded, setExpanded] = useState(false)
   const isDone = stepStatus?.status === 'done'
   const assistNames = (step.expandedTactics?.assistContactIds || [])
     .map((id) => allSteps.find((item) => item.contactId === id)?.contactName)
     .filter(Boolean)
+
+  if (strategyOnly) {
+    return (
+      <div className="flex flex-col gap-2.5">
+        <div className="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">策略正文</p>
+          <p className="mt-1.5 text-[11px] leading-5 text-gray-600 break-words">
+            {step.keyTactic || step.expandedTactics?.scriptSuggestion || step.communicationAdvice.openingLine}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">话题开启建议</p>
+          <p className="mt-1.5 text-[11px] leading-5 text-gray-600 break-words">{step.communicationAdvice.timing}</p>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">对方需求猜测</p>
+          <p className="mt-1.5 text-[11px] leading-5 text-gray-600 break-words">{step.communicationAdvice.channelSuggestion}</p>
+        </div>
+
+        {step.communicationAdvice.caution && (
+          <div className="rounded-xl border border-gray-200 bg-white px-3.5 py-3">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">注意事项</p>
+            <p className="mt-1.5 text-[11px] leading-5 text-gray-600 break-words">{step.communicationAdvice.caution}</p>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className={`rounded-[20px] border p-3.5 text-sm transition ${isDone ? 'border-gray-200 bg-[#fbfbfa] opacity-75' : 'border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]'}`}>
@@ -345,15 +404,15 @@ function ContactTacticCard({
                 <p className="mt-1 rounded-2xl bg-[#fafaf9] px-3 py-2.5 text-[11px] leading-5 text-gray-700">{step.communicationAdvice.openingLine}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">时机</p>
-                  <p className="mt-1 rounded-xl border border-gray-100 bg-white px-3 py-2 text-[11px] leading-5 text-gray-600">{step.communicationAdvice.timing}</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">话题开启建议</p>
+                  <p className="mt-1 rounded-xl border border-gray-100 bg-white px-3 py-2 text-[11px] leading-5 text-gray-600 break-words">{step.communicationAdvice.timing}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">渠道</p>
-                  <p className="mt-1 rounded-xl border border-gray-100 bg-white px-3 py-2 text-[11px] leading-5 text-gray-600">
-                    {CHANNEL_ICON[step.communicationAdvice.channelSuggestion]} {step.communicationAdvice.channelSuggestion}
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">对方需求猜测</p>
+                  <p className="mt-1 rounded-xl border border-gray-100 bg-white px-3 py-2 text-[11px] leading-5 text-gray-600 break-words">
+                    {step.communicationAdvice.channelSuggestion}
                   </p>
                 </div>
               </div>
@@ -403,9 +462,19 @@ function RouteCard({
   onUpdate: (status: StepStatus) => void
 }) {
   const isPrimary = route.key === 'primary'
+  const keyContacts = route.steps.slice(0, 3)
+  const [activeContactId, setActiveContactId] = useState<string | null>(keyContacts[0]?.contactId ?? null)
+
+  useEffect(() => {
+    if (!activeContactId || !keyContacts.some((step) => step.contactId === activeContactId)) {
+      setActiveContactId(keyContacts[0]?.contactId ?? null)
+    }
+  }, [activeContactId, keyContacts])
+
+  const activeStep = keyContacts.find((step) => step.contactId === activeContactId) ?? keyContacts[0] ?? null
 
   return (
-    <div className={`flex w-[22rem] shrink-0 flex-col overflow-hidden rounded-[28px] border ${isPrimary ? 'border-gray-400 bg-white shadow-md' : 'border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]'}`}>
+    <div className={`flex h-full min-h-[420px] w-full min-w-0 flex-col overflow-hidden rounded-[28px] border ${isPrimary ? 'border-gray-400 bg-white shadow-md' : 'border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]'}`}>
       <div className={`border-b px-4 py-4 ${isPrimary ? 'border-gray-200 bg-[#fafaf9]' : 'border-gray-100 bg-white'}`}>
         <div className="mb-2 flex items-center gap-2">
           <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${isPrimary ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}>
@@ -415,76 +484,73 @@ function RouteCard({
             {(route.score * 100).toFixed(0)}%
           </span>
         </div>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">Route Confidence</p>
-        <div className="h-1.5 rounded-full bg-gray-100">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">核心策略评分</p>
+        <div className="mt-1.5 h-1.5 rounded-full bg-gray-100">
           <div className={`h-full rounded-full ${isPrimary ? 'bg-gray-800' : 'bg-gray-400'}`} style={{ width: `${route.score * 100}%` }} />
         </div>
-        {route.rationale && <p className="mt-3 text-xs leading-6 text-gray-500">{route.rationale}</p>}
+        <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-gray-400">核心策略</p>
+        <p className="mt-1 text-xs leading-6 text-gray-600">{route.rationale || '结合当前人脉优先推进成功率更高的连接路径。'}</p>
       </div>
 
       <div className="border-b border-gray-100 px-4 py-3 bg-[#fcfcfb]">
-        <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-gray-400">Sequence</p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[9px] font-semibold text-white">你</span>
-          {route.steps.map((step) => {
-            const done = stepStatuses.find((item) => item.contactId === step.contactId)?.status === 'done'
-            return (
-              <React.Fragment key={step.contactId}>
-                <span className="text-xs text-gray-300">→</span>
-                <span className={`rounded-full border px-2 py-1 text-[10px] ${done ? 'border-gray-300 bg-gray-50 text-gray-700' : 'border-gray-200 bg-white text-gray-500'}`}>
-                  {done ? '✓ ' : ''}
-                  {step.contactName}
-                </span>
-              </React.Fragment>
-            )
-          })}
+        <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-gray-400">关键路径</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {keyContacts.map((step, index) => (
+            <button
+              key={step.contactId}
+              onClick={() => setActiveContactId(step.contactId)}
+              className={`rounded-full border px-2.5 py-1 text-[10px] transition ${
+                activeStep?.contactId === step.contactId
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
+              }`}
+            >
+              {index + 1}. {step.contactName}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto p-3.5 bg-white">
-        {route.steps.map((step) => (
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain bg-white p-3.5 [scrollbar-gutter:stable] [scroll-behavior:smooth] [-webkit-overflow-scrolling:touch]">
+        {activeStep ? (
           <ContactTacticCard
-            key={step.contactId}
-            step={step}
-            stepStatus={stepStatuses.find((item) => item.contactId === step.contactId)}
+            key={activeStep.contactId}
+            step={activeStep}
+            stepStatus={stepStatuses.find((item) => item.contactId === activeStep.contactId)}
             journeyId={journeyId}
             onUpdate={onUpdate}
             allSteps={route.steps}
+            strategyOnly
           />
-        ))}
+        ) : (
+          <div className="flex h-full w-full items-center justify-center rounded-[20px] border border-dashed border-gray-200 text-xs text-gray-400">
+            暂无可展示攻略
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-function ExpansionTile({ item }: { item: NetworkExpansionSuggestion }) {
-  const urgency = URGENCY_CFG[item.urgency]
-
+function ExpansionPersonaTile({
+  item,
+}: {
+  item: { persona: string; companyLevel: string; reason: string; howToExpand: string }
+}) {
   return (
-    <div className="min-w-[260px] rounded-[24px] border border-gray-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-      <div className="mb-2 flex items-center gap-2">
-        <p className="text-sm font-semibold text-gray-900">{item.industry}</p>
-        <span className={`ml-auto rounded-full px-2 py-1 text-[10px] font-medium ${urgency.cls}`}>{urgency.label}</span>
-      </div>
-      <div className="space-y-2 text-xs leading-6 text-gray-500">
-        <div className="rounded-2xl border border-gray-100 bg-[#fafaf9] px-3 py-2">
-          <p><span className="text-gray-400">企业</span> {item.companyProfile}</p>
-          <p><span className="text-gray-400">层级</span> {item.level}</p>
-        </div>
-        <p className="text-gray-600">{item.reason}</p>
-      </div>
-    </div>
-  )
-}
+    <div className="rounded-[22px] border border-gray-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">建议拓展人物</p>
+      <p className="mt-1 text-sm font-semibold text-gray-900">{item.persona}</p>
+      <p className="mt-2 text-xs leading-6 text-gray-600">{item.companyLevel}</p>
 
-function MissingTile({ m }: { m: { roleName: string; whyNeeded: string; howToFind: string } }) {
-  return (
-    <div className="min-w-[260px] rounded-[24px] border border-gray-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-      <p className="text-sm font-semibold text-gray-900">{m.roleName}</p>
-      <p className="mt-2 text-xs leading-6 text-gray-600">{m.whyNeeded}</p>
-      <div className="mt-3 rounded-2xl border border-gray-100 bg-[#fafaf9] px-3 py-2">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">How To Find</p>
-        <p className="mt-1 text-xs leading-6 text-gray-500">{m.howToFind}</p>
+      <div className="mt-3 rounded-2xl border border-gray-100 bg-[#fafaf9] px-3 py-2.5">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">拓展理由</p>
+        <p className="mt-1 text-xs leading-6 text-gray-600">{item.reason}</p>
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-gray-100 bg-[#fafaf9] px-3 py-2.5">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400">拓展方式建议</p>
+        <p className="mt-1 text-xs leading-6 text-gray-600">{item.howToExpand}</p>
       </div>
     </div>
   )
@@ -506,6 +572,10 @@ export default function GoalAnalysisPage() {
   const [journeyId, setJourneyId] = useState<string | null>(null)
   const [stepStatuses, setStepStatuses] = useState<StepStatus[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [pathViewTab, setPathViewTab] = useState<PathViewTab>('routes')
+  const [quickStartGoals, setQuickStartGoals] = useState<string[]>(DEFAULT_QUICK_START)
+  const [quickStartFromCoreGoal, setQuickStartFromCoreGoal] = useState(false)
+  const [quickStartLoading, setQuickStartLoading] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -527,6 +597,50 @@ export default function GoalAnalysisPage() {
       })
       .catch(console.error)
       .finally(() => setHistoryLoading(false))
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function hydrateQuickStart() {
+      try {
+        const meRes = await fetch('/api/me')
+        if (!meRes.ok) return
+
+        const meData = await meRes.json()
+        const coreGoal = typeof meData?.user?.goal === 'string' ? meData.user.goal.trim() : ''
+        if (!coreGoal) return
+
+        setQuickStartLoading(true)
+        const decomposeRes = await fetch('/api/journey/decompose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ goal: coreGoal }),
+        })
+        if (!decomposeRes.ok) return
+
+        const decomposeData = await decomposeRes.json()
+        const plans = Array.isArray(decomposeData?.plans) ? (decomposeData.plans as DecompositionPlan[]) : []
+        const nextQuestions = buildQuickStartQuestions(coreGoal, plans)
+
+        if (!cancelled) {
+          setQuickStartGoals(nextQuestions)
+          setQuickStartFromCoreGoal(true)
+        }
+      } catch {
+        if (!cancelled) {
+          setQuickStartGoals(DEFAULT_QUICK_START)
+          setQuickStartFromCoreGoal(false)
+        }
+      } finally {
+        if (!cancelled) setQuickStartLoading(false)
+      }
+    }
+
+    hydrateQuickStart()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -552,6 +666,7 @@ export default function GoalAnalysisPage() {
     setJourneyId(null)
     setStepStatuses([])
     setError(null)
+    setPathViewTab('routes')
   }, [])
 
   const handleDelete = useCallback((id: string) => {
@@ -598,6 +713,7 @@ export default function GoalAnalysisPage() {
   const handleSelectPlan = useCallback(async (plan: DecompositionPlan) => {
     setSelectedPlan(plan)
     setPhase('analyzing')
+    setPathViewTab('routes')
     setError(null)
     setPathData(null)
     setJourneyId(null)
@@ -648,6 +764,7 @@ export default function GoalAnalysisPage() {
     setStepStatuses(journey.pathData.stepStatuses ?? [])
     setPhase('path_view')
     setError(null)
+    setPathViewTab('routes')
   }, [])
 
   const handleStepUpdate = useCallback((updated: StepStatus) => {
@@ -688,7 +805,7 @@ export default function GoalAnalysisPage() {
           score: pathData.overallConfidence,
           rationale: pathData.overallStrategy,
         },
-        ...pathData.alternativePaths.slice(0, 3).map((alt, index) => ({
+        ...pathData.alternativePaths.slice(0, 2).map((alt, index) => ({
           key: `alt-${index}`,
           label: alt.categoryLabel || ROUTE_LABELS[index + 1] || `备选 ${index + 1}`,
           badge: ROUTE_BADGES[index + 1] || `${index + 1}`,
@@ -699,19 +816,39 @@ export default function GoalAnalysisPage() {
       ]
     : []
 
-  const primaryDone = pathData
-    ? stepStatuses.filter((status) => status.status === 'done' && pathData.primaryPath.some((step) => step.contactId === status.contactId)).length
-    : 0
-  const primaryTotal = pathData?.primaryPath.length ?? 0
-  const sampleGoals = [
-    '认识 3 位医疗行业 HR 总监，争取内推机会',
-    '找到能在 AI 领域帮助我成长的导师',
-    '打入互联网产品圈，拓展核心人脉',
-  ]
+  const phaseLabel: Record<UIPhase, string> = {
+    idle: '分析画布',
+    decomposing: '拆解中',
+    plan_selection: '选方案',
+    analyzing: '分析中',
+    path_view: '目标路径',
+  }
+
+  const expansionProfiles = (() => {
+    if (!pathData) return []
+
+    const merged = [
+      ...(pathData.networkExpansion ?? []).map((item) => ({
+        persona: `${item.industry}方向关键人物`,
+        companyLevel: `${item.companyProfile} · ${item.level}`,
+        reason: item.reason,
+        howToExpand: '优先从现有关系链中寻找同圈层连接，再通过一次价值交换请求引荐。',
+      })),
+      ...pathData.missingNodes.map((node) => ({
+        persona: node.roleName,
+        companyLevel: `目标公司与职位层级建议：${node.howToFind}`,
+        reason: node.whyNeeded,
+        howToExpand: node.howToFind,
+      })),
+    ]
+
+    const unique = merged.filter((item, index) => merged.findIndex((other) => other.persona === item.persona) === index)
+    return unique.slice(0, 3)
+  })()
 
   return (
-    <div className="min-h-full bg-[#f6f6f4]" style={{ fontFamily: `'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif` }}>
-      <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-6 py-4 lg:px-8">
+    <div className="min-h-full bg-[#f6f6f4] lg:h-[100dvh] lg:overflow-hidden" style={{ fontFamily: `'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif` }}>
+      <div className="flex min-h-screen w-full min-w-0 flex-col px-4 py-3 sm:px-5 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:px-6 lg:py-3 xl:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -719,6 +856,7 @@ export default function GoalAnalysisPage() {
           ]}
           title="目标分析"
           summary="把目标拆成真正能执行的人脉路径，并持续追踪每一步推进状态。"
+          className="pb-3 lg:pb-3"
           hints={[
             '先输入目标，再让 AI 拆成可推进的人脉路径。',
             '历史列表会保留已分析过的目标，方便继续推进。',
@@ -728,20 +866,19 @@ export default function GoalAnalysisPage() {
 
         <div className="mt-1 flex min-h-0 flex-1 overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-            <aside className="w-full shrink-0 border-b border-gray-200 bg-[#fcfcfb] xl:w-[300px] xl:border-b-0 xl:border-r">
-              <div className="border-b border-gray-200 px-5 py-5">
-                <div className="mb-4">
+            <aside className="flex min-h-0 w-full shrink-0 flex-col border-b border-gray-200 bg-[#fcfcfb] xl:w-[220px] xl:border-b-0 xl:border-r 2xl:w-[236px]">
+              <div className="shrink-0 border-b border-gray-200 px-4 py-3">
+                <div className="mb-2">
                   <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">History</p>
-                  <h2 className="mt-2 text-lg font-semibold text-gray-900">目标列表</h2>
-                  <p className="mt-1 text-xs leading-5 text-gray-500">保留历史路径，随时回看、恢复或继续推进。</p>
+                  <h2 className="mt-1 text-base font-semibold text-gray-900">目标列表</h2>
                 </div>
 
-                <div className="flex items-center rounded-2xl border border-gray-200 bg-white p-1">
+                <div className="flex items-center rounded-xl border border-gray-200 bg-white p-0.5">
                   {(['all', 'active', 'completed'] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setHistoryTab(tab)}
-                      className={`flex-1 rounded-xl px-3 py-2 text-xs font-medium transition ${
+                      className={`flex-1 whitespace-nowrap rounded-lg px-1.5 py-1 text-[11px] font-medium transition ${
                         historyTab === tab ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'
                       }`}
                     >
@@ -751,7 +888,7 @@ export default function GoalAnalysisPage() {
                 </div>
               </div>
 
-              <div className="min-h-0 xl:h-[calc(100vh-12rem)]">
+              <div className="min-h-0 flex-1">
                 {historyLoading ? (
                   <div className="flex h-40 items-center justify-center">
                     <LottieLoader className="h-10 w-10" />
@@ -774,12 +911,25 @@ export default function GoalAnalysisPage() {
               <div className="border-b border-gray-200 bg-[#fafaf9] px-6 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Workspace</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {{ idle: '待输入', decomposing: '拆解中', plan_selection: '选方案', analyzing: '分析中', path_view: '查看路径' }[phase]}
-                    </p>
+                    <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Canvas</p>
+                    <p className="mt-1 text-sm text-gray-600">{phaseLabel[phase]}</p>
                   </div>
-                  {phase !== 'idle' && (
+                  {phase === 'path_view' ? (
+                    <div className="flex items-center rounded-2xl border border-gray-200 bg-white p-1">
+                      <button
+                        onClick={() => setPathViewTab('routes')}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${pathViewTab === 'routes' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-800'}`}
+                      >
+                        路径页
+                      </button>
+                      <button
+                        onClick={() => setPathViewTab('network')}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${pathViewTab === 'network' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-800'}`}
+                      >
+                        扩展页
+                      </button>
+                    </div>
+                  ) : phase !== 'idle' && (
                     <button
                       onClick={handleReset}
                       className="inline-flex items-center rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
@@ -792,10 +942,10 @@ export default function GoalAnalysisPage() {
               <div className="flex-1 overflow-y-auto">
                 <AnimatePresence mode="wait">
                   {phase === 'idle' && (
-                    <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="px-8 py-7">
-                      <div className="mx-auto grid max-w-5xl gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                        <div className="rounded-[28px] border border-gray-200 bg-white p-8 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                          <div className="mb-8 space-y-3">
+                    <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full px-4 py-4 sm:px-5 sm:py-5">
+                      <div className="grid h-full min-h-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <div className="flex min-h-0 flex-col rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:p-7 xl:row-span-2">
+                          <div className="mb-5 space-y-2.5">
                             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">New Goal</p>
                             <h2 className="text-2xl font-semibold tracking-tight text-gray-900">先把目标说清楚，再让 AI 拆成路径</h2>
                             <p className="text-sm leading-7 text-gray-500">描述你想达成的连接、岗位、融资或行业切入目标。现有流程会先拆出 3 套策略，再进入路径分析。</p>
@@ -803,14 +953,14 @@ export default function GoalAnalysisPage() {
 
                           <textarea
                             ref={textareaRef}
-                            className="h-36 w-full rounded-[24px] border border-gray-200 bg-[#fcfcfb] px-5 py-4 text-sm leading-7 text-gray-800 outline-none transition placeholder:text-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+                            className="min-h-[12rem] flex-1 rounded-[24px] border border-gray-200 bg-[#fcfcfb] px-5 py-4 text-sm leading-7 text-gray-800 outline-none transition placeholder:text-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
                             placeholder="例如：我想在 3 个月内认识 3 位 A 轮投资人，推进天使轮融资。"
                             value={goal}
                             onChange={(event) => setGoal(event.target.value)}
                             onKeyDown={(event) => event.key === 'Enter' && event.metaKey && handleDecompose()}
                           />
 
-                          <div className="mt-5 flex items-center justify-between gap-4">
+                          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                             <p className="text-xs text-gray-400">按 `⌘/Ctrl + Enter` 可直接开始拆解</p>
                             <button
                               disabled={!goal.trim()}
@@ -824,12 +974,19 @@ export default function GoalAnalysisPage() {
                           {error && <p className="mt-4 text-sm text-gray-500">{error}</p>}
                         </div>
 
-                        <div className="space-y-4">
-                          <div className="rounded-[28px] border border-gray-200 bg-white p-6">
+                        <div className="grid min-h-0 gap-4">
+                          <div className="flex min-h-0 flex-col rounded-[28px] border border-gray-200 bg-white p-6 lg:p-7">
                             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Quick Start</p>
                             <h3 className="mt-2 text-lg font-semibold text-gray-900">可以直接从这些目标开始</h3>
-                            <div className="mt-4 space-y-2.5">
-                              {sampleGoals.map((example) => (
+                            <p className="mt-2 text-xs text-gray-500">
+                              {quickStartLoading
+                                ? '正在根据“我”页面核心目标生成拆解问题...'
+                                : quickStartFromCoreGoal
+                                  ? '已按“我”页面核心目标生成'
+                                  : '未填写核心目标时显示默认问题'}
+                            </p>
+                            <div className="mt-4 min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
+                              {quickStartGoals.map((example) => (
                                 <button
                                   key={example}
                                   onClick={() => setGoal(example)}
@@ -840,9 +997,9 @@ export default function GoalAnalysisPage() {
                               ))}
                             </div>
                           </div>
-                          <div className="rounded-[28px] border border-gray-200 bg-white p-6">
+                          <div className="flex min-h-0 flex-col rounded-[28px] border border-gray-200 bg-white p-6 lg:p-7">
                             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Flow</p>
-                            <div className="mt-4 space-y-3">
+                            <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
                               {[
                                 '先拆解目标，生成多套推进策略',
                                 '再从现有人脉里选出更可行的路径',
@@ -926,71 +1083,43 @@ export default function GoalAnalysisPage() {
                   )}
 
                   {phase === 'path_view' && pathData && (
-                    <motion.div key="path_view" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="px-8 py-6">
-                      <div className="mx-auto max-w-6xl space-y-6">
-                        <div className="rounded-[28px] border border-gray-200 bg-white px-6 py-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Current Goal</p>
-                              <p className="mt-2 text-xl font-semibold tracking-tight text-gray-900">{goal}</p>
-                              {selectedPlan && (
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                  <span className="rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-white">方案 {selectedPlan.id}</span>
-                                  <span className="text-sm font-medium text-gray-700">{selectedPlan.title}</span>
-                                  <span className="text-sm text-gray-400">{selectedPlan.summary}</span>
-                                </div>
-                              )}
+                    <motion.div
+                      key="path_view"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="h-full p-4 sm:p-5"
+                    >
+                      <div className="flex h-full min-h-0 flex-col">
+                        {pathViewTab === 'routes' ? (
+                          <section className="flex min-h-0 flex-1 flex-col rounded-[22px] border border-gray-200 bg-white p-4 sm:p-5">
+                            <div className="mb-3 shrink-0">
+                              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400">Routes</p>
+                              <h3 className="mt-1 text-base font-semibold text-gray-900">路径规划</h3>
                             </div>
-
-                            {primaryTotal > 0 && (
-                              <div className="w-full rounded-2xl border border-gray-200 bg-[#fafaf9] px-4 py-4 lg:w-[220px]">
-                                <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Primary Path</p>
-                                <p className="mt-2 text-base font-semibold text-gray-900">{primaryDone}/{primaryTotal}</p>
-                                <div className="mt-3 h-2 rounded-full bg-gray-100">
-                                  <motion.div
-                                    className="h-full rounded-full bg-gray-800"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${primaryTotal ? (primaryDone / primaryTotal) * 100 : 0}%` }}
-                                    transition={{ duration: 0.5 }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <section>
-                          <div className="mb-3">
-                            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Routes</p>
-                            <h3 className="mt-2 text-lg font-semibold text-gray-900">路径规划</h3>
-                          </div>
-                          <div className="flex gap-4 overflow-x-auto pb-2">
-                            {allRoutes.map((route) => (
-                              <RouteCard key={route.key} route={route} stepStatuses={stepStatuses} journeyId={journeyId} onUpdate={handleStepUpdate} />
-                            ))}
-                          </div>
-                        </section>
-
-                        {pathData.networkExpansion && pathData.networkExpansion.length > 0 && (
-                          <section>
-                            <div className="mb-3">
-                              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Expansion</p>
-                              <h3 className="mt-2 text-lg font-semibold text-gray-900">人脉扩展建议</h3>
-                            </div>
-                            <div className="flex gap-3 overflow-x-auto pb-1">
-                              {pathData.networkExpansion.map((item, index) => <ExpansionTile key={index} item={item} />)}
+                            <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto pr-1 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] lg:grid-cols-3">
+                              {allRoutes.map((route) => (
+                                <RouteCard key={route.key} route={route} stepStatuses={stepStatuses} journeyId={journeyId} onUpdate={handleStepUpdate} />
+                              ))}
                             </div>
                           </section>
-                        )}
-
-                        {pathData.missingNodes.length > 0 && (
-                          <section>
-                            <div className="mb-3">
-                              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-gray-400">Missing Nodes</p>
-                              <h3 className="mt-2 text-lg font-semibold text-gray-900">关键缺失人脉</h3>
+                        ) : (
+                          <section className="flex min-h-0 flex-1 flex-col rounded-[22px] border border-gray-200 bg-white p-4 sm:p-5">
+                            <div className="mb-3 shrink-0">
+                              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400">Expansion</p>
+                              <h3 className="mt-1 text-base font-semibold text-gray-900">扩展人脉建议</h3>
+                              <p className="mt-1 text-xs text-gray-500">实现目标过程中优先补齐的 3 位关键人物画像。</p>
                             </div>
-                            <div className="flex gap-3 overflow-x-auto pb-1">
-                              {pathData.missingNodes.map((node) => <MissingTile key={node.missingRole} m={node} />)}
+                            <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto pr-1 [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] sm:grid-cols-2 xl:grid-cols-3">
+                              {expansionProfiles.length > 0 ? (
+                                expansionProfiles.map((item) => (
+                                  <ExpansionPersonaTile key={item.persona} item={item} />
+                                ))
+                              ) : (
+                                <div className="col-span-full flex h-full min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-gray-200 text-xs text-gray-400">
+                                  暂无扩展建议
+                                </div>
+                              )}
                             </div>
                           </section>
                         )}
@@ -1000,9 +1129,6 @@ export default function GoalAnalysisPage() {
                 </AnimatePresence>
               </div>
 
-              <div className="border-t border-gray-200 py-3 text-center">
-                <p className="text-[10px] italic text-gray-300">Powered by Xminer AI</p>
-              </div>
             </main>
           </div>
         </div>

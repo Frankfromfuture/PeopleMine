@@ -26,6 +26,7 @@ export default function RootLayout({
           href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async />
       </head>
       <body className={`${geistMono.variable} antialiased`}>
         {children}
