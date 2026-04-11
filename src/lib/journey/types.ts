@@ -1,0 +1,256 @@
+import { InteractionType, RelationVector, RoleArchetype, Temperature } from '@/types'
+
+// ── 步骤执行状态（存入 Journey.pathData，无需迁移） ────────────────────────────
+export type StepExecutionStatus = 'pending' | 'in_progress' | 'done' | 'skipped' | 'failed'
+
+export interface StepStatus {
+  contactId: string
+  status: StepExecutionStatus
+  note: string | null
+  updatedAt: string // ISO
+  interactionType: InteractionType | null
+}
+
+// ── 目标结构化元数据（GoalInput 向导写入，存入 Journey.pathData） ──────────────
+export interface GoalMeta {
+  type: 'introduction' | 'resource' | 'advice' | 'collaboration' | 'other'
+  target: string | null     // 目标人物描述，如"B轮投资人"
+  count: number | null      // 目标数量
+  deadline: string | null   // ISO date string
+  context: string | null    // 背景说明
+}
+
+/**
+ * 完整的航程路径数据结构 - 存储在 Journey.pathData Json 字段
+ * 包含所有评分、路径、沟通建议和缺失分析
+ */
+export interface JourneyPathData {
+  version: 1
+
+  meta: {
+    goalCategory:
+      | 'introduction'
+      | 'resource'
+      | 'advice'
+      | 'collaboration'
+      | 'information'
+      | 'other'
+    totalContacts: number
+    analyzedContacts: number
+    computedAt: string // ISO timestamp
+    modelUsed: string
+
+    // ARC 可解释性指标（由 API 在分析后补充）
+    averageArcScore?: number // 0-1
+    arcCoverage?: number // 0-1: 有 relationVector 的联系人占比
+    topArcArchetypes?: Array<{ name: string; count: number }>
+  }
+
+  // 所有评分节点（Top-15）
+  nodes: ScoredNode[]
+
+  // 主推荐路径（有序的联系人 ID 和详细沟通建议）
+  primaryPath: PathStep[]
+
+  // 1-2 条备选路径
+  alternativePaths: AlternativePath[]
+
+  // 缺失角色分析
+  missingNodes: MissingNode[]
+
+  // AI 生成的整体策略（2-3 句中文）
+  overallStrategy: string
+
+  // 整体置信度 0-1
+  overallConfidence: number
+
+  // 步骤执行状态（用户追踪进度时写入，初始不存在）
+  stepStatuses?: StepStatus[]
+
+  // 目标结构化元数据（GoalInput 向导写入，初始可能不存在）
+  goalMeta?: GoalMeta
+
+  // Step 1: 用户选定的拆解方案
+  selectedPlan?: DecompositionPlan
+
+  // Step 5: 人脉拓展建议
+  networkExpansion?: NetworkExpansionSuggestion[]
+}
+
+/**
+ * 单个评分节点 - 用于图谱显示和路径计算
+ */
+export interface ScoredNode {
+  contactId: string
+  name: string
+  company: string | null
+  title: string | null
+  roleArchetype: RoleArchetype
+  tags: string[]
+  temperature: Temperature | null
+  energyScore: number
+  trustLevel: number | null
+  archetype: string | null
+  relationVector: RelationVector | null
+
+  // 多维评分结果（0-1）
+  journeyScore: number // 加权综合分
+  arcScore: number // ARC 核心关系向量分
+  relevanceScore: number // 相关性
+  accessibilityScore: number // 可达性
+  centralityScore: number // 网络中心度
+
+  // Claude 输出
+  journeyRoleLabel: string // e.g. "关键路径中转站"
+  isOnPrimaryPath: boolean
+  isOnAnyPath: boolean
+}
+
+/**
+ * 主路径上的单个步骤 - 含具体沟通建议
+ */
+export interface PathStep {
+  contactId: string
+  contactName: string
+  hopIndex: number // 0 = 直连用户，1 = 需经由前一步介绍
+  introductionVia: string | null // 介绍人的 contactId（如果是 2 跳）
+  introductionViaName: string | null
+
+  communicationAdvice: CommunicationAdvice
+
+  confidenceAtThisStep: number // 路径在此步骤的可信度（随着跳数衰减）
+
+  // Step 3 新增
+  keyTactic?: string           // 1-2句关键攻略（始终可见）
+  expandedTactics?: ExpandedTactics // 展开后的完整攻略
+}
+
+/**
+ * 具体的沟通策略建议
+ */
+export interface CommunicationAdvice {
+  openingLine: string // 具体开场白建议（中文）
+  keyMessage: string // 核心信息/诉求（中文）
+  timing: string // 时机建议（什么时候联系最好）
+  caution: string | null // 注意事项，可为空
+  channelSuggestion: 'wechat' | 'call' | 'meeting' | 'email' | 'event'
+}
+
+/**
+ * 备选路径
+ */
+export interface AlternativePath {
+  pathId: string // e.g. "alt-1"
+  steps: PathStep[]
+  score: number
+  rationale: string // 为什么这是备选（中文）
+  pathCategory?: PathCategory  // Step 2 新增
+  categoryLabel?: string       // 中文标签，如"Plan B 备选"
+}
+
+/**
+ * 缺失的关键角色节点
+ */
+export interface MissingNode {
+  missingRole: RoleArchetype
+  roleName: string // 中文角色名
+  whyNeeded: string // 为什么这个角色对目标很重要
+  howToFind: string // 建议在哪儿/怎么找这类人脉
+}
+
+/**
+ * 内部计算用的评分对象（不存储，用于 API 计算）
+ */
+export interface ScoredContact {
+  id: string
+  name: string
+  company: string | null
+  title: string | null
+  roleArchetype: RoleArchetype
+  tags: string[]
+  temperature: Temperature | null
+  energyScore: number
+  trustLevel: number | null
+  lastContactedAt: Date | null
+  notes: string | null
+  archetype: string | null
+  relationVector: RelationVector | null
+
+  // 计算结果
+  arcScore: number
+  relevanceScore: number
+  accessibilityScore: number
+  centralityScore: number
+  journeyScore: number // 加权综合
+}
+
+/**
+ * 候选路径（用于排名和选择）
+ */
+export interface CandidatePath {
+  path: string[] // 联系人 ID 序列
+  score: number
+  roleSequence: string[] // 对应的关系角色序列
+}
+
+// ── 目标拆解计划（Step 1）────────────────────────────────────────────────────
+
+export interface DecompositionStep {
+  id: number
+  label: string
+  description: string
+}
+
+export interface DecompositionPlan {
+  id: 'A' | 'B' | 'C'
+  title: string
+  summary: string          // 一句话特征总结（≤20字）
+  steps: DecompositionStep[]
+  difficulty: 'easy' | 'medium' | 'hard'
+  successRate: number      // 0-100 整数
+  strategy: string         // 策略思路说明（≤40字）
+}
+
+// ── 路径类型（Step 2）────────────────────────────────────────────────────────
+
+export type PathCategory = 'primary' | 'planB' | 'assist'
+
+// ── 扩展的沟通攻略（Step 3 展开后）──────────────────────────────────────────
+
+export interface ExpandedTactics {
+  scriptSuggestion: string    // 话术建议（完整脚本）
+  assistContactIds: string[]  // 可助攻的其他联系人 ID
+  mutualBenefit: string       // 互惠关系助攻说明
+  rapportTips: string         // 好感度加强建议
+}
+
+// ── 人脉拓展建议（Step 5）───────────────────────────────────────────────────
+
+export interface NetworkExpansionSuggestion {
+  industry: string        // 目标行业
+  companyProfile: string  // 企业画像（类型/规模）
+  level: string           // 职级/资历要求
+  reason: string          // 为何需要此类人脉
+  urgency: 'high' | 'medium' | 'low'
+}
+
+/**
+ * API 请求体
+ */
+export interface JourneyAnalysisRequest {
+  goal: string
+  selectedPlan?: DecompositionPlan
+}
+
+/**
+ * API 响应体
+ */
+export interface JourneyAnalysisResponse {
+  journey: {
+    id: string
+    goal: string
+    aiAnalysis: string | null
+    pathData: JourneyPathData
+    createdAt: string
+  }
+}

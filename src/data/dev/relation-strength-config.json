@@ -1,0 +1,188 @@
+{
+  "weights": {
+    "roleComplement": 0.22,
+    "industryOverlap": 0.16,
+    "temperatureMatch": 0.14,
+    "positionLevel": 0.1,
+    "functionAffinity": 0.12,
+    "spiritAnimalAffinity": 0.1,
+    "trustBonus": 0.1,
+    "recencyDecay": 0.06
+  },
+  "roleComplementMatrix": {
+    "BREAKER": {
+      "BREAKER": 0.4,
+      "EVANGELIST": 0.85,
+      "ANALYST": 0.65,
+      "BINDER": 0.45
+    },
+    "EVANGELIST": {
+      "BREAKER": 0.85,
+      "EVANGELIST": 0.45,
+      "ANALYST": 0.55,
+      "BINDER": 0.75
+    },
+    "ANALYST": {
+      "BREAKER": 0.65,
+      "EVANGELIST": 0.55,
+      "ANALYST": 0.4,
+      "BINDER": 0.6
+    },
+    "BINDER": {
+      "BREAKER": 0.45,
+      "EVANGELIST": 0.75,
+      "ANALYST": 0.6,
+      "BINDER": 0.55
+    }
+  },
+  "animalAffinityMatrix": {
+    "TIGER": {
+      "TIGER": 0.35,
+      "PEACOCK": 0.8,
+      "OWL": 0.55,
+      "KOALA": 0.5
+    },
+    "PEACOCK": {
+      "TIGER": 0.8,
+      "PEACOCK": 0.45,
+      "OWL": 0.4,
+      "KOALA": 0.7
+    },
+    "OWL": {
+      "TIGER": 0.55,
+      "PEACOCK": 0.4,
+      "OWL": 0.5,
+      "KOALA": 0.75
+    },
+    "KOALA": {
+      "TIGER": 0.5,
+      "PEACOCK": 0.7,
+      "OWL": 0.75,
+      "KOALA": 0.6
+    }
+  },
+  "temperatureMatrix": {
+    "HOT": {
+      "HOT": 1,
+      "WARM": 0.8,
+      "COLD": 0.35
+    },
+    "WARM": {
+      "HOT": 0.8,
+      "WARM": 0.65,
+      "COLD": 0.45
+    },
+    "COLD": {
+      "HOT": 0.35,
+      "WARM": 0.45,
+      "COLD": 0.3
+    }
+  },
+  "functionAffinityMatrix": {
+    "MANAGEMENT": {
+      "MANAGEMENT": 0.5,
+      "INVESTMENT": 0.7,
+      "SALES": 0.65,
+      "ENGINEER": 0.5,
+      "MARKETING": 0.6,
+      "BUSINESS_DEV": 0.7,
+      "ADMIN": 0.4,
+      "OTHER": 0.45
+    },
+    "INVESTMENT": {
+      "MANAGEMENT": 0.7,
+      "INVESTMENT": 0.45,
+      "SALES": 0.55,
+      "ENGINEER": 0.5,
+      "MARKETING": 0.5,
+      "BUSINESS_DEV": 0.65,
+      "ADMIN": 0.3,
+      "OTHER": 0.45
+    },
+    "SALES": {
+      "MANAGEMENT": 0.65,
+      "INVESTMENT": 0.55,
+      "SALES": 0.5,
+      "ENGINEER": 0.4,
+      "MARKETING": 0.8,
+      "BUSINESS_DEV": 0.85,
+      "ADMIN": 0.35,
+      "OTHER": 0.45
+    },
+    "ENGINEER": {
+      "MANAGEMENT": 0.5,
+      "INVESTMENT": 0.5,
+      "SALES": 0.4,
+      "ENGINEER": 0.55,
+      "MARKETING": 0.4,
+      "BUSINESS_DEV": 0.45,
+      "ADMIN": 0.35,
+      "OTHER": 0.45
+    },
+    "MARKETING": {
+      "MANAGEMENT": 0.6,
+      "INVESTMENT": 0.5,
+      "SALES": 0.8,
+      "ENGINEER": 0.4,
+      "MARKETING": 0.5,
+      "BUSINESS_DEV": 0.75,
+      "ADMIN": 0.35,
+      "OTHER": 0.45
+    },
+    "BUSINESS_DEV": {
+      "MANAGEMENT": 0.7,
+      "INVESTMENT": 0.65,
+      "SALES": 0.85,
+      "ENGINEER": 0.45,
+      "MARKETING": 0.75,
+      "BUSINESS_DEV": 0.55,
+      "ADMIN": 0.4,
+      "OTHER": 0.5
+    },
+    "ADMIN": {
+      "MANAGEMENT": 0.4,
+      "INVESTMENT": 0.3,
+      "SALES": 0.35,
+      "ENGINEER": 0.35,
+      "MARKETING": 0.35,
+      "BUSINESS_DEV": 0.4,
+      "ADMIN": 0.45,
+      "OTHER": 0.4
+    },
+    "OTHER": {
+      "MANAGEMENT": 0.45,
+      "INVESTMENT": 0.45,
+      "SALES": 0.45,
+      "ENGINEER": 0.45,
+      "MARKETING": 0.45,
+      "BUSINESS_DEV": 0.5,
+      "ADMIN": 0.4,
+      "OTHER": 0.45
+    }
+  },
+  "positionOrdinals": {
+    "FOUNDER": 7,
+    "PARTNER": 6,
+    "GENERAL_MANAGER": 5,
+    "VP": 4,
+    "DIRECTOR": 3,
+    "MANAGER": 2,
+    "OTHER": 1
+  },
+  "industryConfig": {
+    "sameL1Score": 0.6,
+    "sameL2Bonus": 0.35,
+    "crossIndustryBridgeBonus": 0.15
+  },
+  "recencyConfig": {
+    "freshDays": 30,
+    "staleDays": 180,
+    "minScore": 0.2
+  },
+  "universeConfig": {
+    "enableDynamicEdges": true,
+    "edgeThreshold": 0.16,
+    "aggregationMode": "avg",
+    "intraCompanyBoost": 0.18
+  }
+}

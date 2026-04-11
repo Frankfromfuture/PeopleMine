@@ -1,0 +1,395 @@
+// PeopleMine 人迈 — 人脉管理工具
+// Web Demo 1.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── 用户与认证 ────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String?
+  image     String?
+  industry  String?  // 行业标签库 JSON
+  role      String?
+  goal      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 「我」的个人档案
+  selfTags        String?  // JSON array
+  selfCompany     String?
+  selfTitle       String?
+  selfJobPosition String?
+  selfSpiritAnimal String?
+  selfBio         String?
+
+  contacts  Contact[]
+  journeys  Journey[]
+  companies Company[]
+}
+
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
+}
+
+// ─── 核心业务模型 ──────────────────────────────────────────
+
+model Contact {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 人脉信息
+  name            String
+  fullName        String?
+  gender          Gender?
+  age             Int?
+  city            String?
+  firstMetYear    Int?
+  personalRelation PersonalRelation?
+  reciprocityLevel Int?  // -2 to +2
+  friendLinks     String[] @default([])  // Contact IDs
+
+  // 企业信息
+  company         String?
+  companyName     String?
+  companyProfile  String?
+  companyScale    CompanyScaleNew?
+  industry        String?
+  industryL1      String?
+  industryL2      String?
+  title           String?
+  jobTitle        String?
+  jobPosition     JobPosition?
+  jobFunction     JobFunction?
+  influence       InfluenceLevel?
+
+  // XMINER 分析
+  networkingNeeds NetworkingNeed[] @default([])
+  spiritAnimal    SpiritAnimalNew?
+  roleArchetype   RoleArchetype?
+  chemistryScore  Int?  // 1-5
+  valueScore      ValueLevel?
+
+  // 备注
+  potentialProjects String?
+  socialPosition    String?
+  hobbies           String?
+  personalNotes     String?  // 毕业学校、家庭情况等
+  notes             String?
+
+  // 其他信息
+  wechat          String?
+  phone           String?
+  email           String?
+  companyAddress  String?
+  personalAddress String?
+
+  // 旧字段（兼容）
+  relationRole         RelationRole?
+  tags                 String?
+  tagV2                Json?
+  tier1CompanySize     Tier1CompanySize?
+  tier1CompanyStage    Tier1CompanyStage?
+  tier1CompanyWebsite  String?
+  tier1CompanyAiConfidence Float?
+  tier1CompanyAiSource String?
+  personalityType      PersonalityType?
+  personalityLabel     String?
+  valueReason          String?
+  noteSummary          String?
+  circles              String[] @default([])
+  interests            String[] @default([])
+  careTopics           String[] @default([])
+  potentialProjectsArray String[] @default([])
+  trustLevel           Int?
+  temperature          Temperature?
+  energyScore          Int @default(50)
+  quickContext         Json?
+  relationVector       Json?
+  archetype            String?
+  lastContactedAt      DateTime?
+  companyId            String?
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedCompany Company?          @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  interactions  Interaction[]
+  relationsA    ContactRelation[] @relation("ContactA")
+  relationsB    ContactRelation[] @relation("ContactB")
+
+  @@index([userId])
+  @@index([userId, relationRole])
+  @@index([userId, spiritAnimal])
+  @@index([companyId])
+}
+
+model ContactRelation {
+  id           String  @id @default(cuid())
+  contactIdA   String
+  contactIdB   String
+  relationDesc String?
+  createdAt    DateTime @default(now())
+
+  contactA Contact @relation("ContactA", fields: [contactIdA], references: [id], onDelete: Cascade)
+  contactB Contact @relation("ContactB", fields: [contactIdB], references: [id], onDelete: Cascade)
+
+  @@unique([contactIdA, contactIdB])
+  @@index([contactIdA])
+  @@index([contactIdB])
+}
+
+model Interaction {
+  id        String          @id @default(cuid())
+  contactId String
+  type      InteractionType
+  content   String
+  date      DateTime        @default(now())
+  createdAt DateTime        @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+  @@index([date])
+}
+
+// ─── 企业模型 ──────────────────────────────────────────────
+
+model Company {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name         String        // 公司名称（必填）
+  mainBusiness String?       // 主营业务
+  website      String?       // 官网
+  scale        CompanyScale? // 规模枚举
+  industry     String?       // 行业（字符串）
+  tags         String?       // JSON string[] 行业标签
+  tagV2        Json?         // V2 自定义标签结构
+
+  // 资本与生态
+  founderName      String?  // 创始人姓名（手动）
+  founderContactId String?  // 关联人物标签 ID
+  investors        String?  // JSON string[] 投资机构
+  upstreams        String?  // JSON string[] 上游公司
+  downstreams      String?  // JSON string[] 下游公司
+
+  // 评估维度
+  familiarityLevel Int?         // 熟悉程度 1-5
+  temperature      Temperature?
+  energyScore      Int          @default(50)
+
+  notes String?
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts        Contact[]        // 该公司下的联系人
+  relationsA      CompanyRelation[] @relation("CompanyA")
+  relationsB      CompanyRelation[] @relation("CompanyB")
+
+  @@index([userId])
+  @@index([userId, scale])
+}
+
+model CompanyRelation {
+  id           String  @id @default(cuid())
+  companyIdA   String
+  companyIdB   String
+  relationDesc String? // 合作伙伴/上下游/竞争对手/投融资…
+  createdAt    DateTime @default(now())
+
+  companyA Company @relation("CompanyA", fields: [companyIdA], references: [id], onDelete: Cascade)
+  companyB Company @relation("CompanyB", fields: [companyIdB], references: [id], onDelete: Cascade)
+
+  @@unique([companyIdA, companyIdB])
+  @@index([companyIdA])
+  @@index([companyIdB])
+}
+
+model Journey {
+  id         String   @id @default(cuid())
+  userId     String
+  goal       String
+  aiAnalysis String?
+  pathData   Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── 枚举 ──────────────────────────────────────────────────
+
+enum SpiritAnimal {
+  LION
+  FOX
+  BEAR
+  CHAMELEON
+  EAGLE
+  DOLPHIN
+  OWL
+  SKUNK
+}
+
+enum RelationRole {
+  BIG_INVESTOR
+  GATEWAY
+  ADVISOR
+  THERMOMETER
+  LIGHTHOUSE
+  COMRADE
+}
+
+enum Temperature {
+  COLD
+  WARM
+  HOT
+}
+
+enum NetworkingNeed {
+  BUSINESS_EXPANSION
+  INTRODUCTIONS
+  FRIENDSHIP
+  SOCIAL
+  CASUAL_CHAT
+}
+
+enum PersonalityType {
+  INTJ
+  INTP
+  ENTJ
+  ENTP
+  INFJ
+  INFP
+  ENFJ
+  ENFP
+  ISTJ
+  ISFJ
+  ESTJ
+  ESFJ
+  ISTP
+  ISFP
+  ESTP
+  ESFP
+  OTHER
+}
+
+enum Tier1CompanySize {
+  SOLO
+  MICRO
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum Tier1CompanyStage {
+  IDEA
+  EARLY
+  GROWTH
+  MATURE
+  PUBLIC
+}
+
+enum InteractionType {
+  MEETING
+  CALL
+  EMAIL
+  MESSAGE
+  EVENT
+  OTHER
+}
+
+enum CompanyScale {
+  STARTUP   // 初创（<50人）
+  SME       // 中小型（50-300人）
+  MID       // 中型（300-1000人）
+  LARGE     // 大型（1000+）
+  LISTED    // 上市公司
+}
+
+// 新字段枚举
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum PersonalRelation {
+  INTIMATE      // 亲密
+  FAMILIAR      // 熟悉
+  NORMAL        // 普通
+  ACQUAINTANCE  // 一面之缘
+}
+
+enum CompanyScaleNew {
+  MILLION       // 百万级
+  TEN_MILLION   // 千万级
+  HUNDRED_MILLION // 亿级
+  BILLION       // 十亿级
+  TEN_BILLION   // 百亿级
+}
+
+enum JobPosition {
+  FOUNDER
+  PARTNER
+  GENERAL_MANAGER
+  VP
+  DIRECTOR
+  MANAGER
+  OTHER
+}
+
+enum JobFunction {
+  MANAGEMENT
+  INVESTMENT
+  SALES
+  ENGINEER
+  MARKETING
+  BUSINESS_DEV
+  ADMIN
+  OTHER
+}
+
+enum InfluenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum SpiritAnimalNew {
+  TIGER     // 老虎
+  PEACOCK   // 孔雀
+  OWL       // 猫头鹰
+  KOALA     // 考拉
+}
+
+enum RoleArchetype {
+  BREAKER    // 破局者
+  EVANGELIST // 布道者
+  ANALYST    // 分析师
+  BINDER     // 粘合剂
+}
+
+enum ValueLevel {
+  LOW
+  MEDIUM
+  HIGH
+  EXTREME
+}

@@ -1,0 +1,40 @@
+
+> peoplemine@0.7.3 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 5.6s
+ ○ Compiling /src/middleware ...
+ GET /contacts/new 200 in 9513ms
+ GET /contacts/new 200 in 334ms
+ GET /favicon.ico 200 in 525ms
+ GET /api/network 200 in 502ms
+ GET /api/network 200 in 31ms
+ POST /api/contacts 201 in 507ms
+ GET /api/table-views?table=contacts 200 in 275ms
+ GET /api/table-views?table=contacts 200 in 43ms
+ GET /contacts/new 200 in 204ms
+ GET /contacts/new 200 in 85ms
+ GET /favicon.ico 200 in 414ms
+ GET /contacts/new 500 in 42ms
+ GET /_next/static/webpack/d72fbea1e7f46ef7.webpack.hot-update.json 500 in 986ms
+ GET /contacts/new 500 in 27ms
+ GET /_next/static/webpack/d72fbea1e7f46ef7.webpack.hot-update.json 500 in 531ms
+ GET /favicon.ico 500 in 565ms
+ GET /contacts/new 500 in 22ms
+ GET /favicon.ico 500 in 16ms
+ GET /contacts/new 500 in 199ms
+ GET /_next/static/webpack/d72fbea1e7f46ef7.webpack.hot-update.json 404 in 1641ms
+ GET /favicon.ico 200 in 28ms
+ GET /contacts/new 200 in 365ms
+ GET /favicon.ico 200 in 21ms
+ GET /api/table-views?table=contacts 200 in 509ms
+ GET /api/table-views?table=contacts 200 in 42ms
+ GET /api/network 200 in 396ms
+ GET /api/network 200 in 42ms
+ GET /contacts/new 200 in 194ms
+ GET /favicon.ico 200 in 252ms

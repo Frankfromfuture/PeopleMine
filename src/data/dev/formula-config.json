@@ -1,0 +1,66 @@
+{
+  "journeyWeights": {
+    "relevance": 0.45,
+    "accessibility": 0.35,
+    "centrality": 0.20
+  },
+  "relevanceWeights": {
+    "keyword": 0.60,
+    "roleAffinity": 0.40
+  },
+  "tempMultipliers": {
+    "HOT": 1.2,
+    "WARM": 1.0,
+    "COLD": 0.6,
+    "DEFAULT": 0.8
+  },
+  "recencyDecay": {
+    "warmupDays": 30,
+    "maxDays": 180,
+    "minDecay": 0.5
+  },
+  "journeyExpr": "relevance * w_relevance + accessibility * w_accessibility + centrality * w_centrality",
+  "relevanceExpr": "keyword * w_keyword + roleAffinity * w_role",
+  "accessibilityExpr": "Math.min(1, (energy / 100) * tempMult * trustMult * recencyDecay)",
+  "roleAffinityMatrix": {
+    "introduction": {
+      "BREAKER": 0.4,
+      "EVANGELIST": 1.0,
+      "ANALYST": 0.3,
+      "BINDER": 0.5
+    },
+    "resource": {
+      "BREAKER": 1.0,
+      "EVANGELIST": 0.7,
+      "ANALYST": 0.5,
+      "BINDER": 0.3
+    },
+    "advice": {
+      "BREAKER": 0.3,
+      "EVANGELIST": 0.4,
+      "ANALYST": 1.0,
+      "BINDER": 0.5
+    },
+    "collaboration": {
+      "BREAKER": 0.4,
+      "EVANGELIST": 0.5,
+      "ANALYST": 0.4,
+      "BINDER": 1.0
+    },
+    "information": {
+      "BREAKER": 0.5,
+      "EVANGELIST": 0.6,
+      "ANALYST": 0.9,
+      "BINDER": 0.5
+    }
+  },
+  "inferLinksWeights": {
+    "roleComplement": 0.6,
+    "tagOverlap": 0.3,
+    "temperatureBonus": 0.1,
+    "energyFactorMin": 0.6,
+    "strengthThreshold": 0.25,
+    "maxDegree": 5
+  },
+  "conditions": []
+}
