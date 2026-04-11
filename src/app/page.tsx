@@ -12,12 +12,12 @@ const PRINCIPLES = [
   {
     index: "01",
     title: "把人脉沉淀成结构化网络",
-    body: "把联系人、公司、标签、关系阶段和关键备注放进同一张图里，让人脉不再只是散落的记录。",
+    body: "把联系人、公司、标签、关系阶段和关键备注放进同一张图里，让人脉不再只是零散的记录。",
   },
   {
     index: "02",
     title: "让关系经营变成持续动作",
-    body: "看见谁正在降温，谁值得优先跟进，谁需要重新连接，把关系维护从想起来再做变成稳定节奏。",
+    body: "看见谁正在降温、谁值得优先跟进、谁需要重新连接，把关系维护从想起来再做变成稳定节奏。",
   },
   {
     index: "03",
@@ -43,34 +43,39 @@ const WORKFLOW = [
     detail: "把该联系谁、什么时候联系、还缺什么节点整理成可执行路径，而不是停留在模糊判断里。",
   },
 ]
-
 function Hero() {
   return (
-    <section className="relative min-h-[100svh] overflow-hidden bg-[#FCFCFC] pt-[clamp(78px,9vw,118px)] text-[#111]">
+    <section className="relative min-h-[100svh] overflow-hidden bg-[#FCFCFC] pt-[96px] text-[#111] sm:pt-[clamp(74px,9vw,118px)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(128%_88%_at_12%_-10%,#F4F4F4_0%,#FCFCFC_56%,#E5E5E5_100%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(78%_58%_at_36%_102%,rgba(229,229,229,0.95)_0%,rgba(229,229,229,0.68)_38%,rgba(252,252,252,0)_72%)]" />
-      <div className="pointer-events-none absolute inset-y-[-12%] right-[-12%] hidden w-[74vw] min-w-[860px] lg:block">
-        <AsciiUniverseCanvas variant="light" quality="desktop" className="opacity-[0.38] mix-blend-multiply" />
+      <div className="pointer-events-none absolute inset-0">
+        <AsciiUniverseCanvas
+          variant="light"
+          quality="auto"
+          maxDpr={1.5}
+          lightDesktopRadiusScale={0.67}
+          lightMobileRadiusScale={1.3}
+          lightMobileCharScale={0.7}
+          className="translate-y-[8%] opacity-[0.18] sm:translate-y-0"
+        />
       </div>
-      <div className="pointer-events-none absolute right-[-34%] top-[6%] h-[48vh] w-[95vw] sm:hidden">
-        <AsciiUniverseCanvas variant="light" quality="mobile" className="opacity-[0.34] mix-blend-multiply" />
-      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(92%_66%_at_42%_38%,rgba(243,243,243,0.12)_0%,rgba(252,252,252,0.82)_70%,rgba(252,252,252,0.96)_100%)]" />
 
       <div
-        className={`relative flex min-h-[calc(100svh-5.5rem)] w-full items-center pb-[clamp(48px,6vw,80px)] ${PAGE_GUTTER_CLASS}`}
+        className={`relative flex min-h-[calc(100svh-6.5rem)] w-full items-center pb-[88px] sm:min-h-[calc(100svh-5.5rem)] sm:pb-[clamp(48px,6vw,80px)] ${PAGE_GUTTER_CLASS}`}
       >
-        <div className="grid w-full gap-[clamp(24px,4vw,56px)] xl:grid-cols-[minmax(560px,48vw)_minmax(320px,1fr)] xl:items-center">
-          <div className="flex max-w-[min(760px,92vw)] flex-col justify-center gap-[clamp(18px,2.8vh,30px)] py-[clamp(8px,2vh,24px)]">
+        <div className="grid w-full gap-10 sm:gap-[clamp(20px,4vw,56px)] xl:grid-cols-[minmax(560px,48vw)_minmax(320px,1fr)] xl:items-center">
+          <div className="flex max-w-[min(760px,100vw)] flex-col justify-center gap-8 py-8 sm:gap-[clamp(16px,2.8vh,30px)] sm:py-[clamp(8px,2vh,24px)]">
             <div
               className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-[clamp(8px,1vw,12px)] py-[clamp(4px,0.55vw,6px)] text-[clamp(9px,0.72vw,11px)] leading-none text-[#585858]"
               style={{ fontFamily: FONT_MONO, letterSpacing: "0.18em", textTransform: "uppercase" }}
             >
               <span className="inline-block h-[5px] w-[5px] animate-pulse rounded-full bg-[#2AA952] shadow-[0_0_0_3px_rgba(42,169,82,0.16)]" />
-              Powered by XMiner AI Platfrom
+              Powered by XMiner AI Platform
             </div>
 
-            <div className="space-y-[clamp(14px,2vh,24px)]">
-              <div className="space-y-[clamp(10px,1.6vh,18px)]">
+            <div className="space-y-6 sm:space-y-[clamp(14px,2vh,24px)]">
+              <div className="space-y-4 sm:space-y-[clamp(10px,1.6vh,18px)]">
                 <p
                   className="text-[clamp(11px,1.1vw,13px)] text-[#6e6e6e]"
                   style={{ fontFamily: FONT_MONO, letterSpacing: "0.24em", textTransform: "uppercase" }}
@@ -78,38 +83,29 @@ function Hero() {
                   PeopleMine
                 </p>
                 <h1
-                  className="max-w-[12.5ch] text-[clamp(34px,6.6vw,82px)] font-semibold leading-[1.02] tracking-[-0.05em] text-[#161616]"
+                  className="max-w-[10.8ch] text-[clamp(42px,14vw,62px)] font-semibold leading-[1.08] tracking-[-0.04em] text-[#161616] [text-wrap:balance] sm:max-w-none sm:text-[clamp(30px,10vw,82px)] sm:leading-[1.03] sm:tracking-[-0.05em]"
                   style={{ fontFamily: FONT_SANS }}
                 >
-                  把人脉经营成
-                  <br />
-                  <span className="whitespace-nowrap">可导航的资产宇宙</span>
+                  <span className="sm:block sm:whitespace-nowrap">每天10分钟</span>
+                  <span className="sm:block sm:whitespace-nowrap">将你的人脉变为长期资产</span>
                 </h1>
               </div>
 
               <p
-                className="max-w-[40rem] text-[clamp(14px,1.5vw,18px)] leading-[1.9] text-[#4f4f4f]"
+                className="mt-3 max-w-[34rem] text-[15px] leading-[1.95] text-[#4f4f4f] sm:mt-0 sm:max-w-[40rem] sm:text-[clamp(14px,1.5vw,18px)] sm:leading-[1.9]"
                 style={{ fontFamily: FONT_SANS }}
               >
-                PeopleMine 把联系人、公司、目标与关系状态组织成一张可以持续经营的网络图谱。
-                你不必再靠记忆管理关系，而是能更清楚地知道谁值得跟进、谁正在降温、下一步该连接谁。
+                通过创新的录入与整理方式，PeopleMine会神奇地将你的人脉变成你的专属资源宇宙。你以后不必再靠记忆，专属的XMiner_AI平台会帮助你整理、跟进与分析人脉资源，制定路径实现目标。
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <Link
                 href="/login"
                 className="inline-flex h-[clamp(50px,5.2vw,64px)] items-center justify-center rounded-full border border-[#A04F47]/18 bg-[#A04F47] px-[clamp(24px,2.5vw,42px)] text-[clamp(15px,1.45vw,18px)] font-semibold text-white shadow-[0_14px_34px_rgba(160,79,71,0.16)] transition duration-300 hover:-translate-y-0.5 hover:border-[#8f443d] hover:bg-[#96463f] hover:shadow-[0_18px_38px_rgba(160,79,71,0.18)] active:translate-y-0"
                 style={{ fontFamily: FONT_SANS }}
               >
                 开始使用
-              </Link>
-              <Link
-                href="/product"
-                className="inline-flex h-[clamp(50px,5.2vw,64px)] items-center justify-center rounded-full border border-black/12 bg-white/72 px-[clamp(24px,2.5vw,42px)] text-[clamp(15px,1.45vw,18px)] font-semibold text-[#2f2f2f] shadow-[0_12px_28px_rgba(0,0,0,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-black/18 hover:bg-white hover:text-[#1f1f1f] hover:shadow-[0_16px_32px_rgba(0,0,0,0.06)] active:translate-y-0"
-                style={{ fontFamily: FONT_SANS }}
-              >
-                查看产品
               </Link>
             </div>
           </div>
@@ -131,8 +127,7 @@ function Hero() {
                 className="max-w-[18rem] text-[14px] leading-7 text-[#575757]"
                 style={{ fontFamily: FONT_SANS }}
               >
-                右侧背景球并不是装饰噪点，而是在表达 PeopleMine 的视角:
-                人脉是一张会变化、会连接、也能被重新点亮的关系网络。
+                右侧背景球并不是装饰噪点，而是在表达 PeopleMine 的视觉隐喻：人脉是一张会变化、会连接、也能被重新点亮的关系网络。
               </p>
             </div>
           </div>
@@ -175,8 +170,7 @@ function Principles() {
             className="max-w-[32rem] text-[14px] leading-7 text-[#9e9e9e] sm:text-[15px]"
             style={{ fontFamily: FONT_SANS }}
           >
-            PeopleMine 不是帮你多记几条备注，而是把联系人、公司、目标、热度和连接路径放到同一个系统里，
-            让你能持续看见关系变化，也能更主动地经营关键节点。
+            PeopleMine 不是帮你多记几条备注，而是把联系人、公司、目标、热度和连接路径放到同一个系统里，让你能持续看见关系变化，也能更主动地经营关键节点。
           </p>
         </div>
 
@@ -298,8 +292,7 @@ function UniverseBand() {
             className="mt-5 max-w-[34rem] text-[14px] leading-8 text-[#b3b3b3] sm:text-[15px]"
             style={{ fontFamily: FONT_SANS }}
           >
-            当图谱被持续更新后，ASCII 球就像一幅抽象的关系星图:
-            节点会连接、路径会变化，而你的目标，也能被拆解成一条更可执行的到达路线。
+            当人脉资产持续更新，你的人脉将会神奇的变为关系星图与资源宇宙：节点会连接、路径会变化、隐性关系被挖掘，而你的目标也将被拆解成一条更可执行的到达路线。
           </p>
         </div>
       </div>
@@ -329,8 +322,7 @@ function FinalCta() {
           className="mx-auto mt-5 max-w-[34rem] text-[15px] leading-8 text-[#9f9f9f]"
           style={{ fontFamily: FONT_SANS }}
         >
-          不论你是在整理现有关系、准备做高质量拓展，还是想围绕一个具体目标找路径，
-          PeopleMine 都会先帮你把网络看清，再帮你决定下一步。
+          不论你是在整理现有关系、准备做高质量拓展，还是想围绕一个具体目标找路径，PeopleMine 都会先帮你把网络看清，再帮你决定下一步。
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -340,13 +332,6 @@ function FinalCta() {
             style={{ fontFamily: FONT_SANS }}
           >
             开始建立我的图谱
-          </Link>
-          <Link
-            href="/product"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-white/12 px-7 text-[13px] font-medium text-[#d0d0d0] transition hover:border-white/22 hover:text-white"
-            style={{ fontFamily: FONT_SANS }}
-          >
-            先看看产品
           </Link>
         </div>
       </div>
@@ -382,3 +367,4 @@ export default function LandingPage() {
     </div>
   )
 }
+

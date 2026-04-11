@@ -89,6 +89,16 @@ const RESIZE_HANDLES: Array<{ handle: ResizeHandle; className: string }> = [
   { handle: "se", className: "bottom-[-6px] right-[-6px] h-3 w-3 cursor-nwse-resize" },
 ]
 
+const MOBILE_WIDGET_ORDER: Array<{ id: WidgetId; className: string }> = [
+  { id: "today", className: "h-[216px]" },
+  { id: "ai", className: "h-[336px]" },
+  { id: "st1", className: "h-[172px]" },
+  { id: "contrib", className: "h-[248px]" },
+  { id: "st3", className: "h-[296px]" },
+  { id: "trend", className: "h-[284px]" },
+  { id: "traits", className: "h-[318px]" },
+]
+
 function cloneLayout(layout: WidgetPlacement[]) {
   return layout.map((item) => ({ ...item }))
 }
@@ -225,6 +235,7 @@ export function DraggableCanvas() {
   const [interaction, setInteraction] = useState<ActiveInteraction | null>(null)
   const [draftRect, setDraftRect] = useState<DraftRect | null>(null)
   const [ghostItem, setGhostItem] = useState<WidgetPlacement | null>(null)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const layoutRef = useRef(layout)
@@ -265,6 +276,18 @@ export function DraggableCanvas() {
     if (containerRef.current) observer.observe(containerRef.current)
 
     return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 1023px)")
+    const apply = () => setIsMobileViewport(media.matches)
+    apply()
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", apply)
+      return () => media.removeEventListener("change", apply)
+    }
+    media.addListener(apply)
+    return () => media.removeListener(apply)
   }, [])
 
   useEffect(() => {
@@ -486,6 +509,18 @@ export function DraggableCanvas() {
     : layout
   const totalRows = Math.max(...itemsForHeight.map((item) => item.y + item.h))
   const canvasHeight = totalRows * ROW_H + (totalRows - 1) * GAP + GAP * 2
+
+  if (isMobileViewport) {
+    return (
+      <div className="flex min-w-0 flex-col gap-1">
+        {MOBILE_WIDGET_ORDER.map((item) => (
+          <section key={`mobile-${item.id}`} className={item.className}>
+            <WidgetContent id={item.id} stats={stats} />
+          </section>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div

@@ -157,9 +157,9 @@ const JOB_FUNCTION_OPTIONS: Array<{ value: JobFunction; label: string }> = [
   { value: 'OTHER', label: '其他' },
 ]
 const INFLUENCE_OPTIONS: Array<{ value: InfluenceLevel; label: string }> = [
-  { value: 'LOW', label: '低影响力' },
-  { value: 'MEDIUM', label: '中影响力' },
-  { value: 'HIGH', label: '高影响力' },
+  { value: 'LOW', label: '低' },
+  { value: 'MEDIUM', label: '中' },
+  { value: 'HIGH', label: '高' },
 ]
 const ROLE_OPTIONS: Array<{ value: RoleArchetype; label: string; desc: string }> = [
   { value: 'BREAKER', label: '破局者', desc: '能打开局面，适合带来关键突破。' },
@@ -278,7 +278,7 @@ function IconChoiceGrid<T extends string>({
             >
               <Icon className="h-[14px] w-[14px]" />
             </span>
-            <span className="text-xs font-medium leading-4">{option.label}</span>
+            <span className="text-[11px] font-medium leading-4">{option.label}</span>
           </button>
         )
       })}
@@ -900,7 +900,7 @@ export default function NewContactForm({
                     <div className="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_auto_auto] sm:items-end">
                       <div>
                         <FieldLabel>城市</FieldLabel>
-                        <TextInput value={city} onChange={(event) => setCity(event.target.value)} placeholder="例如：深圳" />
+                        <TextInput value={city} onChange={(event) => setCity(event.target.value)} />
                       </div>
                       <div>
                         <FieldLabel>性别</FieldLabel>

@@ -34,7 +34,7 @@ export default function PageShell({
 
   return (
     <div className={`min-h-full bg-[#f6f6f4] ${className}`.trim()} style={style}>
-      <div className="flex min-h-screen w-full min-w-0 flex-col px-6 py-4 lg:px-8">
+      <div className="flex min-h-screen w-full min-w-0 flex-col px-4 py-3 sm:px-5 sm:py-4 lg:px-8">
         <PageHeader
           items={items}
           title={title}

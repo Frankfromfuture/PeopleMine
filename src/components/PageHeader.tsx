@@ -57,9 +57,9 @@ export default function PageHeader({
   const resolvedSummary = undefined
 
   return (
-    <div className={`flex items-start justify-between gap-4 pb-4 lg:pb-5 ${className}`.trim()}>
+    <div className={`flex flex-col gap-3 pb-4 sm:flex-row sm:items-start sm:justify-between lg:pb-5 ${className}`.trim()}>
       <div className="min-w-0">
-        <div className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">
+        <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 sm:text-[11px] sm:tracking-[0.24em]">
           {items.map((item, index) => (
             <span key={`${item.label}-${index}`}>
               {item.href ? (
@@ -73,16 +73,18 @@ export default function PageHeader({
             </span>
           ))}
         </div>
-        <div className="mt-2.5">
+        <div className="mt-2">
           <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-            <h1 className="text-[32px] font-semibold tracking-tight text-gray-900">{title}</h1>
+            <h1 className="text-[24px] font-semibold tracking-tight text-gray-900 sm:text-[32px]">{title}</h1>
             {resolvedTitleNote ? <div className="pb-1">{resolvedTitleNote}</div> : null}
           </div>
           {resolvedSummary ? <p className="mt-1.5 max-w-3xl text-sm leading-6 text-gray-500">{resolvedSummary}</p> : null}
         </div>
         {actions ? <div className="mt-4 flex flex-wrap items-center gap-3">{actions}</div> : null}
       </div>
-      <HintBadge items={hints} />
+      <div className="hidden sm:block">
+        <HintBadge items={hints} />
+      </div>
     </div>
   )
 }

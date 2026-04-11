@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:encoding:dashboard && npm run prisma:generate && next build",
+    "build": "npm run check:encoding:dashboard && npm run check:encoding:landing && npm run prisma:generate && next build",
     "start": "next start",
     "check:encoding:dashboard": "node scripts/check-dashboard-encoding.mjs",
-    "lint": "npm run check:encoding:dashboard && next lint",
+    "check:encoding:landing": "node scripts/check-landing-encoding.mjs",
+    "lint": "npm run check:encoding:dashboard && npm run check:encoding:landing && next lint",
     "postinstall": "npm run prisma:generate",
     "prisma:generate": "prisma generate",
     "test": "npm run lint && npm run build && npm run test:report",

@@ -5,7 +5,6 @@ import { sessionOptions, SessionData } from "@/lib/session"
 const PUBLIC_PATHS = [
   "/",
   "/login",
-  "/product",
   "/pricing",
   "/solutions",
   "/api/auth/send-otp",
@@ -41,4 +40,3 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }
-

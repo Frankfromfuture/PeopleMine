@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   const today    = getToday()
 
   return (
-    <div className="min-h-full bg-[#f6f6f4] px-8 py-6 lg:px-10 lg:py-8">
+    <div className="min-h-full bg-[#f6f6f4] px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-8">
       {/* DB error banner */}
       {dbError && (
         <div className="mb-4 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">

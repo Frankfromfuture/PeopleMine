@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLoading } from '@/components/ThinkingToast'
-import LottieLoader from '@/components/LottieLoader'
 import PageHeader from '@/components/PageHeader'
 import PeopleUniverseView from './PeopleUniverseView'
 import { NetworkContact, NetworkRelation } from './JourneyGraph'
@@ -575,7 +574,7 @@ export default function JourneyPage() {
       return (
         <div className="flex h-full items-center justify-center">
           <div className="text-center">
-            <LottieLoader className="mx-auto mb-3 h-20 w-20" />
+            <div className="mx-auto mb-3 h-16 w-16 animate-spin rounded-full border-2 border-gray-200 border-t-gray-500" />
             <p className="text-sm font-medium text-gray-700">正在加载人脉宇宙</p>
             <p className="mt-1 text-xs text-gray-500">读取联系人与关系链数据中</p>
           </div>

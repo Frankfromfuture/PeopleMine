@@ -2,7 +2,6 @@ import Link from "next/link"
 import { ReactNode } from "react"
 
 const NAV = [
-  { href: "/product", label: "产品" },
   { href: "/solutions", label: "解决方案" },
   { href: "/pricing", label: "定价" },
 ]

@@ -19,18 +19,16 @@ export default function DashboardClient({
 
   return (
     <>
-      <section className="mb-4 flex flex-col gap-5 pb-1 pt-1 xl:flex-row xl:items-end xl:justify-between">
-        <div className="space-y-2">
-          <h1 className="text-[30px] font-bold tracking-tight text-gray-900 sm:text-[35px]">
-            {`${greeting}，${name}`}
-          </h1>
-          <p className="text-[13px] italic text-gray-500 sm:text-[14px]">{today}</p>
+      <section className="mb-3 flex flex-col gap-4 pb-1 pt-1 xl:mb-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="text-[24px] font-bold tracking-tight text-gray-900 sm:text-[35px]">{`${greeting}，${name}`}</h1>
+          <p className="text-[12px] italic text-gray-500 sm:text-[14px]">{today}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 pb-1">
+        <div className="hidden flex-wrap items-center gap-3 pb-1 md:flex">
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-500 shadow-sm">
             <MoveDiagonal size={12} />
-            <span>空白处拖拽，边框缩放</span>
+            <span>空白处拖拽，边框可缩放</span>
           </div>
 
           <button
@@ -42,7 +40,7 @@ export default function DashboardClient({
         </div>
       </section>
 
-      <div className="mt-4 sm:mt-5">
+      <div className="mt-3 sm:mt-5">
         <DraggableCanvas />
       </div>
 

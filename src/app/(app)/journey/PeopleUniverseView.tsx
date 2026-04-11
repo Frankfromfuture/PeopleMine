@@ -202,7 +202,7 @@ function NodeCard({ node, meta, wx, wy }: { node: SphereNode; meta: PersonMeta; 
           <span style={{ fontSize:12, color:'#333' }}>{node.degree}</span>
         </div>
       </div>
-    </div>
+  </div>
   )
 }
 
@@ -241,6 +241,7 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
   const [hovered, setHovered]     = useState<{ node:SphereNode; meta:PersonMeta; wx:number; wy:number } | null>(null)
   const [activeView, setActiveView] = useState<string | null>(null)
   const [zoom, setZoom]           = useState(1.04)
+  const [showOverlays, setShowOverlays] = useState(false)
   // Entrance explosion progress: 0 → 1, driven by RAF loop
   const entranceRef = useRef({ progress: 0, done: false })
 
@@ -864,6 +865,19 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
       {/* Hovered node card */}
       {hovered && <NodeCard node={hovered.node} meta={hovered.meta} wx={hovered.wx} wy={hovered.wy} />}
 
+      <button
+        type="button"
+        onClick={() => setShowOverlays((prev) => !prev)}
+        aria-label={showOverlays ? '隐藏图示' : '显示图示'}
+        className="absolute left-5 top-5 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/15 bg-white/80 text-[#333] shadow-[0_2px_8px_rgba(0,0,0,0.08)] backdrop-blur transition hover:bg-white"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      {showOverlays ? (
+        <>
       {/* Stats */}
       <div className="absolute top-8 right-10 pointer-events-none select-none text-right">
         <div style={{ fontSize:10, color:'#999', letterSpacing:'0.18em', marginBottom:10 }}>总览</div>
@@ -976,6 +990,8 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
       >
         Xminer 智能社交关系网络图
       </div>
+        </>
+      ) : null}
     </div>
   )
 }

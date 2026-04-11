@@ -14,8 +14,6 @@ const COPY = {
   backHome: '返回首页',
   signIn: 'Sign In',
   loginTitle: '登录 PeopleMine',
-  loginBody:
-    '用手机号验证码进入你的关系工作台，继续整理联系人，经营关键关系，并围绕目标推进下一步。',
   phone: '手机号',
   phonePlaceholder: '输入中国大陆手机号',
   code: '验证码',
@@ -30,8 +28,6 @@ const COPY = {
     '验证码有效期 5 分钟，发送后请尽快完成验证。',
   workspaceLabel: 'Relationship Workspace',
   workspaceTitle: 'Xminer_AI 人脉资产管理与分析系统',
-  workspaceBody:
-    '登录后你会回到同一套工作台：dashboard 看状态，contacts 管理关系，journey 围绕目标找路径。',
   badgeAuthTitle: '验证码登录',
   badgeAuthBody:
     '用手机号进入，不需要记忆额外密码，适合快速回到你的关系工作流。',
@@ -291,23 +287,26 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#f6f1ea] text-[#1d1b18]" style={{ fontFamily: FONT_SANS }}>
+    <div className="min-h-[100dvh] overflow-x-hidden bg-[#f6f1ea] text-[#1d1b18]" style={{ fontFamily: FONT_SANS }}>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.84),transparent_24%),radial-gradient(circle_at_78%_24%,rgba(160,79,71,0.10),transparent_22%),linear-gradient(180deg,rgba(246,241,234,0.92)_0%,rgba(246,241,234,1)_100%)]" />
-      <div className="relative mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 pb-5 pt-4 sm:px-8 sm:pb-6 sm:pt-5 lg:px-10 lg:pb-8 lg:pt-6">
-        <header className="flex items-start justify-between gap-4">
+      <div
+        className="relative mx-auto flex min-h-[100dvh] max-w-[1500px] flex-col px-4 pt-4 sm:px-8 sm:pt-5 lg:px-10 lg:pt-6"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
+        <header className="flex items-center justify-between gap-3">
           <PeopleMineLogo />
           <Link
             href="/"
-            className="inline-flex h-10 items-center gap-2 rounded-full border border-black/10 bg-white/70 px-4 text-[13px] text-[#5f584f] transition hover:border-black/20 hover:text-[#1d1b18]"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3.5 text-[12px] text-[#5f584f] transition hover:border-black/20 hover:text-[#1d1b18] sm:h-10 sm:px-4 sm:text-[13px]"
           >
             <ArrowLeft className="h-4 w-4" />
             {COPY.backHome}
           </Link>
         </header>
 
-        <main className="flex flex-1 items-center py-4 sm:py-5 lg:py-6">
-          <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)] lg:gap-8">
-            <section className="relative overflow-hidden rounded-[28px] border border-black/8 bg-[rgba(255,255,255,0.78)] p-6 shadow-[0_18px_80px_rgba(40,24,16,0.08)] backdrop-blur-xl sm:p-7">
+        <main className="flex flex-1 items-start py-4 sm:items-center sm:py-5 lg:py-6">
+          <div className="grid w-full gap-4 sm:gap-6 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)] lg:gap-8">
+            <section className="relative overflow-hidden rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.78)] p-5 shadow-[0_18px_80px_rgba(40,24,16,0.08)] backdrop-blur-xl sm:rounded-[28px] sm:p-7">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#A04F47] via-[#c78982] to-transparent" />
 
               <div className="mb-6">
@@ -315,12 +314,9 @@ export default function LoginPage() {
                   <Sparkles className="h-3.5 w-3.5" />
                   {COPY.signIn}
                 </div>
-                <h1 className="mt-4 text-[30px] font-semibold leading-[1.06] tracking-[-0.05em] text-[#1d1b18] sm:text-[38px]">
+                <h1 className="mt-4 text-[26px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#1d1b18] sm:text-[38px]">
                   {COPY.loginTitle}
                 </h1>
-                <p className="mt-3 max-w-[30rem] text-[14px] leading-7 text-[#655d55] sm:text-[15px]">
-                  {COPY.loginBody}
-                </p>
               </div>
 
               <div className="space-y-4">
@@ -378,7 +374,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={step === 'phone' ? handleSendOtp : handleVerifyOtp}
                     disabled={isPending}
-                    className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#A04F47] px-5 text-[14px] font-medium text-white transition hover:bg-[#A04F47]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#A04F47] px-5 py-2.5 text-[14px] font-medium text-white transition hover:bg-[#A04F47]/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {step === 'phone' ? COPY.sendCode : COPY.verifyLogin}
                     <ArrowRight className="h-4 w-4" />
@@ -392,7 +388,7 @@ export default function LoginPage() {
                         setFeedback(null)
                       }}
                       disabled={isPending}
-                      className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 px-5 text-[14px] font-medium text-[#4c463f] transition hover:border-black/20 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center justify-center rounded-full border border-black/10 px-5 py-2.5 text-[14px] font-medium text-[#4c463f] transition hover:border-black/20 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {COPY.editPhone}
                     </button>
@@ -401,18 +397,15 @@ export default function LoginPage() {
               </div>
             </section>
 
-            <section className="flex flex-col justify-between rounded-[28px] border border-black/8 bg-[rgba(255,255,255,0.54)] p-6 shadow-[0_8px_40px_rgba(40,24,16,0.05)] backdrop-blur-sm sm:p-7">
+            <section className="flex flex-col justify-between rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.54)] p-5 shadow-[0_8px_40px_rgba(40,24,16,0.05)] backdrop-blur-sm sm:rounded-[28px] sm:p-7">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.28em] text-[#8a827a]">{COPY.workspaceLabel}</p>
-                <h2 className="mt-3 overflow-hidden text-ellipsis whitespace-nowrap text-[26px] font-semibold leading-[1.08] tracking-[-0.05em] text-[#1d1b18] sm:text-[32px] xl:text-[38px]">
+                <h2 className="mt-3 overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#1d1b18] sm:text-[32px] xl:text-[38px]">
                   {COPY.workspaceTitle}
                 </h2>
-                <p className="mt-3 max-w-[42rem] text-[14px] leading-7 text-[#6c645b] sm:text-[15px]">
-                  {COPY.workspaceBody}
-                </p>
               </div>
 
-              <div className="mt-5 grid gap-3 xl:grid-cols-1">
+              <div className="mt-5 hidden gap-3 sm:grid xl:grid-cols-1">
                 <InfoBadge
                   icon={<ShieldCheck className="h-5 w-5" />}
                   title={COPY.badgeAuthTitle}

@@ -63,6 +63,11 @@ type AsciiUniverseCanvasProps = {
   className?: string
   quality?: QualityMode
   variant?: VariantMode
+  maxDpr?: number
+  pausedWhenOffscreen?: boolean
+  lightDesktopRadiusScale?: number
+  lightMobileRadiusScale?: number
+  lightMobileCharScale?: number
 }
 
 function getLightPalette(depth: number) {
@@ -84,13 +89,23 @@ function resolveQualityMode(mode: QualityMode, width: number): ResolvedQuality {
 
 export default function AsciiUniverseCanvas({
   className = '',
-  quality = 'desktop',
+  quality = 'auto',
   variant = 'default',
+  maxDpr = 2,
+  pausedWhenOffscreen = true,
+  lightDesktopRadiusScale = 1,
+  lightMobileRadiusScale = 1,
+  lightMobileCharScale = 1,
 }: AsciiUniverseCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [resolvedQuality, setResolvedQuality] = useState<ResolvedQuality>(() =>
-    quality === 'mobile' ? 'mobile' : 'desktop'
-  )
+  const [resolvedQuality, setResolvedQuality] = useState<ResolvedQuality>(() => {
+    if (quality === 'mobile') return 'mobile'
+    if (quality === 'desktop') return 'desktop'
+    if (typeof window !== 'undefined') {
+      return resolveQualityMode('auto', window.innerWidth)
+    }
+    return 'desktop'
+  })
 
   useEffect(() => {
     if (quality !== 'auto') {
@@ -127,20 +142,24 @@ export default function AsciiUniverseCanvas({
     const latitudeLevels = isMobile ? MOBILE_LATITUDE_LEVELS : LATITUDE_LEVELS
     const latitudeSamples = isMobile ? 20 : 44
     const flowDots = FLOW_DOT_SEEDS.slice(0, isMobile ? 8 : 18).map((dot) => ({ ...dot }))
-    const baseRadius = isLight ? (isMobile ? 0.27 : 0.54) : 0.98
+    const lightRadius = isMobile
+      ? 0.27 * lightMobileRadiusScale
+      : 0.54 * lightDesktopRadiusScale
+    const baseRadius = isLight ? lightRadius : 0.98
     const centerY = isLight ? (isMobile ? 0.34 : 0.5) : 0.88
     const speedY = isMobile ? 0.0032 : 0.009
     const speedX = isMobile ? 0.0005 : 0.0015
-    const nodeFontScale = (isMobile ? 1.35 : 1.2) * CHAR_SCALE_MULTIPLIER
-    const edgeFontScale = (isMobile ? 1.35 : 1.2) * CHAR_SCALE_MULTIPLIER
-    const latitudeFontScale = (isMobile ? 1.35 : 1.2) * CHAR_SCALE_MULTIPLIER
-    const flowFontScale = (isMobile ? 1.2 : 1.1) * CHAR_SCALE_MULTIPLIER
+    const lightMobileCharMultiplier = isLight && isMobile ? lightMobileCharScale : 1
+    const nodeFontScale = (isMobile ? 1.35 : 1.2) * CHAR_SCALE_MULTIPLIER * lightMobileCharMultiplier
+    const edgeFontScale = (isMobile ? 1.35 : 1.2) * CHAR_SCALE_MULTIPLIER * lightMobileCharMultiplier
+    const latitudeFontScale = (isMobile ? 1.35 : 1.2) * CHAR_SCALE_MULTIPLIER * lightMobileCharMultiplier
+    const flowFontScale = (isMobile ? 1.2 : 1.1) * CHAR_SCALE_MULTIPLIER * lightMobileCharMultiplier
 
     type ProjectedNode = { px: number; py: number; depth: number; rz: number; index: number }
     const projected: ProjectedNode[] = []
 
     const resize = () => {
-      const ratio = window.devicePixelRatio || 1
+      const ratio = Math.min(window.devicePixelRatio || 1, maxDpr)
       logicalWidth = canvas.offsetWidth
       logicalHeight = canvas.offsetHeight
       canvas.width = logicalWidth * ratio
@@ -353,15 +372,18 @@ export default function AsciiUniverseCanvas({
     resizeObserver.observe(canvas)
     resize()
 
-    const visibilityObserver = new IntersectionObserver(
-      ([entry]) => {
-        isVisible = Boolean(entry?.isIntersecting)
-        if (isVisible) startLoop()
-        else stopLoop()
-      },
-      { threshold: 0.02 }
-    )
-    visibilityObserver.observe(canvas)
+    let visibilityObserver: IntersectionObserver | null = null
+    if (pausedWhenOffscreen) {
+      visibilityObserver = new IntersectionObserver(
+        ([entry]) => {
+          isVisible = Boolean(entry?.isIntersecting)
+          if (isVisible) startLoop()
+          else stopLoop()
+        },
+        { threshold: 0.02 }
+      )
+      visibilityObserver.observe(canvas)
+    }
 
     startLoop()
 
@@ -369,9 +391,17 @@ export default function AsciiUniverseCanvas({
       isDisposed = true
       stopLoop()
       resizeObserver.disconnect()
-      visibilityObserver.disconnect()
+      visibilityObserver?.disconnect()
     }
-  }, [resolvedQuality, variant])
+  }, [
+    lightDesktopRadiusScale,
+    lightMobileCharScale,
+    lightMobileRadiusScale,
+    maxDpr,
+    pausedWhenOffscreen,
+    resolvedQuality,
+    variant,
+  ])
 
   return <canvas ref={canvasRef} className={`absolute inset-0 h-full w-full ${className}`} />
 }

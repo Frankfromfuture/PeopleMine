@@ -355,6 +355,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
   const [editingCell, setEditingCell] = useState<EditingCell>(null)
   const [savingCells, setSavingCells] = useState<Set<string>>(new Set())
   const [sortState, setSortState] = useState<SortState>(null)
+  const [toolbarExpanded, setToolbarExpanded] = useState(false)
 
   useEffect(() => { setRows(contacts) }, [contacts])
 
@@ -667,7 +668,20 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
   return (
     <div className="bg-white">
       <div className="border-b border-gray-100 bg-[#fcfcfb] px-5 py-4">
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setToolbarExpanded((prev) => !prev)}
+            className="inline-flex h-8 items-center rounded-full border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+          >
+            {toolbarExpanded ? '收起功能栏' : '展开功能栏'}
+          </button>
+          <span className="text-xs text-gray-400">{sorted.length} 位联系人</span>
+        </div>
+
+        {toolbarExpanded ? (
+          <>
+        <div className="mt-3 flex flex-wrap items-center gap-2.5">
           <Link
             href="/contacts/new"
             className="inline-flex h-9 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3.5 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
@@ -736,7 +750,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
           </details>
         </div>
 
-        {batchPanelOpen && (
+        {toolbarExpanded && batchPanelOpen && (
           <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
             <span className="text-xs font-medium text-gray-800">批量字段</span>
             <select value={batchField} onChange={(e) => { const f = e.target.value as BatchField; setBatchField(f); setBatchValue(f === 'temperature' ? 'HOT' : f === 'roleArchetype' ? 'BINDER' : '3') }} className="h-8 rounded-xl border border-gray-200 bg-white px-2.5 text-xs text-gray-700">
@@ -749,7 +763,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
           </div>
         )}
 
-        {undoStack.length > 0 && (
+        {toolbarExpanded && undoStack.length > 0 && (
           <div className="mt-3 space-y-1 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
             <p className="text-xs text-gray-700">可撤销最近批量编辑（10 秒内）</p>
             {undoStack.map((entry, idx) => (
@@ -761,7 +775,7 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
           </div>
         )}
 
-        {deleteUndoStack.length > 0 && (
+        {toolbarExpanded && deleteUndoStack.length > 0 && (
           <div className="mt-3 space-y-1 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
             <p className="text-xs text-gray-700">可撤销删除</p>
             {deleteUndoStack.map((entry, idx) => (
@@ -773,12 +787,14 @@ export default function ContactsTable({ contacts }: { contacts: ContactRow[] }) 
           </div>
         )}
 
-        {(undoSync.running || undoSync.total > 0) && (
+        {toolbarExpanded && (undoSync.running || undoSync.total > 0) && (
           <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl border border-gray-200 bg-[#fafaf9] p-3">
             <span className="text-xs text-gray-700">服务端回滚：{undoSync.done}/{undoSync.total}{undoSync.failedRows.length > 0 ? ` · 失败 ${undoSync.failedRows.length}` : ''}</span>
             {undoSync.failedRows.length > 0 && !undoSync.running && <button onClick={retryUndoSync} className="rounded-full border border-gray-200 px-2.5 py-0.5 text-xs text-gray-700">重试</button>}
           </div>
         )}
+          </>
+        ) : null}
       </div>
 
       {sorted.length === 0 ? (

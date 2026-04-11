@@ -445,8 +445,9 @@ export function TraitsSummaryWidget({ stats }: { stats: DashboardStats | null })
 
 export function NetworkTrendWidget({ stats }: { stats: DashboardStats | null }) {
   const data =
-    stats?.monthlyGrowth ??
-    Array.from({ length: 12 }, (_, index) => ({ month: `${index + 1}月`, value: 0 }))
+    stats?.monthlyGrowth && stats.monthlyGrowth.length > 0
+      ? stats.monthlyGrowth
+      : Array.from({ length: 12 }, (_, index) => ({ month: `${index + 1}月`, value: 0 }))
 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
