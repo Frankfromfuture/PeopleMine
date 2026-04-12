@@ -33,11 +33,22 @@ mkdir -p "$RELEASES_DIR" "$SHARED_DIR" "$REL"
 chown -R admin:admin "$APP_BASE"
 
 tar -xzf "$PKG" -C "$REL"
+
+INNER_PKG="$(find "$REL" -maxdepth 2 -type f -name 'package.tgz' | head -n1)"
+if [ -n "${INNER_PKG:-}" ]; then
+  INNER_DIR="$REL/inner"
+  mkdir -p "$INNER_DIR"
+  tar -xzf "$INNER_PKG" -C "$INNER_DIR"
+  SEARCH_DIR="$INNER_DIR"
+else
+  SEARCH_DIR="$REL"
+fi
+
 chown -R admin:admin "$REL"
 
-APP_DIR="$REL"
+APP_DIR="$SEARCH_DIR"
 if [ ! -f "$APP_DIR/package.json" ]; then
-  PACKAGE_JSON_PATH="$(find "$REL" -path '*/node_modules/*' -prune -o -name package.json -print | head -n1)"
+  PACKAGE_JSON_PATH="$(find "$SEARCH_DIR" -path '*/node_modules/*' -prune -o -name package.json -print | head -n1)"
   if [ -n "${PACKAGE_JSON_PATH:-}" ]; then
     APP_DIR="$(dirname "$PACKAGE_JSON_PATH")"
   fi
