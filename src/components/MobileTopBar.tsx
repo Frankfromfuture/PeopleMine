@@ -13,25 +13,9 @@ function normalizePath(pathname: string) {
   return pathname
 }
 
-function getTitle(pathname: string) {
-  if (pathname === "/dashboard") return ""
-  if (pathname === "/contacts") return "联系人"
-  if (pathname === "/contacts/new") return "新增联系人"
-  if (pathname.startsWith("/contacts/")) return "联系人详情"
-  if (pathname === "/journey") return "人脉宇宙"
-  if (pathname === "/me") return "我的资料"
-  if (pathname === "/settings") return "设置"
-  if (pathname.startsWith("/companies")) return "企业"
-  if (pathname.startsWith("/goal-analysis")) return "目标分析"
-  if (pathname.startsWith("/relationship")) return "关系温度"
-  if (pathname.startsWith("/social-advice")) return "社交建议"
-  return "PeopleMine"
-}
-
 export default function MobileTopBar() {
   const pathname = normalizePath(usePathname())
   const router = useRouter()
-  const title = getTitle(pathname)
   const isRootPath = ROOT_PATHS.has(pathname)
 
   return (
@@ -62,7 +46,6 @@ export default function MobileTopBar() {
               <ChevronLeft size={16} />
             </button>
           )}
-          {title ? <span className="truncate text-[15px] font-medium text-[#2d2d2d]">{title}</span> : null}
         </div>
 
         <div className="flex items-center gap-1.5">

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import PeopleMineLogo from "@/components/PeopleMineLogo"
 
 const FONT_SANS = '"Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
@@ -16,6 +16,20 @@ const NAV_ITEMS = [
 
 export default function LandingNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false)
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      setMobileMenuVisible(true)
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setMobileMenuVisible(false)
+    }, 260)
+
+    return () => window.clearTimeout(timer)
+  }, [mobileMenuOpen])
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-black/8 bg-[rgba(232,229,224,0.82)] backdrop-blur-xl">
@@ -62,23 +76,43 @@ export default function LandingNav() {
             type="button"
             onClick={() => setMobileMenuOpen((current) => !current)}
             aria-label={mobileMenuOpen ? "关闭菜单" : "打开菜单"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/12 bg-white/80 text-[#3c3a37]"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="landing-mobile-menu"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/12 bg-white/80 text-[#3c3a37] transition duration-200 hover:bg-white"
           >
-            {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+            <span
+              className={`transition-transform duration-300 ${mobileMenuOpen ? "rotate-90 scale-95" : "rotate-0 scale-100"}`}
+            >
+              {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+            </span>
           </button>
         </div>
       </div>
 
-      {mobileMenuOpen ? (
-        <div className="border-t border-black/8 bg-[#ece8e2] px-4 pb-4 pt-3 md:hidden">
-          <nav className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => (
+      {mobileMenuVisible ? (
+        <div
+          id="landing-mobile-menu"
+          className={`overflow-hidden border-t border-black/8 bg-[#ece8e2] px-4 transition-[max-height,opacity,transform] duration-300 ease-out md:hidden ${
+            mobileMenuOpen ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <nav
+            className={`flex flex-col gap-1 pb-4 pt-3 transition duration-300 ease-out ${
+              mobileMenuOpen ? "translate-y-0 scale-100" : "-translate-y-2 scale-[0.98]"
+            }`}
+          >
+            {NAV_ITEMS.map((item, index) => (
               <a
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-2xl border border-transparent px-3 py-2.5 text-[15px] text-[#4f4b47] transition hover:border-black/10 hover:bg-white/70"
-                style={{ fontFamily: FONT_SANS }}
+                className="rounded-2xl border border-transparent px-3 py-2.5 text-[15px] text-[#4f4b47] transition-[background-color,border-color,transform,opacity] duration-300 hover:border-black/10 hover:bg-white/70"
+                style={{
+                  fontFamily: FONT_SANS,
+                  transitionDelay: mobileMenuOpen ? `${index * 45}ms` : "0ms",
+                  opacity: mobileMenuOpen ? 1 : 0,
+                  transform: mobileMenuOpen ? "translateY(0)" : "translateY(-8px)",
+                }}
               >
                 {item.label}
               </a>

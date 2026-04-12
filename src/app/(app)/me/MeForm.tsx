@@ -42,20 +42,11 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="mb-2 block text-sm font-medium text-gray-900">{children}</label>
 }
 
-function SectionHeading({
-  eyebrow,
-  title,
-  description,
-}: {
-  eyebrow: string
-  title: string
-  description: string
-}) {
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="space-y-1">
       <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">{eyebrow}</p>
       <h3 className="text-lg font-semibold tracking-tight text-gray-900">{title}</h3>
-      <p className="text-sm leading-6 text-gray-500">{description}</p>
     </div>
   )
 }
@@ -63,12 +54,10 @@ function SectionHeading({
 function SummaryItem({
   icon,
   title,
-  description,
   complete,
 }: {
   icon: React.ReactNode
   title: string
-  description: string
   complete: boolean
 }) {
   return (
@@ -88,7 +77,6 @@ function SummaryItem({
               {complete ? '已完成' : '待补充'}
             </span>
           </div>
-          <p className="mt-1 text-xs leading-5 text-gray-500">{description}</p>
         </div>
       </div>
     </div>
@@ -137,19 +125,16 @@ export default function MeForm() {
   const sections = [
     {
       title: '基础身份',
-      description: '姓名、公司、角色与城市，用来快速识别你的当下位置。',
       complete: Boolean(form.name && form.company && form.title),
       icon: <UserRound className="h-4 w-4" />,
     },
     {
       title: '当前目标',
-      description: '聚焦你此刻要拿下的方向，方便系统推荐维护与拓展动作。',
       complete: Boolean(form.focus && form.annualGoal && form.targetPeople),
       icon: <Target className="h-4 w-4" />,
     },
     {
       title: '个人画像',
-      description: '梳理你的标签、优势与可交换资源，形成稳定画像。',
       complete: Boolean(form.tags && form.strengths && form.resources),
       icon: <Layers3 className="h-4 w-4" />,
     },
@@ -161,9 +146,6 @@ export default function MeForm() {
         <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">Profile</p>
         <div className="mt-3">
           <h2 className="text-2xl font-semibold tracking-tight text-gray-900">我的画像</h2>
-          <p className="mt-2 text-sm leading-6 text-gray-500">
-            用和“+人脉”一致的方式，先把你自己的角色、目标与资源整理成可被系统理解的基础档案。
-          </p>
         </div>
 
         <div className="mt-5 space-y-3">
@@ -172,7 +154,6 @@ export default function MeForm() {
               key={section.title}
               icon={section.icon}
               title={section.title}
-              description={section.description}
               complete={section.complete}
             />
           ))}
@@ -181,7 +162,6 @@ export default function MeForm() {
         <div className="mt-5 rounded-[24px] border border-gray-200 bg-[#fafaf9] p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-gray-400">完成度</p>
           <p className="mt-2 text-2xl font-semibold text-gray-900">{progress}%</p>
-          <p className="mt-2 text-xs leading-5 text-gray-500">越完整，你在人脉系统中的维护建议与优先级就越准确。</p>
         </div>
 
         <div className="mt-5 rounded-[24px] border border-gray-200 bg-[#fafaf9] p-4">
@@ -221,9 +201,6 @@ export default function MeForm() {
             <div>
               <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400">Identity</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight text-gray-900">我是谁，我正要去哪里</h2>
-              <p className="mt-1 text-sm leading-6 text-gray-500">
-                这份档案会作为你在系统中的个人基线，帮助后续的人脉维护、优先级判断与资产分析更贴合你的真实目标。
-              </p>
             </div>
             <div className="rounded-full border border-gray-200 bg-[#fafaf9] px-3 py-1 text-xs text-gray-500">
               {hydrated ? '个人档案' : '载入中'}
@@ -234,11 +211,7 @@ export default function MeForm() {
         <div className="flex-1 space-y-8 px-6 py-6">
           <div className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
-              <SectionHeading
-                eyebrow="Section 01"
-                title="基础身份"
-                description="先定义你的身份坐标，这会影响关系网络中“我”的观察视角。"
-              />
+              <SectionHeading eyebrow="Section 01" title="基础身份" />
             </div>
             <div>
               <FieldLabel>姓名</FieldLabel>
@@ -280,11 +253,7 @@ export default function MeForm() {
 
           <div className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
-              <SectionHeading
-                eyebrow="Section 02"
-                title="当前目标"
-                description="明确你正在推进的方向，让人脉建议围绕真正重要的事展开。"
-              />
+              <SectionHeading eyebrow="Section 02" title="当前目标" />
             </div>
             <div>
               <FieldLabel>当前最重要的主题</FieldLabel>
@@ -318,11 +287,7 @@ export default function MeForm() {
 
           <div className="grid gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
-              <SectionHeading
-                eyebrow="Section 03"
-                title="个人画像"
-                description="沉淀你自己的长期价值表达，让每一次拓展和维护都围绕你的真实优势发生。"
-              />
+              <SectionHeading eyebrow="Section 03" title="个人画像" />
             </div>
             <div className="md:col-span-2">
               <FieldLabel>我的标签</FieldLabel>
@@ -367,12 +332,7 @@ export default function MeForm() {
         </div>
 
         <div className="flex items-center justify-between border-t border-gray-100 px-6 py-5">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-white">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            {saved ? '已保存到当前浏览器，本页会继续沿用这份个人画像。' : '更新后会作为系统推荐、维护和分析的个人基线。'}
-          </div>
+          <div />
           <button
             type="button"
             onClick={handleSave}

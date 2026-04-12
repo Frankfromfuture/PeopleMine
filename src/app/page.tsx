@@ -83,7 +83,7 @@ function Hero() {
                   PeopleMine
                 </p>
                 <h1
-                  className="max-w-[10.8ch] text-[clamp(42px,14vw,62px)] font-semibold leading-[1.08] tracking-[-0.04em] text-[#A04F47] [text-wrap:balance] sm:max-w-none sm:text-[clamp(30px,10vw,82px)] sm:leading-[1.03] sm:tracking-[-0.05em]"
+                  className="max-w-[10.8ch] text-[clamp(42px,14vw,62px)] font-semibold leading-[1.08] tracking-[-0.04em] text-[#3a3a3a] [text-wrap:balance] sm:max-w-none sm:text-[clamp(30px,10vw,82px)] sm:leading-[1.03] sm:tracking-[-0.05em]"
                   style={{ fontFamily: FONT_SANS }}
                 >
                   <span className="sm:block sm:whitespace-nowrap">每天10分钟</span>

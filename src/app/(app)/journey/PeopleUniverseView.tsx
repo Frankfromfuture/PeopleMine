@@ -225,6 +225,12 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
   const prevHovRef   = useRef<string | null>(null)
   const zoomRef      = useRef<number>(1.04)
   const dragMoved    = useRef(false)
+  const pinch = useRef<{
+    active: boolean
+    distance: number
+    centerX: number
+    centerY: number
+  }>({ active: false, distance: 0, centerX: 0, centerY: 0 })
 
   const simRef = useRef<{
     nodes: SphereNode[]; edges: Edge[]; nodeMap: Map<string, SphereNode>
@@ -709,6 +715,113 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
   const onMouseUp    = useCallback(()=>{ drag.current.on=false }, [])
   const onMouseLeave = useCallback(()=>{ simRef.current.hoveredId=null; setHovered(null) }, [])
 
+  const getTouchDistance = useCallback((touches: TouchList) => {
+    if (touches.length < 2) return 0
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.hypot(dx, dy)
+  }, [])
+
+  const onTouchStart = useCallback((e: TouchEvent) => {
+    if (e.touches.length >= 2) {
+      pinch.current = {
+        active: true,
+        distance: getTouchDistance(e.touches),
+        centerX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        centerY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      }
+      drag.current.on = false
+      drag.current.vx = 0
+      drag.current.vy = 0
+      dragMoved.current = true
+      simRef.current.hoveredId = null
+      setHovered(null)
+      return
+    }
+
+    const touch = e.touches[0]
+    if (!touch) return
+    drag.current = { on: true, lx: touch.clientX, ly: touch.clientY, vx: 0, vy: 0 }
+    dragMoved.current = false
+    simRef.current.hoveredId = null
+    setHovered(null)
+  }, [getTouchDistance])
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    if (e.touches.length >= 2) {
+      const nextDistance = getTouchDistance(e.touches)
+      if (!pinch.current.active) {
+        pinch.current = {
+          active: true,
+          distance: nextDistance,
+          centerX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          centerY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        }
+        return
+      }
+
+      const ratio = pinch.current.distance > 0 ? nextDistance / pinch.current.distance : 1
+      if (Number.isFinite(ratio) && ratio !== 1) {
+        setZoom((current) => Math.min(4, Math.max(0.25, current * ratio)))
+      }
+      pinch.current = {
+        active: true,
+        distance: nextDistance,
+        centerX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        centerY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      }
+      dragMoved.current = true
+      drag.current.on = false
+      e.preventDefault()
+      return
+    }
+
+    const touch = e.touches[0]
+    if (!touch) return
+    if (!drag.current.on) {
+      drag.current = { on: true, lx: touch.clientX, ly: touch.clientY, vx: 0, vy: 0 }
+      return
+    }
+
+    const rawVx = (touch.clientX - drag.current.lx) * 0.009
+    const rawVy = (touch.clientY - drag.current.ly) * 0.009
+    if (Math.abs(touch.clientX - drag.current.lx) > 4 || Math.abs(touch.clientY - drag.current.ly) > 4) {
+      dragMoved.current = true
+    }
+    drag.current.vx = Math.max(-0.04, Math.min(0.04, rawVx))
+    drag.current.vy = Math.max(-0.04, Math.min(0.04, rawVy))
+    simRef.current.rotY += drag.current.vx
+    simRef.current.rotX += drag.current.vy
+    drag.current.lx = touch.clientX
+    drag.current.ly = touch.clientY
+    e.preventDefault()
+  }, [getTouchDistance])
+
+  const onTouchEnd = useCallback((e: TouchEvent) => {
+    if (e.touches.length >= 2) {
+      pinch.current = {
+        active: true,
+        distance: getTouchDistance(e.touches),
+        centerX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        centerY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      }
+      return
+    }
+
+    pinch.current.active = false
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      drag.current = { on: true, lx: touch.clientX, ly: touch.clientY, vx: 0, vy: 0 }
+      return
+    }
+
+    drag.current.on = false
+  }, [getTouchDistance])
+
   const onClickCanvas = useCallback((e:MouseEvent) => {
     if (dragMoved.current) return
     const canvas=canvasRef.current; if(!canvas) return
@@ -767,6 +880,10 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
     canvas.addEventListener('mousedown',  onMouseDown)
     canvas.addEventListener('mouseleave', onMouseLeave)
     canvas.addEventListener('click',      onClickCanvas)
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false })
+    canvas.addEventListener('touchmove',  onTouchMove, { passive: false })
+    canvas.addEventListener('touchend',   onTouchEnd)
+    canvas.addEventListener('touchcancel', onTouchEnd)
     window.addEventListener('mouseup',    onMouseUp)
     window.addEventListener('resize',     resizeCanvas)
     const ro = new ResizeObserver(() => resizeCanvas())
@@ -812,11 +929,15 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
       canvas.removeEventListener('mousedown',  onMouseDown)
       canvas.removeEventListener('mouseleave', onMouseLeave)
       canvas.removeEventListener('click',      onClickCanvas)
+      canvas.removeEventListener('touchstart', onTouchStart)
+      canvas.removeEventListener('touchmove',  onTouchMove)
+      canvas.removeEventListener('touchend',   onTouchEnd)
+      canvas.removeEventListener('touchcancel', onTouchEnd)
       window.removeEventListener('mouseup',    onMouseUp)
       window.removeEventListener('resize',     resizeCanvas)
       ro.disconnect()
     }
-  }, [init, project, draw, updateEffects, onMouseMove, onMouseDown, onMouseLeave, onMouseUp, onClickCanvas])
+  }, [init, project, draw, updateEffects, onMouseMove, onMouseDown, onMouseLeave, onMouseUp, onClickCanvas, onTouchStart, onTouchMove, onTouchEnd])
 
   // Sync zoom state → ref
   useEffect(() => { zoomRef.current = zoom }, [zoom])
@@ -859,7 +980,7 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
       <canvas
         ref={canvasRef}
         className="absolute inset-0"
-        style={{ cursor: hovered ? 'pointer' : 'grab' }}
+        style={{ cursor: hovered ? 'pointer' : 'grab', touchAction: 'none' }}
       />
 
       {/* Hovered node card */}
@@ -956,6 +1077,9 @@ export default function PeopleUniverseView({ contacts, relations, focusContactId
 
       {/* Zoom controls — bottom right */}
       <div className="absolute select-none" style={{ bottom:32, right:10 }}>
+        <div className="mb-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] text-[#666] shadow-[0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur md:hidden">
+          单指旋转 · 双指缩放
+        </div>
         <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
           {([
             { label:'+', title:'放大',   action:()=>setZoom(z=>Math.min(z*1.25, 4))    },

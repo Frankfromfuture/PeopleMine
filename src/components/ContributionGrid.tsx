@@ -3,6 +3,11 @@
 import React from "react"
 
 const colors = ["#e5e7eb", "#9ca3af", "#6b7280", "#4b5563", "#1a1a1a"]
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const FALLBACK: number[] = Array.from({ length: 365 }, () => 0)
+const WEEK_LABEL_WIDTH = 54
+const INNER_LABEL_WIDTH = 34
 
 const buildMonthLabels = () => {
   const today = new Date()
@@ -17,7 +22,7 @@ const buildMonthLabels = () => {
     const month = current.getMonth()
     if (month !== lastMonth) {
       lastMonth = month
-      labels.push({ label: String(month + 1), weekIndex: Math.floor(i / 7) })
+      labels.push({ label: MONTH_SHORT[month], weekIndex: Math.floor(i / 7) })
     }
   }
 
@@ -25,8 +30,6 @@ const buildMonthLabels = () => {
 }
 
 const monthLabels = buildMonthLabels()
-const DAY_LABELS = ["", "Mon", "Tue", "Wed", "Thu", "Fri", ""]
-const FALLBACK: number[] = Array.from({ length: 365 }, () => 0)
 
 function levelLabel(level: number) {
   if (level === 0) return "无新增"
@@ -42,70 +45,83 @@ export function ContributionGrid({ activityData }: { activityData?: number[] }) 
   const days = 7
 
   return (
-    <div className="flex flex-col gap-[4px] pb-1">
-      <div className="flex">
-        <div className="w-[28px] shrink-0" />
-        <div className="flex gap-[3px]">
-          {Array.from({ length: weeks }).map((_, weekIndex) => {
-            const month = monthLabels.find((item) => item.weekIndex === weekIndex)
-            return (
-              <div
-                key={weekIndex}
-                className="w-[10px] overflow-visible whitespace-nowrap text-gray-400"
-                style={{ fontSize: 9, lineHeight: "10px" }}
-              >
-                {month ? month.label : ""}
+    <div className="inline-block origin-top-left scale-[1.2] pb-1">
+      <div className="flex w-fit flex-col">
+        <div className="flex w-fit">
+          <div
+            className="sticky left-0 z-40 shrink-0 bg-white"
+            style={{ width: WEEK_LABEL_WIDTH }}
+          />
+          <div className="flex gap-[3px]">
+            {Array.from({ length: weeks }).map((_, weekIndex) => {
+              const month = monthLabels.find((item) => item.weekIndex === weekIndex)
+              return (
+                <div
+                  key={weekIndex}
+                  className="w-[10px] overflow-visible whitespace-nowrap text-gray-300"
+                  style={{ fontSize: 8.5, lineHeight: "10px", letterSpacing: "0.06em" }}
+                >
+                  {month ? month.label : ""}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="mt-[14px] flex w-fit gap-[4px]">
+          <div
+            className="sticky left-0 z-40 shrink-0 bg-white"
+            style={{ width: WEEK_LABEL_WIDTH }}
+          >
+            <div className="bg-white pr-[4px]" style={{ width: INNER_LABEL_WIDTH }}>
+              {DAY_LABELS.map((label, dayIndex) => (
+                <div
+                  key={dayIndex}
+                  className="flex h-[10px] items-center justify-end pr-[2px] text-gray-400"
+                  style={{ fontSize: 8.5, lineHeight: "10px", marginBottom: dayIndex === DAY_LABELS.length - 1 ? 0 : 3 }}
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-[3px]">
+            {Array.from({ length: weeks }).map((_, weekIndex) => (
+              <div key={weekIndex} className="flex flex-col gap-[3px]">
+                {Array.from({ length: days }).map((_, dayIndex) => {
+                  const dataIndex = weekIndex * 7 + dayIndex
+                  const level = dataIndex < 365 ? data[dataIndex] : 0
+                  const dayLabel = DAY_LABELS[dayIndex]
+
+                  return (
+                    <div
+                      key={dayIndex}
+                      className="h-[10px] w-[10px] rounded-[2px]"
+                      style={{ backgroundColor: colors[level] }}
+                      title={`Week ${weekIndex + 1} ${dayLabel}: ${levelLabel(level)}`}
+                    />
+                  )
+                })}
               </div>
-            )
-          })}
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="flex gap-[4px]">
-        <div className="flex w-[28px] shrink-0 flex-col gap-[3px]">
-          {DAY_LABELS.map((label, dayIndex) => (
-            <div
-              key={dayIndex}
-              className="flex h-[10px] items-center justify-end pr-[3px] text-gray-400"
-              style={{ fontSize: 9, lineHeight: "10px" }}
-            >
-              {label}
-            </div>
+        <div
+          className="sticky bottom-0 left-0 z-40 mt-1 flex w-fit items-center gap-[4px] bg-white pr-2"
+          style={{ marginLeft: WEEK_LABEL_WIDTH + 4 }}
+        >
+          <span className="text-gray-400" style={{ fontSize: 9 }}>
+            少
+          </span>
+          {colors.map((color, index) => (
+            <div key={index} className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: color }} />
           ))}
+          <span className="text-gray-400" style={{ fontSize: 9 }}>
+            多
+          </span>
         </div>
-
-        <div className="flex gap-[3px]">
-          {Array.from({ length: weeks }).map((_, weekIndex) => (
-            <div key={weekIndex} className="flex flex-col gap-[3px]">
-              {Array.from({ length: days }).map((_, dayIndex) => {
-                const dataIndex = weekIndex * 7 + dayIndex
-                const level = dataIndex < 365 ? data[dataIndex] : 0
-                const dayLabel = DAY_LABELS[dayIndex] || (dayIndex === 0 ? "Sun" : "Sat")
-
-                return (
-                  <div
-                    key={dayIndex}
-                    className="h-[10px] w-[10px] rounded-[2px]"
-                    style={{ backgroundColor: colors[level] }}
-                    title={`Week ${weekIndex + 1} ${dayLabel}: ${levelLabel(level)}`}
-                  />
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="ml-[32px] mt-1 flex items-center gap-[4px]">
-        <span className="text-gray-400" style={{ fontSize: 9 }}>
-          少
-        </span>
-        {colors.map((color, index) => (
-          <div key={index} className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: color }} />
-        ))}
-        <span className="text-gray-400" style={{ fontSize: 9 }}>
-          多
-        </span>
       </div>
     </div>
   )

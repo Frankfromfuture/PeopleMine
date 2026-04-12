@@ -9,7 +9,6 @@ export default function MePage() {
         { label: '我' },
       ]}
       title="我"
-      titleNote={<span className="text-sm italic text-gray-500">把你自己也当作一位需要经营的人脉资产来整理。</span>}
       hints={[
         '页面结构、卡片层级与“+人脉”保持一致，方便在同一套节奏里录入和维护。',
         '先补全最核心的身份、目标和资源，后续系统建议会更贴合你的真实方向。',

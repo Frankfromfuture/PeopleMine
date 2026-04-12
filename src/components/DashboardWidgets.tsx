@@ -374,12 +374,10 @@ export function ContributionWidget({ stats }: { stats: DashboardStats | null }) 
   return (
     <div className={`${WIDGET_SHELL_CLASS} p-5`}>
       <WidgetHeader icon={Sparkles} title="新增与活跃" />
-      <div className="mt-3 flex flex-1 flex-col">
-        <div className="flex-1 overflow-x-scroll overflow-y-hidden pb-3">
-          <div className="min-w-[1120px] pl-2">
-            <div className="flex justify-start" style={{ transform: "scale(1.22)", transformOrigin: "top left" }}>
-              <ContributionGrid activityData={stats?.dailyActivity} />
-            </div>
+      <div className="mt-3 flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
+          <div className="inline-block pl-1 pr-0">
+            <ContributionGrid activityData={stats?.dailyActivity} />
           </div>
         </div>
       </div>
@@ -482,13 +480,13 @@ export function NeedsMaintenanceWidget({ stats }: { stats: DashboardStats | null
         icon={AlertTriangle}
         title="需要维护的人脉"
         end={
-          <span className="rounded-full bg-gray-100 px-2.5 py-[5px] text-[10px] text-gray-600">
+          <span className="mt-0.5 rounded-full bg-gray-100 px-2.5 py-[5px] text-[10px] text-gray-600 md:mt-0">
             {`${stats?.needsMaintenance ?? 0} 位待跟进`}
           </span>
         }
       />
 
-      <div className="mt-4 grid flex-1 grid-cols-2 gap-2 overflow-y-auto pr-1">
+      <div className="mt-4 flex flex-1 flex-col gap-2 overflow-y-auto pr-1 md:grid md:grid-cols-2 md:overflow-visible">
         {list.length ? (
           list.map((contact) => (
             <div key={contact.id} className="flex items-center justify-between gap-3 rounded-[18px] border border-gray-200 px-4 py-3">
@@ -509,7 +507,7 @@ export function NeedsMaintenanceWidget({ stats }: { stats: DashboardStats | null
             </div>
           ))
         ) : (
-          <div className="col-span-2 flex h-full min-h-[180px] items-center justify-center rounded-[18px] border border-dashed border-gray-200 text-[12px] text-gray-400">
+          <div className="flex h-full min-h-[180px] items-center justify-center rounded-[18px] border border-dashed border-gray-200 text-[12px] text-gray-400 md:col-span-2">
             暂无需要维护的人脉
           </div>
         )}
