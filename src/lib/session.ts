@@ -1,5 +1,6 @@
 import { getIronSession, type IronSession, type SessionOptions } from 'iron-session'
 import { cookies, headers } from 'next/headers'
+import { findOrCreateUserByPhone } from '@/lib/auth-user'
 
 export interface SessionData {
   userId?: string
@@ -111,12 +112,7 @@ export async function getAuthUserId(): Promise<string> {
   } catch {
     if (testUserId) return testUserId
 
-    const { db } = await import('@/lib/db')
-    const testUser = await db.user.upsert({
-      where: { phone: '13800138000' },
-      update: {},
-      create: { phone: '13800138000', name: 'Demo User' },
-    })
+    const testUser = await findOrCreateUserByPhone('13800138000', 'Demo User')
 
     testUserId = testUser.id
     return testUser.id

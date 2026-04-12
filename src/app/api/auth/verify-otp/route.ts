@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { findOrCreateUserByPhone } from '@/lib/auth-user'
 import { getSession } from '@/lib/session'
 
 export async function POST(req: NextRequest) {
@@ -28,11 +29,7 @@ export async function POST(req: NextRequest) {
     await db.phoneOtp.deleteMany({ where: { phone } })
 
     const now = new Date()
-    const user = await db.user.upsert({
-      where: { phone },
-      update: {},
-      create: { phone },
-    })
+    const user = await findOrCreateUserByPhone(phone)
     const isNew = now.getTime() - user.createdAt.getTime() < 5000
 
     const session = await getSession()

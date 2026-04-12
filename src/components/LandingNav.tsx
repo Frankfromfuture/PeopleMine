@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
+import PeopleMineLogo from "@/components/PeopleMineLogo"
 
 const FONT_SANS = '"Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif'
 const PAGE_GUTTER_CLASS = "px-[clamp(16px,4vw,72px)]"
@@ -22,21 +22,8 @@ export default function LandingNav() {
       <div
         className={`relative flex w-full items-center justify-between gap-3 py-[clamp(12px,1.8vw,18px)] ${PAGE_GUTTER_CLASS}`}
       >
-        <Link href="/" className="flex items-center gap-2.5">
-          <Image
-            src="/assets/brand/logo-icon.svg"
-            alt="PeopleMine"
-            width={74}
-            height={40}
-            className="h-[clamp(28px,2.4vw,34px)] w-auto object-contain"
-            priority
-          />
-          <span
-            className="text-[clamp(17px,1.5vw,21px)] font-semibold tracking-[-0.025em] text-[#3f3a35]"
-            style={{ fontFamily: FONT_SANS }}
-          >
-            PeopleMine
-          </span>
+        <Link href="/" className="flex items-center">
+          <PeopleMineLogo className="h-[28px] w-auto sm:h-[34px]" />
         </Link>
 
         <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-[clamp(44px,7vw,96px)] md:flex">

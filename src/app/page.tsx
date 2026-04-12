@@ -45,9 +45,9 @@ const WORKFLOW = [
 ]
 function Hero() {
   return (
-    <section className="relative min-h-[100svh] overflow-hidden bg-[#FCFCFC] pt-[96px] text-[#111] sm:pt-[clamp(74px,9vw,118px)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(128%_88%_at_12%_-10%,#F4F4F4_0%,#FCFCFC_56%,#E5E5E5_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(78%_58%_at_36%_102%,rgba(229,229,229,0.95)_0%,rgba(229,229,229,0.68)_38%,rgba(252,252,252,0)_72%)]" />
+    <section className="relative min-h-[100svh] overflow-hidden bg-[#f1f1f1] pt-[96px] text-[#111] sm:pt-[clamp(74px,9vw,118px)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(132%_90%_at_12%_-10%,#f6f6f6_0%,#efefef_58%,#e2e2e2_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(78%_58%_at_36%_102%,rgba(218,218,218,0.94)_0%,rgba(226,226,226,0.68)_40%,rgba(241,241,241,0)_74%)]" />
       <div className="pointer-events-none absolute inset-0">
         <AsciiUniverseCanvas
           variant="light"
@@ -56,10 +56,10 @@ function Hero() {
           lightDesktopRadiusScale={0.67}
           lightMobileRadiusScale={1.3}
           lightMobileCharScale={0.7}
-          className="translate-y-[8%] opacity-[0.18] sm:translate-y-0"
+          className="translate-y-[8%] opacity-[0.25] sm:translate-y-0"
         />
       </div>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(92%_66%_at_42%_38%,rgba(243,243,243,0.12)_0%,rgba(252,252,252,0.82)_70%,rgba(252,252,252,0.96)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(92%_66%_at_42%_38%,rgba(236,236,236,0.16)_0%,rgba(240,240,240,0.84)_70%,rgba(241,241,241,0.98)_100%)]" />
 
       <div
         className={`relative flex min-h-[calc(100svh-6.5rem)] w-full items-center pb-[88px] sm:min-h-[calc(100svh-5.5rem)] sm:pb-[clamp(48px,6vw,80px)] ${PAGE_GUTTER_CLASS}`}
@@ -83,7 +83,7 @@ function Hero() {
                   PeopleMine
                 </p>
                 <h1
-                  className="max-w-[10.8ch] text-[clamp(42px,14vw,62px)] font-semibold leading-[1.08] tracking-[-0.04em] text-[#161616] [text-wrap:balance] sm:max-w-none sm:text-[clamp(30px,10vw,82px)] sm:leading-[1.03] sm:tracking-[-0.05em]"
+                  className="max-w-[10.8ch] text-[clamp(42px,14vw,62px)] font-semibold leading-[1.08] tracking-[-0.04em] text-[#A04F47] [text-wrap:balance] sm:max-w-none sm:text-[clamp(30px,10vw,82px)] sm:leading-[1.03] sm:tracking-[-0.05em]"
                   style={{ fontFamily: FONT_SANS }}
                 >
                   <span className="sm:block sm:whitespace-nowrap">每天10分钟</span>

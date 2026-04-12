@@ -71,15 +71,15 @@ type AsciiUniverseCanvasProps = {
 }
 
 function getLightPalette(depth: number) {
-  if (depth > 0.72) return '#111111'
-  if (depth > 0.42) return '#242424'
-  return '#3a3a3a'
+  if (depth > 0.72) return '#0d0d0d'
+  if (depth > 0.42) return '#1f1f1f'
+  return '#303030'
 }
 
 function getLightEdgePalette(depth: number) {
-  if (depth > 0.66) return '#242424'
-  if (depth > 0.36) return '#2e2e2e'
-  return '#3a3a3a'
+  if (depth > 0.66) return '#1d1d1d'
+  if (depth > 0.36) return '#292929'
+  return '#353535'
 }
 
 function resolveQualityMode(mode: QualityMode, width: number): ResolvedQuality {
@@ -286,7 +286,7 @@ export default function AsciiUniverseCanvas({
         if (py > logicalHeight * 0.93 || depth < 0.16) continue
 
         ctx.globalAlpha = dot.alpha * depth * (isLight ? 1.12 : 1)
-        ctx.fillStyle = isLight ? '#262626' : '#8c8c8c'
+        ctx.fillStyle = isLight ? '#1f1f1f' : '#8c8c8c'
         ctx.font = `${((isLight ? 5.4 : 6.2) + depth * (isLight ? 3.8 : 4.2)) * flowFontScale}px ${MONO}`
         ctx.fillText('*', px, py)
       }
