@@ -1,13 +1,14 @@
 import { getIronSession, type IronSession, type SessionOptions } from 'iron-session'
 import { cookies, headers } from 'next/headers'
 import { findOrCreateUserByPhone } from '@/lib/auth-user'
+import { SESSION_COOKIE_NAME } from '@/lib/session-constants'
 
 export interface SessionData {
   userId?: string
   phone?: string
 }
 
-export const SESSION_COOKIE_NAME = 'peoplemine_session'
+export { SESSION_COOKIE_NAME }
 const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
 
 function normalizeProtocol(value: string | null | undefined): string | null {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { SESSION_COOKIE_NAME } from "@/lib/session"
+import { SESSION_COOKIE_NAME } from "@/lib/session-constants"
 
 const PUBLIC_PATHS = [
   "/",
