@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Search } from 'lucide-react'
 import { useLoading } from '@/components/ThinkingToast'
 import PageHeader from '@/components/PageHeader'
 import PeopleUniverseView from './PeopleUniverseView'
@@ -510,6 +511,7 @@ function UniversePanelContent({
 
 export default function JourneyPage() {
   const { showLoading, hideLoading } = useLoading()
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null)
 
   const [contacts, setContacts] = useState<NetworkContact[]>([])
   const [relations, setRelations] = useState<NetworkRelation[]>([])
@@ -518,6 +520,7 @@ export default function JourneyPage() {
   const [selectedContact, setSelectedContact] = useState<NetworkContact | null>(null)
   const [focusContactId, setFocusContactId] = useState<string | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   useEffect(() => {
@@ -621,8 +624,8 @@ export default function JourneyPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#f6f6f4] lg:h-[100dvh] lg:overflow-hidden">
-      <div className="flex min-h-screen w-full min-w-0 flex-col px-4 py-3 sm:px-5 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:px-6 lg:py-3 xl:px-8">
+    <div className="h-full bg-[#f6f6f4] lg:h-[100dvh] lg:overflow-hidden">
+      <div className="flex h-full w-full min-w-0 flex-col px-0 py-0 sm:px-0 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:px-6 lg:py-3 xl:px-8">
         <PageHeader
           items={[
             { label: '首页', href: '/dashboard' },
@@ -630,7 +633,7 @@ export default function JourneyPage() {
           ]}
           title="人脉宇宙"
           titleNote={<span className="text-sm italic text-gray-500">Xminer 智能社交关系网络图</span>}
-          className="pb-3 lg:pb-3"
+          className="hidden pb-3 lg:block lg:pb-3"
           hints={[
             '点击宇宙中的节点，可查看联系人详情和关联人脉。',
             '用右侧搜索快速定位联系人，并同步把宇宙焦点移动过去。',
@@ -638,12 +641,84 @@ export default function JourneyPage() {
           ]}
         />
 
-        <div className="mt-1 grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_312px] xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_336px]">
-          <section className="min-h-0 min-w-0">
-            <div className="h-full min-h-[420px] overflow-hidden rounded-[28px] border border-gray-200 bg-[#f8f8f6] p-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:min-h-0">
-              <div className="h-full min-h-0 overflow-hidden rounded-[24px] border border-gray-200 bg-transparent">
-                <div className="relative h-full min-h-[420px] lg:min-h-0">{renderUniverseState()}</div>
+        <div className="grid min-h-0 flex-1 gap-0 lg:mt-1 lg:gap-3 lg:grid-cols-[minmax(0,1fr)_312px] xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_336px]">
+          <section className="relative min-h-0 min-w-0">
+            <div className="h-full min-h-0 overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none lg:min-h-[420px] lg:rounded-[28px] lg:border lg:border-gray-200 lg:bg-[#f8f8f6] lg:p-2.5 lg:shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="h-full min-h-0 overflow-hidden rounded-none border-0 bg-transparent lg:rounded-[24px] lg:border lg:border-gray-200">
+                <div className="relative h-full min-h-0 lg:min-h-[420px]">{renderUniverseState()}</div>
               </div>
+            </div>
+
+            <div className="absolute bottom-4 right-4 z-30 flex items-end gap-2 lg:hidden">
+              <AnimatePresence initial={false}>
+                {mobileSearchOpen ? (
+                  <motion.div
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: "min(72vw, 320px)", opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="relative overflow-visible"
+                  >
+                    <input
+                      ref={mobileSearchInputRef}
+                      value={searchQuery}
+                      placeholder="搜索人脉姓名"
+                      onFocus={() => {
+                        if (searchResults.length > 0) setShowDropdown(true)
+                      }}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setSearchQuery(value)
+                        setShowDropdown(value.trim().length > 0)
+                      }}
+                      className="h-10 w-full rounded-2xl border border-gray-200 bg-white/95 pl-4 pr-10 text-sm text-gray-800 outline-none backdrop-blur transition focus:border-gray-400 focus:ring-2 focus:ring-gray-100"
+                    />
+                    {searchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleClearSearch()
+                          mobileSearchInputRef.current?.focus()
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M2 2L12 12M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    ) : null}
+                    <AnimatePresence>
+                      {showDropdown && searchResults.length > 0 ? (
+                        <SearchResults
+                          results={searchResults}
+                          onSelect={(contact) => {
+                            handleSelectContact(contact)
+                            setShowDropdown(false)
+                            setMobileSearchOpen(false)
+                          }}
+                        />
+                      ) : null}
+                    </AnimatePresence>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+
+              <button
+                type="button"
+                aria-label="搜索人脉"
+                onClick={() => {
+                  if (mobileSearchOpen) {
+                    setMobileSearchOpen(false)
+                    setShowDropdown(false)
+                    return
+                  }
+                  setMobileSearchOpen(true)
+                  setTimeout(() => mobileSearchInputRef.current?.focus(), 0)
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/95 text-[#333] shadow-[0_4px_12px_rgba(0,0,0,0.12)] backdrop-blur"
+              >
+                <Search size={16} />
+              </button>
             </div>
           </section>
 
@@ -708,24 +783,6 @@ export default function JourneyPage() {
           </div>
         </div>
 
-        <div className="mt-5 lg:hidden">
-          <UniversePanelContent
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            searchResults={searchResults}
-            showDropdown={showDropdown}
-            setShowDropdown={setShowDropdown}
-            selectedContact={selectedContact}
-            relatedContacts={relatedContacts}
-            onSelectContact={handleSelectContact}
-            onClearSearch={handleClearSearch}
-            onFocusContact={(id) => {
-              setFocusContactId(id)
-              const contact = contacts.find((item) => item.id === id)
-              if (contact) handleSelectContact(contact)
-            }}
-          />
-        </div>
       </div>
     </div>
   )

@@ -873,6 +873,28 @@ export default function NewContactForm({
           ]}
         />
 
+        <div className="sticky top-0 z-30 -mx-6 mb-3 border-y border-black/8 bg-[#f6f6f4]/92 px-6 py-3 backdrop-blur lg:hidden">
+          <div className="flex items-end justify-between gap-3">
+            <div
+              className="text-[34px] font-bold leading-none tracking-[0.01em]"
+              style={{ color: progressTone, fontFamily: 'Rajdhani, "Orbitron", "DIN Alternate", "SF Pro Display", sans-serif' }}
+            >
+              {overallProgress}%
+            </div>
+            <div className="text-right text-[11px] text-[#7F786F]">
+              当前阶段：{activeStage === 'flash' ? '闪识' : activeStage === 'depth' ? '深链' : '画像'}
+            </div>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full border border-black/10 bg-white">
+            <motion.div
+              initial={false}
+              animate={{ width: `${overallProgress}%` }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="h-full bg-[linear-gradient(90deg,#3A3A3E_0%,#A04F47_100%)]"
+            />
+          </div>
+        </div>
+
         <div className="relative min-h-0 flex-1">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.78),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(160,79,71,0.07),transparent_28%)]" />
           <div className="relative flex h-full min-h-0 flex-col">
@@ -1194,7 +1216,7 @@ export default function NewContactForm({
 
             <div className="mt-3 rounded-[28px] border border-black/8 bg-white/78 px-4 py-4 shadow-[0_12px_34px_rgba(24,20,16,0.06)]">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 flex-1">
+                <div className="hidden min-w-0 flex-1 lg:block">
                   <div>
                     <div className="flex items-center gap-3">
                       <div

@@ -14,7 +14,7 @@ function normalizePath(pathname: string) {
 }
 
 function getTitle(pathname: string) {
-  if (pathname === "/dashboard") return "工作台"
+  if (pathname === "/dashboard") return ""
   if (pathname === "/contacts") return "联系人"
   if (pathname === "/contacts/new") return "新增联系人"
   if (pathname.startsWith("/contacts/")) return "联系人详情"
@@ -62,7 +62,7 @@ export default function MobileTopBar() {
               <ChevronLeft size={16} />
             </button>
           )}
-          <span className="truncate text-[15px] font-medium text-[#2d2d2d]">{title}</span>
+          {title ? <span className="truncate text-[15px] font-medium text-[#2d2d2d]">{title}</span> : null}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -76,7 +76,7 @@ export default function MobileTopBar() {
           <Link
             href="/contacts/new"
             aria-label="新增联系人"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 bg-white text-[#4a4a4a]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#8f1d31] bg-[#8f1d31] text-white transition hover:bg-[#7a1829]"
           >
             <Plus size={16} />
           </Link>
