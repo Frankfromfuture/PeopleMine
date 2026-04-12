@@ -61,21 +61,9 @@ fi
 
 echo "app dir: $APP_DIR"
 
-rm -rf "$APP_DIR/node_modules" "$APP_DIR/.next"
-
 if [ -f "$SHARED_DIR/.env.production" ]; then
   ln -sfn "$SHARED_DIR/.env.production" "$APP_DIR/.env.production"
 fi
-
-sudo -u admin -H bash -lc "
-  set -Eeuo pipefail
-  cd '$APP_DIR'
-  unset PRISMA_ENGINES_MIRROR
-  export PRISMA_SKIP_POSTINSTALL_GENERATE=1
-  npm ci
-  npx prisma generate
-  npm run build
-"
 
 ln -sfn "$APP_DIR" "$CURRENT_LINK"
 chown -h admin:admin "$CURRENT_LINK"
