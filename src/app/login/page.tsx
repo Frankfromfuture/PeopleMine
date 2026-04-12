@@ -306,17 +306,27 @@ export default function LoginPage() {
 
         <main className="flex flex-1 items-start py-4 sm:items-center sm:py-5 lg:py-6">
           <div className="grid w-full gap-4 sm:gap-6 lg:grid-cols-[minmax(0,540px)_minmax(0,1fr)] lg:gap-8">
-            <section className="relative overflow-hidden rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.78)] p-5 shadow-[0_18px_80px_rgba(40,24,16,0.08)] backdrop-blur-xl sm:rounded-[28px] sm:p-7">
+            <section className="relative overflow-hidden rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.78)] p-4 shadow-[0_18px_80px_rgba(40,24,16,0.08)] backdrop-blur-xl sm:rounded-[28px] sm:p-7">
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#A04F47] via-[#c78982] to-transparent" />
 
               <div className="mb-6">
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#A04F47]/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[#A04F47]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  {COPY.signIn}
+                <div className="sm:hidden">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[#8a827a]">{COPY.workspaceLabel}</p>
+                  <h1 className="mt-2 text-[24px] font-semibold leading-[1.14] tracking-[-0.03em] text-[#1d1b18]">
+                    {COPY.workspaceTitle}
+                  </h1>
+                  <p className="mt-2 text-[18px] font-medium leading-tight text-[#4d463f]">{COPY.loginTitle}</p>
                 </div>
-                <h1 className="mt-4 text-[26px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#1d1b18] sm:text-[38px]">
-                  {COPY.loginTitle}
-                </h1>
+
+                <div className="hidden sm:block">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[#A04F47]/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-[#A04F47]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {COPY.signIn}
+                  </div>
+                  <h1 className="mt-4 text-[26px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#1d1b18] sm:text-[38px]">
+                    {COPY.loginTitle}
+                  </h1>
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -374,7 +384,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={step === 'phone' ? handleSendOtp : handleVerifyOtp}
                     disabled={isPending}
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#A04F47] px-5 py-2.5 text-[14px] font-medium text-white transition hover:bg-[#A04F47]/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-[#A04F47] px-5 text-[14px] font-medium text-white transition hover:bg-[#A04F47]/90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-auto sm:py-2.5"
                   >
                     {step === 'phone' ? COPY.sendCode : COPY.verifyLogin}
                     <ArrowRight className="h-4 w-4" />
@@ -388,7 +398,7 @@ export default function LoginPage() {
                         setFeedback(null)
                       }}
                       disabled={isPending}
-                      className="inline-flex items-center justify-center rounded-full border border-black/10 px-5 py-2.5 text-[14px] font-medium text-[#4c463f] transition hover:border-black/20 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-black/10 px-5 text-[14px] font-medium text-[#4c463f] transition hover:border-black/20 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-50 sm:h-auto sm:py-2.5"
                     >
                       {COPY.editPhone}
                     </button>
@@ -397,10 +407,10 @@ export default function LoginPage() {
               </div>
             </section>
 
-            <section className="flex flex-col justify-between rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.54)] p-5 shadow-[0_8px_40px_rgba(40,24,16,0.05)] backdrop-blur-sm sm:rounded-[28px] sm:p-7">
-              <div>
+            <section className="flex flex-col justify-between rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.54)] p-4 shadow-[0_8px_40px_rgba(40,24,16,0.05)] backdrop-blur-sm sm:rounded-[28px] sm:p-7">
+              <div className="hidden sm:block">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-[#8a827a]">{COPY.workspaceLabel}</p>
-                <h2 className="mt-3 overflow-hidden text-ellipsis whitespace-nowrap text-[22px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#1d1b18] sm:text-[32px] xl:text-[38px]">
+                <h2 className="mt-3 text-[22px] font-semibold leading-[1.08] tracking-[-0.04em] text-[#1d1b18] sm:text-[32px] xl:text-[38px]">
                   {COPY.workspaceTitle}
                 </h2>
               </div>
@@ -434,7 +444,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => handlePreviewEntry('/dashboard')}
                       disabled={isPending}
-                      className="inline-flex items-center justify-center rounded-full bg-[#A04F47] px-5 py-2.5 text-[13px] font-medium text-white transition hover:bg-[#A04F47]/90"
+                      className="inline-flex h-10 items-center justify-center rounded-full bg-[#A04F47] px-5 text-[13px] font-medium text-white transition hover:bg-[#A04F47]/90 sm:h-auto sm:py-2.5"
                     >
                       {COPY.devDashboard}
                     </button>
@@ -442,7 +452,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => handlePreviewEntry('/dev-lab')}
                       disabled={isPending}
-                      className="inline-flex items-center justify-center rounded-full border border-[#A04F47]/20 px-5 py-2.5 text-[13px] font-medium text-[#A04F47] transition hover:bg-[#A04F47]/6"
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-[#A04F47]/20 px-5 text-[13px] font-medium text-[#A04F47] transition hover:bg-[#A04F47]/6 sm:h-auto sm:py-2.5"
                     >
                       {COPY.devLab}
                     </button>

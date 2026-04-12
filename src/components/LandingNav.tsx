@@ -22,18 +22,21 @@ export default function LandingNav() {
       <div
         className={`relative flex w-full items-center justify-between gap-3 py-[clamp(12px,1.8vw,18px)] ${PAGE_GUTTER_CLASS}`}
       >
-        <Link href="/" className="flex items-center gap-3">
-          <div className="h-[clamp(30px,2.8vw,44px)] w-auto">
-            <Image
-              src="/assets/brand/logo-with-pm.svg"
-              alt="PeopleMine"
-              width={250}
-              height={36}
-              className="h-full w-auto object-contain"
-              priority
-              unoptimized
-            />
-          </div>
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image
+            src="/assets/brand/logo-icon.svg"
+            alt="PeopleMine"
+            width={74}
+            height={40}
+            className="h-[clamp(28px,2.4vw,34px)] w-auto object-contain"
+            priority
+          />
+          <span
+            className="text-[clamp(17px,1.5vw,21px)] font-semibold tracking-[-0.025em] text-[#3f3a35]"
+            style={{ fontFamily: FONT_SANS }}
+          >
+            PeopleMine
+          </span>
         </Link>
 
         <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-[clamp(44px,7vw,96px)] md:flex">

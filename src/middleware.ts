@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getIronSession } from "iron-session"
-import { sessionOptions, SessionData } from "@/lib/session"
+import { getSessionOptions, isSecureRequestFromHeaders, SessionData } from "@/lib/session"
 
 const PUBLIC_PATHS = [
   "/",
@@ -28,7 +28,8 @@ export async function middleware(req: NextRequest) {
   }
 
   const res = NextResponse.next()
-  const session = await getIronSession<SessionData>(req, res, sessionOptions)
+  const secure = isSecureRequestFromHeaders(req.headers, req.nextUrl.protocol)
+  const session = await getIronSession<SessionData>(req, res, getSessionOptions(secure))
 
   if (!session.userId) {
     return NextResponse.redirect(new URL("/login", req.url))
