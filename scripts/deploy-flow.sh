@@ -68,6 +68,12 @@ fi
 ln -sfn "$APP_DIR" "$CURRENT_LINK"
 chown -h admin:admin "$CURRENT_LINK"
 
+sudo -u admin -H bash -lc "
+  set -Eeuo pipefail
+  cd '$CURRENT_LINK'
+  npm run check:runtime-env
+"
+
 # Clear any stale root-managed process so the admin PM2 app can bind 3000.
 pm2 delete peoplemine >/dev/null 2>&1 || true
 

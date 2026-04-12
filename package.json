@@ -8,6 +8,7 @@
     "start": "next start",
     "check:encoding:dashboard": "node scripts/check-dashboard-encoding.mjs",
     "check:encoding:landing": "node scripts/check-landing-encoding.mjs",
+    "check:runtime-env": "node scripts/check-runtime-env.mjs",
     "lint": "npm run check:encoding:dashboard && npm run check:encoding:landing && next lint",
     "postinstall": "npm run prisma:generate",
     "prisma:generate": "prisma generate",
