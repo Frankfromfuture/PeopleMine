@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getIronSession } from "iron-session"
-import { getSessionOptions, isSecureRequestFromHeaders, SessionData } from "@/lib/session"
+import { SESSION_COOKIE_NAME } from "@/lib/session"
 
 const PUBLIC_PATHS = [
   "/",
@@ -27,15 +26,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const res = NextResponse.next()
-  const secure = isSecureRequestFromHeaders(req.headers, req.nextUrl.protocol)
-  const session = await getIronSession<SessionData>(req, res, getSessionOptions(secure))
-
-  if (!session.userId) {
+  // Middleware runs on Edge runtime. Avoid importing Node-only session parsing here.
+  const sessionCookie = req.cookies.get(SESSION_COOKIE_NAME)?.value
+  if (!sessionCookie) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
-
-  return res
+  return NextResponse.next()
 }
 
 export const config = {

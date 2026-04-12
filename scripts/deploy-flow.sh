@@ -61,6 +61,9 @@ fi
 
 echo "app dir: $APP_DIR"
 
+# Prevent packaged env files from overriding server-managed production env.
+rm -f "$APP_DIR/.env.local" "$APP_DIR/.env.production.local" "$APP_DIR/.env"
+
 if [ -f "$SHARED_DIR/.env.production" ]; then
   ln -sfn "$SHARED_DIR/.env.production" "$APP_DIR/.env.production"
 fi

@@ -7,7 +7,7 @@ export interface SessionData {
   phone?: string
 }
 
-const SESSION_COOKIE_NAME = 'peoplemine_session'
+export const SESSION_COOKIE_NAME = 'peoplemine_session'
 const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
 
 function normalizeProtocol(value: string | null | undefined): string | null {
