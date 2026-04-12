@@ -69,13 +69,22 @@ sudo -u admin -H bash -lc "
 ln -sfn "$APP_DIR" "$CURRENT_LINK"
 chown -h admin:admin "$CURRENT_LINK"
 
+# Clear any stale root-managed process so the admin PM2 app can bind 3000.
+pm2 delete peoplemine >/dev/null 2>&1 || true
+
+if command -v fuser >/dev/null 2>&1; then
+  fuser -k 3000/tcp >/dev/null 2>&1 || true
+else
+  PORT_PIDS="$(ss -lntp 2>/dev/null | grep ':3000' | sed -n 's/.*pid=\([0-9]\+\).*/\1/p' | sort -u)"
+  if [ -n "${PORT_PIDS:-}" ]; then
+    kill $PORT_PIDS >/dev/null 2>&1 || true
+  fi
+fi
+
 sudo -u admin -H bash -lc "
   set -Eeuo pipefail
-  if pm2 describe peoplemine >/dev/null 2>&1; then
-    pm2 restart peoplemine --update-env
-  else
-    pm2 start npm --name peoplemine --cwd '$CURRENT_LINK' -- start
-  fi
+  pm2 delete peoplemine >/dev/null 2>&1 || true
+  pm2 start npm --name peoplemine --cwd '$CURRENT_LINK' -- start
   pm2 save
 "
 
