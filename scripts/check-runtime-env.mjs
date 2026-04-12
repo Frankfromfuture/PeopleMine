@@ -32,22 +32,51 @@ for (const filename of ['.env.production.local', '.env.local', '.env.production'
   loadEnvFile(filename)
 }
 
+function validateDatabaseUrl(value) {
+  const raw = value?.trim()
+  if (!raw) {
+    return { ok: false, message: 'must be set to a PostgreSQL connection string' }
+  }
+
+  const normalized = raw.replace(/^['"]|['"]$/g, '')
+  let parsed
+  try {
+    parsed = new URL(normalized)
+  } catch {
+    return { ok: false, message: 'must be a valid URL (example: postgresql://user:pass@host:5432/db?schema=public)' }
+  }
+
+  if (!['postgresql:', 'postgres:'].includes(parsed.protocol)) {
+    return { ok: false, message: 'must start with postgresql:// or postgres://' }
+  }
+
+  if (!parsed.hostname || parsed.hostname.toLowerCase() === 'base') {
+    return { ok: false, message: 'hostname is invalid (current value is unresolved)' }
+  }
+
+  if (!parsed.pathname || parsed.pathname === '/') {
+    return { ok: false, message: 'database name is missing in URL path' }
+  }
+
+  return { ok: true, message: '' }
+}
+
 const requiredEnv = [
   {
     key: 'DATABASE_URL',
-    validate: (value) => Boolean(value?.trim()),
-    message: 'must be set to a PostgreSQL connection string',
+    validate: (value) => validateDatabaseUrl(value).ok,
+    message: (value) => validateDatabaseUrl(value).message,
   },
   {
     key: 'SESSION_SECRET',
     validate: (value) => Boolean(value?.trim()) && value.trim().length >= 32,
-    message: 'must be set and at least 32 characters long',
+    message: () => 'must be set and at least 32 characters long',
   },
 ]
 
 const failures = requiredEnv
   .filter(({ key, validate }) => !validate(process.env[key]))
-  .map(({ key, message }) => `${key} ${message}`)
+  .map(({ key, message }) => `${key} ${message(process.env[key])}`)
 
 if (failures.length > 0) {
   console.error('Runtime environment check failed:')

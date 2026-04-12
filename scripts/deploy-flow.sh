@@ -14,6 +14,30 @@ SHARED_DIR="$APP_BASE/shared"
 CURRENT_LINK="$APP_BASE/current"
 RELEASE_ID="${CI_COMMIT_SHA:-$(date +%Y%m%d%H%M%S)}"
 REL="$RELEASES_DIR/$RELEASE_ID"
+PREVIOUS_TARGET="$(readlink -f "$CURRENT_LINK" 2>/dev/null || true)"
+
+health_check() {
+  local tries=0
+  local max_tries=30
+  local sleep_seconds=2
+  local body_file="/tmp/peoplemine-health-${RELEASE_ID}.json"
+  rm -f "$body_file"
+
+  while [ "$tries" -lt "$max_tries" ]; do
+    if curl -fsS -m 5 "http://127.0.0.1:3000/api/health" -o "$body_file"; then
+      if grep -q '"ok"[[:space:]]*:[[:space:]]*true' "$body_file"; then
+        echo "health check passed: $(cat "$body_file")"
+        return 0
+      fi
+      echo "health check response not ready: $(cat "$body_file")"
+    fi
+    tries=$((tries + 1))
+    sleep "$sleep_seconds"
+  done
+
+  echo "health check failed after ${max_tries} tries"
+  return 1
+}
 
 if [ -n "${package_download_path:-}" ] && [ -f "${package_download_path}" ]; then
   PKG="${package_download_path}"
@@ -28,6 +52,9 @@ fi
 
 echo "using package: $PKG"
 echo "release dir: $REL"
+if [ -n "${PREVIOUS_TARGET:-}" ]; then
+  echo "previous target: $PREVIOUS_TARGET"
+fi
 
 mkdir -p "$RELEASES_DIR" "$SHARED_DIR" "$REL"
 chown -R admin:admin "$APP_BASE"
@@ -96,8 +123,31 @@ sudo -u admin -H bash -lc "
   pm2 save
 "
 
-sleep 5
-curl -fI http://127.0.0.1:3000
+if ! health_check; then
+  echo "new release health check failed, starting rollback..."
+
+  if [ -n "${PREVIOUS_TARGET:-}" ] && [ -f "$PREVIOUS_TARGET/package.json" ]; then
+    ln -sfn "$PREVIOUS_TARGET" "$CURRENT_LINK"
+    chown -h admin:admin "$CURRENT_LINK"
+
+    sudo -u admin -H bash -lc "
+      set -Eeuo pipefail
+      pm2 delete peoplemine >/dev/null 2>&1 || true
+      pm2 start npm --name peoplemine --cwd '$CURRENT_LINK' -- start
+      pm2 save
+    "
+
+    if health_check; then
+      echo "rollback succeeded to $PREVIOUS_TARGET"
+    else
+      echo "rollback failed: previous release is unhealthy too"
+    fi
+  else
+    echo "rollback skipped: no previous release target"
+  fi
+
+  exit 1
+fi
 
 cd "$RELEASES_DIR"
 ls -1dt */ | tail -n +6 | xargs -r rm -rf
